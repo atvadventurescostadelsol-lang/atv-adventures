@@ -532,7 +532,7 @@ export default function BatchEntry() {
 
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-4">
                       <div>
-                        <Label>Categoría</Label>
+                        <Label>{t('category')}</Label>
                         <Select
                           value={entry.category}
                           onValueChange={(value) => updateEntry(entry.id, 'category', value)}
@@ -548,13 +548,13 @@ export default function BatchEntry() {
                       </div>
 
                       <div>
-                        <Label>Producto</Label>
+                        <Label>{t('product')}</Label>
                         <Select
                           value={entry.productId}
                           onValueChange={(value) => handleProductChange(entry.id, value)}
                         >
                           <SelectTrigger className="mt-1">
-                            <SelectValue placeholder="Selecciona" />
+                            <SelectValue placeholder={t('select')} />
                           </SelectTrigger>
                           <SelectContent>
                             {products
@@ -569,7 +569,7 @@ export default function BatchEntry() {
                       </div>
 
                       <div>
-                        <Label>Cantidad de Vehículos</Label>
+                        <Label>{t('vehicleCount')}</Label>
                         <Input
                           type="number"
                           min="1"
@@ -580,11 +580,11 @@ export default function BatchEntry() {
                       </div>
 
                       <div>
-                        <Label>Etiqueta de Grupo (Opcional)</Label>
+                        <Label>{t('groupLabel')}</Label>
                         <Input
                           value={entry.groupLabel}
                           onChange={(e) => updateEntry(entry.id, 'groupLabel', e.target.value)}
-                          placeholder="ej: Grupo A"
+                          placeholder={t('groupPlaceholder')}
                           className="mt-1"
                         />
                       </div>
