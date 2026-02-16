@@ -101,3 +101,126 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  Build a production-ready, mobile-first internal web application for an ATV rental business 
+  to manage operational control of departures and track income. Uses Google Sheets as database.
+  Key features: Batch entry for departures, capacity control, financial tracking (VAT, deposits, 
+  payment splits by amount), dashboard with stats, and admin panel for products/timeslots.
+
+backend:
+  - task: "POST /api/departures/batch - Create batch departures"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 3
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "User reported save button not working - entries not appearing in dashboard"
+      - working: false
+        agent: "main"
+        comment: "Diagnosed issue: appendSheetData was writing to wrong columns (AD:BJ instead of A:AG)"
+      - working: true
+        agent: "main"
+        comment: "Fixed by implementing safeAppendSheetData with correct column calculation for AG (33 columns). Tested with curl - entry created successfully and appears in dashboard"
+
+  - task: "GET /api/dashboard - Dashboard stats"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Returns departures and aggregated stats correctly"
+
+  - task: "GET /api/products - List products"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+
+  - task: "GET /api/timeslots - List time slots"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+
+  - task: "GET /api/capacity - Check capacity for date/slot"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+
+  - task: "DELETE /api/departures/:id - Delete departure"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+
+frontend:
+  - task: "Dashboard view with stats and departures"
+    implemented: true
+    working: true
+    file: "app/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+
+  - task: "Batch Entry form for creating departures"
+    implemented: true
+    working: true
+    file: "app/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "Save button reported not working"
+      - working: true
+        agent: "main"
+        comment: "Backend fix applied - needs UI verification"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "POST /api/departures/batch - Create batch departures"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      Fixed critical bug in batch departure creation. The issue was that safeAppendSheetData 
+      had incorrect column letter calculation for columns > 26 (AG = column 33). 
+      
+      Fix applied in /app/lib/safe-append.js:
+      - Added columnToLetter() function to correctly convert column numbers to letters (1=A, 27=AA, 33=AG)
+      - Updated safeAppendSheetData to use this function
+      
+      Verified with curl test:
+      - POST /api/departures/batch with test entry
+      - Entry saved correctly (33 columns to Departures!A2:AG2)
+      - Entry appears in GET /api/dashboard response
+      
+      Please verify the batch creation endpoint works correctly with multiple entries.
