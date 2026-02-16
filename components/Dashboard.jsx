@@ -228,7 +228,19 @@ export default function Dashboard() {
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {slotDepartures.map((dep, idx) => (
-                      <Card key={idx} className="bg-muted/50">
+                      <Card key={idx} className="bg-muted/50 relative">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-2 right-2 h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => setDeleteDialog({
+                            open: true,
+                            departureId: dep.id,
+                            departureName: `${dep.productName} - ${dep.groupLabel || 'Sin grupo'}`
+                          })}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                         <CardContent className="p-3">
                           <div className="flex items-start justify-between mb-2">
                             <Badge variant={dep.category === 'quad' ? 'default' : 'secondary'}>
