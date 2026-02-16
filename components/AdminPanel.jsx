@@ -360,28 +360,28 @@ export default function AdminPanel() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Panel de Administración</CardTitle>
-          <CardDescription>Gestiona productos, precios y configuración del sistema</CardDescription>
+          <CardTitle>{t('adminTitle')}</CardTitle>
+          <CardDescription>{t('adminDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="products" className="space-y-4">
             <TabsList>
-              <TabsTrigger value="products">Productos</TabsTrigger>
-              <TabsTrigger value="timeslots">Franjas Horarias</TabsTrigger>
-              <TabsTrigger value="capacity">Capacidades</TabsTrigger>
-              <TabsTrigger value="categories">Categorías</TabsTrigger>
+              <TabsTrigger value="products">{t('products')}</TabsTrigger>
+              <TabsTrigger value="timeslots">{t('timeSlots')}</TabsTrigger>
+              <TabsTrigger value="capacity">{t('capacities')}</TabsTrigger>
+              <TabsTrigger value="categories">{t('categories')}</TabsTrigger>
             </TabsList>
 
             {/* Products Tab */}
             <TabsContent value="products" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Agregar Nuevo Producto</CardTitle>
+                  <CardTitle>{t('addProduct')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
                     <div>
-                      <Label>Categoría</Label>
+                      <Label>{t('category')}</Label>
                       <Select value={newProduct.category} onValueChange={(value) => setNewProduct({...newProduct, category: value})}>
                         <SelectTrigger className="mt-1">
                           <SelectValue />
@@ -396,21 +396,21 @@ export default function AdminPanel() {
                       </Select>
                     </div>
                     <div>
-                      <Label>Nombre</Label>
+                      <Label>{t('name')}</Label>
                       <Input value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} placeholder="ej: 2 horas" className="mt-1" />
                     </div>
                     <div>
-                      <Label>Duración</Label>
+                      <Label>{t('duration')}</Label>
                       <Input value={newProduct.duration} onChange={(e) => setNewProduct({...newProduct, duration: e.target.value})} placeholder="ej: 2h" className="mt-1" />
                     </div>
                     <div>
-                      <Label>Precio Base (€)</Label>
+                      <Label>{t('basePrice')} (€)</Label>
                       <Input type="number" step="0.01" value={newProduct.basePrice} onChange={(e) => setNewProduct({...newProduct, basePrice: e.target.value})} placeholder="70" className="mt-1" />
                     </div>
                     <div className="flex items-end">
                       <Button onClick={handleCreateProduct} className="w-full">
                         <Plus className="h-4 w-4 mr-2" />
-                        Agregar
+                        {t('addProduct')}
                       </Button>
                     </div>
                   </div>
