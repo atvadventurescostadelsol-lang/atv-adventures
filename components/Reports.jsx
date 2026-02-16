@@ -429,10 +429,10 @@ export default function Reports() {
               <div className="text-2xl font-bold text-blue-600">€{periodStats.weekly.totalGross.toFixed(2)}</div>
               <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
                 <div className="bg-blue-50 p-2 rounded">
-                  <span className="text-blue-700 font-medium">Quads:</span> €{periodStats.weekly.quadGross.toFixed(0)} ({periodStats.weekly.quadCount})
+                  <span className="text-blue-700 font-medium">Quads:</span> €{periodStats.weekly.quadGross.toFixed(2)} ({periodStats.weekly.quadCount})
                 </div>
                 <div className="bg-green-50 p-2 rounded">
-                  <span className="text-green-700 font-medium">Buggies:</span> €{periodStats.weekly.buggyGross.toFixed(0)} ({periodStats.weekly.buggyCount})
+                  <span className="text-green-700 font-medium">Buggies:</span> €{periodStats.weekly.buggyGross.toFixed(2)} ({periodStats.weekly.buggyCount})
                 </div>
               </div>
             </CardContent>
@@ -450,10 +450,10 @@ export default function Reports() {
               <div className="text-2xl font-bold text-green-600">€{periodStats.monthly.totalGross.toFixed(2)}</div>
               <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
                 <div className="bg-blue-50 p-2 rounded">
-                  <span className="text-blue-700 font-medium">Quads:</span> €{periodStats.monthly.quadGross.toFixed(0)} ({periodStats.monthly.quadCount})
+                  <span className="text-blue-700 font-medium">Quads:</span> €{periodStats.monthly.quadGross.toFixed(2)} ({periodStats.monthly.quadCount})
                 </div>
                 <div className="bg-green-50 p-2 rounded">
-                  <span className="text-green-700 font-medium">Buggies:</span> €{periodStats.monthly.buggyGross.toFixed(0)} ({periodStats.monthly.buggyCount})
+                  <span className="text-green-700 font-medium">Buggies:</span> €{periodStats.monthly.buggyGross.toFixed(2)} ({periodStats.monthly.buggyCount})
                 </div>
               </div>
             </CardContent>
@@ -471,10 +471,10 @@ export default function Reports() {
               <div className="text-2xl font-bold text-purple-600">€{periodStats.yearly.totalGross.toFixed(2)}</div>
               <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
                 <div className="bg-blue-50 p-2 rounded">
-                  <span className="text-blue-700 font-medium">Quads:</span> €{periodStats.yearly.quadGross.toFixed(0)} ({periodStats.yearly.quadCount})
+                  <span className="text-blue-700 font-medium">Quads:</span> €{periodStats.yearly.quadGross.toFixed(2)} ({periodStats.yearly.quadCount})
                 </div>
                 <div className="bg-green-50 p-2 rounded">
-                  <span className="text-green-700 font-medium">Buggies:</span> €{periodStats.yearly.buggyGross.toFixed(0)} ({periodStats.yearly.buggyCount})
+                  <span className="text-green-700 font-medium">Buggies:</span> €{periodStats.yearly.buggyGross.toFixed(2)} ({periodStats.yearly.buggyCount})
                 </div>
               </div>
             </CardContent>
