@@ -225,7 +225,12 @@ metadata:
 test_plan:
   current_focus:
     - "POST /api/departures/batch - Create batch departures"
-  stuck_tasks: []
+    - "GET /api/dashboard - Dashboard stats"  
+    - "GET /api/departures - List departures with Cruceros data"
+  stuck_tasks:
+    - "POST /api/departures/batch - Create batch departures"
+    - "GET /api/dashboard - Dashboard stats"
+    - "GET /api/departures - List departures with Cruceros data"
   test_all: false
   test_priority: "high_first"
 
