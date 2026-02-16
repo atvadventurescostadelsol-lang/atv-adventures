@@ -295,22 +295,31 @@ export default function Reports() {
         <h2>Desglose por Canal de Pago</h2>
         <div class="summary">
           <div class="stat-card">
-            <div class="label">Efectivo</div>
+            <div class="label">💵 Efectivo</div>
             <div class="value">€${results.totals.cashTotal.toFixed(2)}</div>
           </div>
           <div class="stat-card">
-            <div class="label">Banco</div>
+            <div class="label">🏦 Banco</div>
             <div class="value">€${results.totals.bankTotal.toFixed(2)}</div>
           </div>
           <div class="stat-card">
-            <div class="label">Web</div>
+            <div class="label">🌐 Web</div>
             <div class="value">€${results.totals.webTotal.toFixed(2)}</div>
           </div>
           <div class="stat-card">
-            <div class="label">GYG</div>
+            <div class="label">🎫 GYG</div>
             <div class="value">€${results.totals.gygTotal.toFixed(2)}</div>
           </div>
+          <div class="stat-card">
+            <div class="label">🚢 Cruceros</div>
+            <div class="value">€${results.totals.cruiseTotal.toFixed(2)}</div>
+          </div>
         </div>
+        ${results.totals.pendingCruise > 0 ? `
+        <div style="background: #fef3c7; padding: 10px; border-radius: 8px; margin: 15px 0;">
+          <strong>⏳ Pendiente de cobro (Cruceros):</strong> €${results.totals.pendingCruise.toFixed(2)}
+        </div>
+        ` : ''}
         
         <h2>Detalle de Entradas (${results.data.length})</h2>
         <table>
