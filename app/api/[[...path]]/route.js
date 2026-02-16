@@ -748,6 +748,44 @@ async function handlePost(request, path) {
     }
   }
 
+  // Create time slot
+  if (path === 'timeslots') {
+    try {
+      const { time, active = true, userId = 'system' } = body;
+
+      if (!time) {
+        return NextResponse.json({ error: 'Time is required' }, { status: 400 });
+      }
+
+      const id = uuidv4();
+
+      const slotRow = [
+        id,
+        time,
+        '10', // default quad capacity
+        '6',  // default buggy capacity
+        active ? 'TRUE' : 'FALSE',
+      ];
+
+      await appendSheetData(SPREADSHEET_ID, 'TimeSlots!A:E', [slotRow]);
+      await addAuditLog('CREATE', 'TimeSlot', id, { slot: slotRow }, userId, 'Admin');
+
+      return NextResponse.json({
+        success: true,
+        id,
+        slot: {
+          id,
+          time,
+          quadCapacity: '10',
+          buggyCapacity: '6',
+          active,
+        }
+      });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   return NextResponse.json({ error: 'Not found' }, { status: 404 });
 }
 
