@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
-import { initializeGoogleSheet } from '@/lib/init-sheets';
-import {
+const { initializeGoogleSheet } = require('@/lib/init-sheets');
+const {
   getSheetData,
   appendSheetData,
   updateSheetData,
   batchUpdateSheetData,
   parseSheetToObjects,
   objectsToSheetRows,
-} from '@/lib/google-sheets';
-import { getDatabase } from '@/lib/mongodb';
+} = require('@/lib/google-sheets');
 import { v4 as uuidv4 } from 'uuid';
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
