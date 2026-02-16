@@ -295,20 +295,20 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
       <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar entrada?</AlertDialogTitle>
+            <AlertDialogTitle>{t('deleteEntry')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Estás a punto de eliminar la entrada: <strong>{deleteDialog.departureName}</strong>
+              {t('deleteConfirmation')}: <strong>{deleteDialog.departureName}</strong>
               <br /><br />
-              Esta acción no se puede deshacer. La entrada se eliminará permanentemente del sistema.
+              {t('deleteWarning')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => handleDelete(deleteDialog.departureId)}
               className="bg-red-600 hover:bg-red-700"
             >
-              Eliminar
+              {t('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
