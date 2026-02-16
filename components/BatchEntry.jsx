@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Save, AlertCircle, CheckCircle2, Percent } from 'lucide-react';
+import { Plus, Trash2, Save, AlertCircle, CheckCircle2, Euro } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -23,7 +23,7 @@ export default function BatchEntry() {
     groupLabel: '',
     notes: '',
     salesChannel: 'cash',
-    paymentSplit: [{ method: 'cash', percentage: 100 }],
+    paymentSplit: [{ method: 'cash', amount: 0 }],
   }]);
 
   const [products, setProducts] = useState([]);
@@ -103,7 +103,7 @@ export default function BatchEntry() {
       groupLabel: '',
       notes: '',
       salesChannel: 'cash',
-      paymentSplit: [{ method: 'cash', percentage: 100 }],
+      paymentSplit: [{ method: 'cash', amount: 0 }],
     }]);
   }
 
@@ -117,12 +117,19 @@ export default function BatchEntry() {
     setEntries(entries.map(e => e.id === id ? { ...e, [field]: value } : e));
   }
 
+  function getEntryTotal(entry) {
+    if (!entry.productId || !entry.vehiclesCount) return 0;
+    const product = products.find(p => p.id === entry.productId);
+    if (!product) return 0;
+    return parseFloat(product.basePrice) * parseInt(entry.vehiclesCount);
+  }
+
   function addPaymentSplit(entryId) {
     setEntries(entries.map(e => {
       if (e.id === entryId) {
         return {
           ...e,
-          paymentSplit: [...e.paymentSplit, { method: 'cash', percentage: 0 }]
+          paymentSplit: [...e.paymentSplit, { method: 'cash', amount: 0 }]
         };
       }
       return e;
@@ -155,7 +162,7 @@ export default function BatchEntry() {
   }
 
   function getPaymentSplitTotal(entry) {
-    return entry.paymentSplit.reduce((sum, split) => sum + parseFloat(split.percentage || 0), 0);
+    return entry.paymentSplit.reduce((sum, split) => sum + parseFloat(split.amount || 0), 0);
   }
 
   function getTotalVehicles(category) {
@@ -172,8 +179,11 @@ export default function BatchEntry() {
     const buggyAvailable = capacity.buggy.available;
 
     const allValid = entries.every(e => {
+      if (!e.productId || !e.vehiclesCount) return false;
+      const entryTotal = getEntryTotal(e);
       const splitTotal = getPaymentSplitTotal(e);
-      return e.productId && e.vehiclesCount > 0 && Math.abs(splitTotal - 100) < 0.01;
+      // Validar que el split total coincida con el total (con tolerancia de 0.01 para decimales)
+      return Math.abs(splitTotal - entryTotal) < 0.01;
     });
     
     const capacityOk = quadTotal <= quadAvailable && buggyTotal <= buggyAvailable;
@@ -184,9 +194,14 @@ export default function BatchEntry() {
   async function handleSave() {
     if (!canSave()) {
       // Check which validation failed
-      const invalidSplits = entries.filter(e => Math.abs(getPaymentSplitTotal(e) - 100) >= 0.01);
+      const invalidSplits = entries.filter(e => {
+        const entryTotal = getEntryTotal(e);
+        const splitTotal = getPaymentSplitTotal(e);
+        return Math.abs(splitTotal - entryTotal) >= 0.01;
+      });
+      
       if (invalidSplits.length > 0) {
-        toast.error('Los porcentajes de pago deben sumar 100%');
+        toast.error('Las cantidades de pago deben sumar el total de cada entrada');
         return;
       }
       toast.error('Por favor, verifica los datos y la capacidad disponible');
@@ -205,7 +220,10 @@ export default function BatchEntry() {
           groupLabel: e.groupLabel,
           notes: e.notes,
           salesChannel: e.salesChannel,
-          paymentSplit: e.paymentSplit,
+          paymentSplit: e.paymentSplit.map(s => ({
+            method: s.method,
+            amount: parseFloat(s.amount)
+          })),
           userId: 'user-1',
           userName: 'Usuario Demo',
         })),
@@ -232,11 +250,14 @@ export default function BatchEntry() {
             groupLabel: '',
             notes: '',
             salesChannel: 'cash',
-            paymentSplit: [{ method: 'cash', percentage: 100 }],
+            paymentSplit: [{ method: 'cash', amount: 0 }],
           }]);
           loadCapacity();
         } else {
           toast.error(`Creadas ${result.created}, errores: ${result.errors}`);
+          if (result.errorDetails && result.errorDetails.length > 0) {
+            console.error('Error details:', result.errorDetails);
+          }
         }
       } else {
         const error = await res.json();
@@ -261,7 +282,7 @@ export default function BatchEntry() {
         <CardHeader>
           <CardTitle>Nueva Entrada de Salidas</CardTitle>
           <CardDescription>
-            Crea una o múltiples salidas con fraccionamiento de pagos
+            Crea una o múltiples salidas con fraccionamiento de pagos por cantidad
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -352,14 +373,23 @@ export default function BatchEntry() {
             </div>
 
             {entries.map((entry, index) => {
+              const entryTotal = getEntryTotal(entry);
               const splitTotal = getPaymentSplitTotal(entry);
-              const splitValid = Math.abs(splitTotal - 100) < 0.01;
+              const splitValid = Math.abs(splitTotal - entryTotal) < 0.01;
+              const splitDiff = entryTotal - splitTotal;
               
               return (
                 <Card key={entry.id} className="bg-muted/50">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-4">
-                      <Badge>Entrada #{index + 1}</Badge>
+                      <div>
+                        <Badge>Entrada #{index + 1}</Badge>
+                        {entryTotal > 0 && (
+                          <Badge variant="outline" className="ml-2">
+                            Total: €{entryTotal.toFixed(2)}
+                          </Badge>
+                        )}
+                      </div>
                       {entries.length > 1 && (
                         <Button
                           onClick={() => removeEntry(entry.id)}
@@ -393,7 +423,15 @@ export default function BatchEntry() {
                         <Label>Producto</Label>
                         <Select
                           value={entry.productId}
-                          onValueChange={(value) => updateEntry(entry.id, 'productId', value)}
+                          onValueChange={(value) => {
+                            updateEntry(entry.id, 'productId', value);
+                            // Auto-calculate payment split to default (all cash)
+                            const product = products.find(p => p.id === value);
+                            if (product) {
+                              const total = parseFloat(product.basePrice) * parseInt(entry.vehiclesCount);
+                              updateEntry(entry.id, 'paymentSplit', [{ method: 'cash', amount: total }]);
+                            }
+                          }}
                         >
                           <SelectTrigger className="mt-1">
                             <SelectValue placeholder="Selecciona" />
@@ -416,7 +454,18 @@ export default function BatchEntry() {
                           type="number"
                           min="1"
                           value={entry.vehiclesCount}
-                          onChange={(e) => updateEntry(entry.id, 'vehiclesCount', e.target.value)}
+                          onChange={(e) => {
+                            const newCount = e.target.value;
+                            updateEntry(entry.id, 'vehiclesCount', newCount);
+                            // Update payment split with new total
+                            if (entry.productId) {
+                              const product = products.find(p => p.id === entry.productId);
+                              if (product) {
+                                const newTotal = parseFloat(product.basePrice) * parseInt(newCount || 0);
+                                updateEntry(entry.id, 'paymentSplit', [{ method: 'cash', amount: newTotal }]);
+                              }
+                            }
+                          }}
                           className="mt-1"
                         />
                       </div>
@@ -444,78 +493,82 @@ export default function BatchEntry() {
                     </div>
 
                     {/* Payment Split Section */}
-                    <div className="border-t pt-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <Label className="flex items-center gap-2">
-                          <Percent className="h-4 w-4" />
-                          Fraccionamiento de Pago
-                          {!splitValid && (
-                            <Badge variant="destructive" className="text-xs">
-                              Total: {splitTotal.toFixed(1)}% (debe ser 100%)
-                            </Badge>
-                          )}
-                          {splitValid && (
-                            <Badge variant="default" className="text-xs bg-green-600">
-                              ✓ 100%
-                            </Badge>
-                          )}
-                        </Label>
-                        <Button
-                          onClick={() => addPaymentSplit(entry.id)}
-                          size="sm"
-                          variant="outline"
-                          className="h-7"
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          Agregar
-                        </Button>
-                      </div>
-
-                      <div className="space-y-2">
-                        {entry.paymentSplit.map((split, splitIndex) => (
-                          <div key={splitIndex} className="flex gap-2 items-start">
-                            <div className="flex-1">
-                              <Select
-                                value={split.method}
-                                onValueChange={(value) => updatePaymentSplit(entry.id, splitIndex, 'method', value)}
-                              >
-                                <SelectTrigger className="h-9">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="cash">Efectivo</SelectItem>
-                                  <SelectItem value="bank">Banco</SelectItem>
-                                  <SelectItem value="web">Web</SelectItem>
-                                  <SelectItem value="gyg">GetYourGuide</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="w-24">
-                              <Input
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.1"
-                                value={split.percentage}
-                                onChange={(e) => updatePaymentSplit(entry.id, splitIndex, 'percentage', parseFloat(e.target.value))}
-                                className="h-9"
-                                placeholder="%"
-                              />
-                            </div>
-                            {entry.paymentSplit.length > 1 && (
-                              <Button
-                                onClick={() => removePaymentSplit(entry.id, splitIndex)}
-                                size="sm"
-                                variant="ghost"
-                                className="h-9 w-9 p-0 text-red-600"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                    {entryTotal > 0 && (
+                      <div className="border-t pt-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <Label className="flex items-center gap-2">
+                            <Euro className="h-4 w-4" />
+                            Fraccionamiento de Pago
+                            {!splitValid && splitDiff !== 0 && (
+                              <Badge variant="destructive" className="text-xs">
+                                Faltan: €{splitDiff.toFixed(2)}
+                              </Badge>
                             )}
+                            {splitValid && (
+                              <Badge variant="default" className="text-xs bg-green-600">
+                                ✓ Completo
+                              </Badge>
+                            )}
+                          </Label>
+                          <Button
+                            onClick={() => addPaymentSplit(entry.id)}
+                            size="sm"
+                            variant="outline"
+                            className="h-7"
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Agregar
+                          </Button>
+                        </div>
+
+                        <div className="space-y-2">
+                          {entry.paymentSplit.map((split, splitIndex) => (
+                            <div key={splitIndex} className="flex gap-2 items-start">
+                              <div className="flex-1">
+                                <Select
+                                  value={split.method}
+                                  onValueChange={(value) => updatePaymentSplit(entry.id, splitIndex, 'method', value)}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="cash">Efectivo</SelectItem>
+                                    <SelectItem value="bank">Banco</SelectItem>
+                                    <SelectItem value="web">Web</SelectItem>
+                                    <SelectItem value="gyg">GetYourGuide</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="w-28">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={split.amount}
+                                  onChange={(e) => updatePaymentSplit(entry.id, splitIndex, 'amount', e.target.value)}
+                                  className="h-9"
+                                  placeholder="€"
+                                />
+                              </div>
+                              {entry.paymentSplit.length > 1 && (
+                                <Button
+                                  onClick={() => removePaymentSplit(entry.id, splitIndex)}
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-9 w-9 p-0 text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                          <div className="text-sm text-muted-foreground mt-2">
+                            Total asignado: €{splitTotal.toFixed(2)} de €{entryTotal.toFixed(2)}
                           </div>
-                        ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               );
