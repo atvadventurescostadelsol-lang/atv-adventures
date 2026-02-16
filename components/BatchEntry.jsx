@@ -8,9 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Save, AlertCircle, CheckCircle2, Euro } from 'lucide-react';
+import { Plus, Trash2, Save, AlertCircle, CheckCircle2, Euro, Ship, Percent } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+
+const GYG_DISCOUNT = 0.25; // 25% discount for GYG
 
 export default function BatchEntry() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -24,6 +26,8 @@ export default function BatchEntry() {
     notes: '',
     salesChannel: 'cash',
     paymentSplit: [{ method: 'cash', amount: 0 }],
+    gygDiscount: 0,
+    isPendingCruise: false,
   }]);
 
   const [products, setProducts] = useState([]);
@@ -104,6 +108,8 @@ export default function BatchEntry() {
       notes: '',
       salesChannel: 'cash',
       paymentSplit: [{ method: 'cash', amount: 0 }],
+      gygDiscount: 0,
+      isPendingCruise: false,
     }]);
   }
 
@@ -117,11 +123,20 @@ export default function BatchEntry() {
     setEntries(entries.map(e => e.id === id ? { ...e, [field]: value } : e));
   }
 
-  function getEntryTotal(entry) {
+  function getBaseTotal(entry) {
     if (!entry.productId || !entry.vehiclesCount) return 0;
     const product = products.find(p => p.id === entry.productId);
     if (!product) return 0;
     return parseFloat(product.basePrice) * parseInt(entry.vehiclesCount);
+  }
+
+  function getEntryTotal(entry) {
+    const baseTotal = getBaseTotal(entry);
+    // Apply GYG discount if applicable
+    if (entry.gygDiscount > 0) {
+      return baseTotal * (1 - entry.gygDiscount);
+    }
+    return baseTotal;
   }
 
   function addPaymentSplit(entryId) {
@@ -155,7 +170,97 @@ export default function BatchEntry() {
           }
           return split;
         });
-        return { ...e, paymentSplit: newSplits };
+        
+        // Check if any split is GYG and apply discount
+        const hasGyg = newSplits.some(s => s.method === 'gyg');
+        const hasCruise = newSplits.some(s => s.method === 'cruceros');
+        
+        let updatedEntry = { ...e, paymentSplit: newSplits };
+        
+        // Apply GYG discount automatically
+        if (field === 'method' && value === 'gyg') {
+          const baseTotal = getBaseTotal(e);
+          const discountedTotal = baseTotal * (1 - GYG_DISCOUNT);
+          updatedEntry.gygDiscount = GYG_DISCOUNT;
+          // Update all splits to reflect discounted total
+          if (newSplits.length === 1) {
+            updatedEntry.paymentSplit = [{ method: 'gyg', amount: discountedTotal }];
+          }
+          toast.info(`Descuento GYG del 25% aplicado: €${(baseTotal - discountedTotal).toFixed(2)}`);
+        } else if (field === 'method' && value !== 'gyg') {
+          // Remove GYG discount if switching away from GYG
+          const otherHasGyg = newSplits.filter((_, idx) => idx !== splitIndex).some(s => s.method === 'gyg');
+          if (!otherHasGyg && e.gygDiscount > 0) {
+            updatedEntry.gygDiscount = 0;
+            const baseTotal = getBaseTotal(e);
+            if (newSplits.length === 1) {
+              updatedEntry.paymentSplit = [{ method: value, amount: baseTotal }];
+            }
+          }
+        }
+        
+        // Mark as pending for cruise
+        if (field === 'method' && value === 'cruceros') {
+          updatedEntry.isPendingCruise = true;
+          toast.info('Pago de crucero marcado como pendiente (cobro mensual)');
+        } else if (field === 'method' && value !== 'cruceros') {
+          const otherHasCruise = newSplits.filter((_, idx) => idx !== splitIndex).some(s => s.method === 'cruceros');
+          if (!otherHasCruise) {
+            updatedEntry.isPendingCruise = false;
+          }
+        }
+        
+        return updatedEntry;
+      }
+      return e;
+    }));
+  }
+
+  function handleProductChange(entryId, productId) {
+    const entry = entries.find(e => e.id === entryId);
+    const product = products.find(p => p.id === productId);
+    if (!product || !entry) return;
+
+    const baseTotal = parseFloat(product.basePrice) * parseInt(entry.vehiclesCount);
+    const hasGyg = entry.paymentSplit.some(s => s.method === 'gyg');
+    const finalTotal = hasGyg ? baseTotal * (1 - GYG_DISCOUNT) : baseTotal;
+    const method = entry.paymentSplit[0]?.method || 'cash';
+
+    setEntries(entries.map(e => {
+      if (e.id === entryId) {
+        return {
+          ...e,
+          productId,
+          paymentSplit: [{ method, amount: finalTotal }],
+          gygDiscount: hasGyg ? GYG_DISCOUNT : 0,
+        };
+      }
+      return e;
+    }));
+  }
+
+  function handleVehicleCountChange(entryId, newCount) {
+    const entry = entries.find(e => e.id === entryId);
+    if (!entry || !entry.productId) {
+      updateEntry(entryId, 'vehiclesCount', newCount);
+      return;
+    }
+
+    const product = products.find(p => p.id === entry.productId);
+    if (!product) return;
+
+    const baseTotal = parseFloat(product.basePrice) * parseInt(newCount || 0);
+    const hasGyg = entry.paymentSplit.some(s => s.method === 'gyg');
+    const finalTotal = hasGyg ? baseTotal * (1 - GYG_DISCOUNT) : baseTotal;
+    const method = entry.paymentSplit[0]?.method || 'cash';
+
+    setEntries(entries.map(e => {
+      if (e.id === entryId) {
+        return {
+          ...e,
+          vehiclesCount: newCount,
+          paymentSplit: [{ method, amount: finalTotal }],
+        };
       }
       return e;
     }));
@@ -178,47 +283,21 @@ export default function BatchEntry() {
     const quadAvailable = capacity.quad.available;
     const buggyAvailable = capacity.buggy.available;
 
-    // Debug logging
-    console.log('Validating save:', {
-      quadTotal,
-      buggyTotal,
-      quadAvailable,
-      buggyAvailable,
-      entries: entries.length
-    });
-
     const allValid = entries.every(e => {
-      if (!e.productId || !e.vehiclesCount) {
-        console.log('Entry missing product or vehicles:', e);
-        return false;
-      }
+      if (!e.productId || !e.vehiclesCount) return false;
       const entryTotal = getEntryTotal(e);
       const splitTotal = getPaymentSplitTotal(e);
       const diff = Math.abs(splitTotal - entryTotal);
-      
-      console.log('Entry validation:', {
-        id: e.id,
-        productId: e.productId,
-        vehicles: e.vehiclesCount,
-        entryTotal,
-        splitTotal,
-        diff,
-        valid: diff < 0.01
-      });
-      
       return diff < 0.01;
     });
     
     const capacityOk = quadTotal <= quadAvailable && buggyTotal <= buggyAvailable;
-
-    console.log('Final validation:', { allValid, capacityOk, date, timeSlot });
 
     return allValid && capacityOk && date && timeSlot;
   }
 
   async function handleSave() {
     if (!canSave()) {
-      // Check which validation failed
       const invalidSplits = entries.filter(e => {
         const entryTotal = getEntryTotal(e);
         const splitTotal = getPaymentSplitTotal(e);
@@ -244,11 +323,13 @@ export default function BatchEntry() {
           vehiclesCount: parseInt(e.vehiclesCount),
           groupLabel: e.groupLabel,
           notes: e.notes,
-          salesChannel: e.salesChannel,
+          salesChannel: e.paymentSplit[0]?.method || 'otros',
           paymentSplit: e.paymentSplit.map(s => ({
             method: s.method,
             amount: parseFloat(s.amount)
           })),
+          gygDiscount: e.gygDiscount || 0,
+          isPendingCruise: e.isPendingCruise || false,
           userId: 'user-1',
           userName: 'Usuario Demo',
         })),
@@ -266,7 +347,6 @@ export default function BatchEntry() {
         const result = await res.json();
         if (result.success) {
           toast.success(`¡${result.created} entrada(s) creada(s) exitosamente!`);
-          // Reset form
           setEntries([{
             id: Math.random(),
             category: 'quad',
@@ -276,13 +356,12 @@ export default function BatchEntry() {
             notes: '',
             salesChannel: 'cash',
             paymentSplit: [{ method: 'cash', amount: 0 }],
+            gygDiscount: 0,
+            isPendingCruise: false,
           }]);
           loadCapacity();
         } else {
           toast.error(`Creadas ${result.created}, errores: ${result.errors}`);
-          if (result.errorDetails && result.errorDetails.length > 0) {
-            console.error('Error details:', result.errorDetails);
-          }
         }
       } else {
         const error = await res.json();
@@ -398,20 +477,42 @@ export default function BatchEntry() {
             </div>
 
             {entries.map((entry, index) => {
+              const baseTotal = getBaseTotal(entry);
               const entryTotal = getEntryTotal(entry);
               const splitTotal = getPaymentSplitTotal(entry);
               const splitValid = Math.abs(splitTotal - entryTotal) < 0.01;
               const splitDiff = entryTotal - splitTotal;
+              const hasDiscount = entry.gygDiscount > 0;
               
               return (
                 <Card key={entry.id} className="bg-muted/50">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-4">
-                      <div>
+                      <div className="flex flex-wrap gap-2 items-center">
                         <Badge>Entrada #{index + 1}</Badge>
-                        {entryTotal > 0 && (
-                          <Badge variant="outline" className="ml-2">
-                            Total: €{entryTotal.toFixed(2)}
+                        {baseTotal > 0 && (
+                          <>
+                            {hasDiscount ? (
+                              <>
+                                <Badge variant="outline" className="line-through text-muted-foreground">
+                                  €{baseTotal.toFixed(2)}
+                                </Badge>
+                                <Badge className="bg-green-600">
+                                  <Percent className="h-3 w-3 mr-1" />
+                                  €{entryTotal.toFixed(2)} (-25% GYG)
+                                </Badge>
+                              </>
+                            ) : (
+                              <Badge variant="outline">
+                                Total: €{entryTotal.toFixed(2)}
+                              </Badge>
+                            )}
+                          </>
+                        )}
+                        {entry.isPendingCruise && (
+                          <Badge className="bg-amber-500">
+                            <Ship className="h-3 w-3 mr-1" />
+                            Pendiente Crucero
                           </Badge>
                         )}
                       </div>
@@ -448,23 +549,7 @@ export default function BatchEntry() {
                         <Label>Producto</Label>
                         <Select
                           value={entry.productId}
-                          onValueChange={(value) => {
-                            const product = products.find(p => p.id === value);
-                            if (product) {
-                              const total = parseFloat(product.basePrice) * parseInt(entry.vehiclesCount);
-                              // Update both productId and paymentSplit
-                              setEntries(entries.map(e => {
-                                if (e.id === entry.id) {
-                                  return {
-                                    ...e,
-                                    productId: value,
-                                    paymentSplit: [{ method: 'cash', amount: total }]
-                                  };
-                                }
-                                return e;
-                              }));
-                            }
-                          }}
+                          onValueChange={(value) => handleProductChange(entry.id, value)}
                         >
                           <SelectTrigger className="mt-1">
                             <SelectValue placeholder="Selecciona" />
@@ -487,27 +572,7 @@ export default function BatchEntry() {
                           type="number"
                           min="1"
                           value={entry.vehiclesCount}
-                          onChange={(e) => {
-                            const newCount = e.target.value;
-                            if (entry.productId) {
-                              const product = products.find(p => p.id === entry.productId);
-                              if (product) {
-                                const newTotal = parseFloat(product.basePrice) * parseInt(newCount || 0);
-                                setEntries(entries.map(en => {
-                                  if (en.id === entry.id) {
-                                    return {
-                                      ...en,
-                                      vehiclesCount: newCount,
-                                      paymentSplit: [{ method: 'cash', amount: newTotal }]
-                                    };
-                                  }
-                                  return en;
-                                }));
-                              }
-                            } else {
-                              updateEntry(entry.id, 'vehiclesCount', newCount);
-                            }
-                          }}
+                          onChange={(e) => handleVehicleCountChange(entry.id, e.target.value)}
                           className="mt-1"
                         />
                       </div>
@@ -540,7 +605,7 @@ export default function BatchEntry() {
                         <div className="flex items-center justify-between mb-3">
                           <Label className="flex items-center gap-2">
                             <Euro className="h-4 w-4" />
-                            Fraccionamiento de Pago
+                            Forma de Pago
                             {!splitValid && splitDiff !== 0 && (
                               <Badge variant="destructive" className="text-xs">
                                 Faltan: €{splitDiff.toFixed(2)}
@@ -559,7 +624,7 @@ export default function BatchEntry() {
                             className="h-7"
                           >
                             <Plus className="h-3 w-3 mr-1" />
-                            Agregar
+                            Dividir Pago
                           </Button>
                         </div>
 
@@ -575,10 +640,11 @@ export default function BatchEntry() {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="cash">Efectivo</SelectItem>
-                                    <SelectItem value="bank">Banco</SelectItem>
-                                    <SelectItem value="web">Web</SelectItem>
-                                    <SelectItem value="gyg">GetYourGuide</SelectItem>
+                                    <SelectItem value="cash">💵 Efectivo</SelectItem>
+                                    <SelectItem value="bank">🏦 Banco</SelectItem>
+                                    <SelectItem value="web">🌐 Web</SelectItem>
+                                    <SelectItem value="gyg">🎫 GetYourGuide (-25%)</SelectItem>
+                                    <SelectItem value="cruceros">🚢 Cruceros (Pendiente)</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -607,6 +673,9 @@ export default function BatchEntry() {
                           ))}
                           <div className="text-sm text-muted-foreground mt-2">
                             Total asignado: €{splitTotal.toFixed(2)} de €{entryTotal.toFixed(2)}
+                            {hasDiscount && (
+                              <span className="text-green-600 ml-2">(Precio original: €{baseTotal.toFixed(2)})</span>
+                            )}
                           </div>
                         </div>
                       </div>
