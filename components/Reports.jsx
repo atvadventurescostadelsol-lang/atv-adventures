@@ -10,9 +10,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Download, Search, FileText, Calendar, TrendingUp, Car } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function Reports() {
+  const { language, t } = useLanguage();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [category, setCategory] = useState('all');
@@ -21,6 +23,8 @@ export default function Reports() {
   const [loading, setLoading] = useState(false);
   const [periodStats, setPeriodStats] = useState(null);
   const reportRef = useRef(null);
+  
+  const dateLocale = language === 'es' ? es : enUS;
 
   useEffect(() => {
     loadPeriodStats();
