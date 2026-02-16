@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, Save, AlertCircle, CheckCircle2, Percent } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -22,7 +22,8 @@ export default function BatchEntry() {
     vehiclesCount: 1,
     groupLabel: '',
     notes: '',
-    salesChannel: 'web',
+    salesChannel: 'cash',
+    paymentSplit: [{ method: 'cash', percentage: 100 }],
   }]);
 
   const [products, setProducts] = useState([]);
@@ -101,7 +102,8 @@ export default function BatchEntry() {
       vehiclesCount: 1,
       groupLabel: '',
       notes: '',
-      salesChannel: 'web',
+      salesChannel: 'cash',
+      paymentSplit: [{ method: 'cash', percentage: 100 }],
     }]);
   }
 
@@ -113,6 +115,47 @@ export default function BatchEntry() {
 
   function updateEntry(id, field, value) {
     setEntries(entries.map(e => e.id === id ? { ...e, [field]: value } : e));
+  }
+
+  function addPaymentSplit(entryId) {
+    setEntries(entries.map(e => {
+      if (e.id === entryId) {
+        return {
+          ...e,
+          paymentSplit: [...e.paymentSplit, { method: 'cash', percentage: 0 }]
+        };
+      }
+      return e;
+    }));
+  }
+
+  function removePaymentSplit(entryId, splitIndex) {
+    setEntries(entries.map(e => {
+      if (e.id === entryId && e.paymentSplit.length > 1) {
+        const newSplits = e.paymentSplit.filter((_, i) => i !== splitIndex);
+        return { ...e, paymentSplit: newSplits };
+      }
+      return e;
+    }));
+  }
+
+  function updatePaymentSplit(entryId, splitIndex, field, value) {
+    setEntries(entries.map(e => {
+      if (e.id === entryId) {
+        const newSplits = e.paymentSplit.map((split, i) => {
+          if (i === splitIndex) {
+            return { ...split, [field]: value };
+          }
+          return split;
+        });
+        return { ...e, paymentSplit: newSplits };
+      }
+      return e;
+    }));
+  }
+
+  function getPaymentSplitTotal(entry) {
+    return entry.paymentSplit.reduce((sum, split) => sum + parseFloat(split.percentage || 0), 0);
   }
 
   function getTotalVehicles(category) {
@@ -128,7 +171,11 @@ export default function BatchEntry() {
     const quadAvailable = capacity.quad.available;
     const buggyAvailable = capacity.buggy.available;
 
-    const allValid = entries.every(e => e.productId && e.vehiclesCount > 0);
+    const allValid = entries.every(e => {
+      const splitTotal = getPaymentSplitTotal(e);
+      return e.productId && e.vehiclesCount > 0 && Math.abs(splitTotal - 100) < 0.01;
+    });
+    
     const capacityOk = quadTotal <= quadAvailable && buggyTotal <= buggyAvailable;
 
     return allValid && capacityOk && date && timeSlot;
@@ -136,6 +183,12 @@ export default function BatchEntry() {
 
   async function handleSave() {
     if (!canSave()) {
+      // Check which validation failed
+      const invalidSplits = entries.filter(e => Math.abs(getPaymentSplitTotal(e) - 100) >= 0.01);
+      if (invalidSplits.length > 0) {
+        toast.error('Los porcentajes de pago deben sumar 100%');
+        return;
+      }
       toast.error('Por favor, verifica los datos y la capacidad disponible');
       return;
     }
@@ -152,6 +205,7 @@ export default function BatchEntry() {
           groupLabel: e.groupLabel,
           notes: e.notes,
           salesChannel: e.salesChannel,
+          paymentSplit: e.paymentSplit,
           userId: 'user-1',
           userName: 'Usuario Demo',
         })),
@@ -177,7 +231,8 @@ export default function BatchEntry() {
             vehiclesCount: 1,
             groupLabel: '',
             notes: '',
-            salesChannel: 'web',
+            salesChannel: 'cash',
+            paymentSplit: [{ method: 'cash', percentage: 100 }],
           }]);
           loadCapacity();
         } else {
@@ -206,7 +261,7 @@ export default function BatchEntry() {
         <CardHeader>
           <CardTitle>Nueva Entrada de Salidas</CardTitle>
           <CardDescription>
-            Crea una o múltiples salidas para la misma fecha y franja horaria
+            Crea una o múltiples salidas con fraccionamiento de pagos
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -296,115 +351,175 @@ export default function BatchEntry() {
               </Button>
             </div>
 
-            {entries.map((entry, index) => (
-              <Card key={entry.id} className="bg-muted/50">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-4">
-                    <Badge>Entrada #{index + 1}</Badge>
-                    {entries.length > 1 && (
-                      <Button
-                        onClick={() => removeEntry(entry.id)}
-                        size="sm"
-                        variant="ghost"
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <div>
-                      <Label>Categoría</Label>
-                      <Select
-                        value={entry.category}
-                        onValueChange={(value) => updateEntry(entry.id, 'category', value)}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="quad">Quad</SelectItem>
-                          <SelectItem value="buggy">Buggy</SelectItem>
-                        </SelectContent>
-                      </Select>
+            {entries.map((entry, index) => {
+              const splitTotal = getPaymentSplitTotal(entry);
+              const splitValid = Math.abs(splitTotal - 100) < 0.01;
+              
+              return (
+                <Card key={entry.id} className="bg-muted/50">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-4">
+                      <Badge>Entrada #{index + 1}</Badge>
+                      {entries.length > 1 && (
+                        <Button
+                          onClick={() => removeEntry(entry.id)}
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
 
-                    <div>
-                      <Label>Producto</Label>
-                      <Select
-                        value={entry.productId}
-                        onValueChange={(value) => updateEntry(entry.id, 'productId', value)}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="Selecciona" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {products
-                            .filter(p => p.category === entry.category)
-                            .map(product => (
-                              <SelectItem key={product.id} value={product.id}>
-                                {product.name} - €{product.basePrice}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-4">
+                      <div>
+                        <Label>Categoría</Label>
+                        <Select
+                          value={entry.category}
+                          onValueChange={(value) => updateEntry(entry.id, 'category', value)}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="quad">Quad</SelectItem>
+                            <SelectItem value="buggy">Buggy</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>Producto</Label>
+                        <Select
+                          value={entry.productId}
+                          onValueChange={(value) => updateEntry(entry.id, 'productId', value)}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Selecciona" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {products
+                              .filter(p => p.category === entry.category)
+                              .map(product => (
+                                <SelectItem key={product.id} value={product.id}>
+                                  {product.name} - €{product.basePrice}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>Cantidad de Vehículos</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={entry.vehiclesCount}
+                          onChange={(e) => updateEntry(entry.id, 'vehiclesCount', e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Etiqueta de Grupo (Opcional)</Label>
+                        <Input
+                          value={entry.groupLabel}
+                          onChange={(e) => updateEntry(entry.id, 'groupLabel', e.target.value)}
+                          placeholder="ej: Grupo A"
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <Label>Notas (Opcional)</Label>
+                        <Textarea
+                          value={entry.notes}
+                          onChange={(e) => updateEntry(entry.id, 'notes', e.target.value)}
+                          placeholder="Notas adicionales..."
+                          className="mt-1"
+                          rows={2}
+                        />
+                      </div>
                     </div>
 
-                    <div>
-                      <Label>Cantidad de Vehículos</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={entry.vehiclesCount}
-                        onChange={(e) => updateEntry(entry.id, 'vehiclesCount', e.target.value)}
-                        className="mt-1"
-                      />
-                    </div>
+                    {/* Payment Split Section */}
+                    <div className="border-t pt-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <Label className="flex items-center gap-2">
+                          <Percent className="h-4 w-4" />
+                          Fraccionamiento de Pago
+                          {!splitValid && (
+                            <Badge variant="destructive" className="text-xs">
+                              Total: {splitTotal.toFixed(1)}% (debe ser 100%)
+                            </Badge>
+                          )}
+                          {splitValid && (
+                            <Badge variant="default" className="text-xs bg-green-600">
+                              ✓ 100%
+                            </Badge>
+                          )}
+                        </Label>
+                        <Button
+                          onClick={() => addPaymentSplit(entry.id)}
+                          size="sm"
+                          variant="outline"
+                          className="h-7"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Agregar
+                        </Button>
+                      </div>
 
-                    <div>
-                      <Label>Etiqueta de Grupo (Opcional)</Label>
-                      <Input
-                        value={entry.groupLabel}
-                        onChange={(e) => updateEntry(entry.id, 'groupLabel', e.target.value)}
-                        placeholder="ej: Grupo A"
-                        className="mt-1"
-                      />
+                      <div className="space-y-2">
+                        {entry.paymentSplit.map((split, splitIndex) => (
+                          <div key={splitIndex} className="flex gap-2 items-start">
+                            <div className="flex-1">
+                              <Select
+                                value={split.method}
+                                onValueChange={(value) => updatePaymentSplit(entry.id, splitIndex, 'method', value)}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="cash">Efectivo</SelectItem>
+                                  <SelectItem value="bank">Banco</SelectItem>
+                                  <SelectItem value="web">Web</SelectItem>
+                                  <SelectItem value="gyg">GetYourGuide</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="w-24">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                value={split.percentage}
+                                onChange={(e) => updatePaymentSplit(entry.id, splitIndex, 'percentage', parseFloat(e.target.value))}
+                                className="h-9"
+                                placeholder="%"
+                              />
+                            </div>
+                            {entry.paymentSplit.length > 1 && (
+                              <Button
+                                onClick={() => removePaymentSplit(entry.id, splitIndex)}
+                                size="sm"
+                                variant="ghost"
+                                className="h-9 w-9 p-0 text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-
-                    <div>
-                      <Label>Canal de Venta</Label>
-                      <Select
-                        value={entry.salesChannel}
-                        onValueChange={(value) => updateEntry(entry.id, 'salesChannel', value)}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="web">Web</SelectItem>
-                          <SelectItem value="gyg">GetYourGuide</SelectItem>
-                          <SelectItem value="cruceros">Cruceros</SelectItem>
-                          <SelectItem value="colaborador">Colaborador</SelectItem>
-                          <SelectItem value="otros">Otros</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="md:col-span-2 lg:col-span-3">
-                      <Label>Notas (Opcional)</Label>
-                      <Textarea
-                        value={entry.notes}
-                        onChange={(e) => updateEntry(entry.id, 'notes', e.target.value)}
-                        placeholder="Notas adicionales..."
-                        className="mt-1"
-                        rows={2}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           {/* Save Button */}
