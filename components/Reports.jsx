@@ -53,9 +53,13 @@ export default function Reports() {
       const yearEnd = format(endOfYear(today), 'yyyy-MM-dd');
       const yearlyData = allDepartures.filter(d => d.date >= yearStart && d.date <= yearEnd);
       
+      const weekLabel = language === 'es' 
+        ? `Semana: ${format(startOfWeek(today, { weekStartsOn: 1 }), 'd MMM', { locale: es })} - ${format(endOfWeek(today, { weekStartsOn: 1 }), 'd MMM', { locale: es })}`
+        : `Week: ${format(startOfWeek(today, { weekStartsOn: 1 }), 'MMM d', { locale: enUS })} - ${format(endOfWeek(today, { weekStartsOn: 1 }), 'MMM d', { locale: enUS })}`;
+      
       setPeriodStats({
-        weekly: calculateStats(weeklyData, `Semana: ${format(startOfWeek(today, { weekStartsOn: 1 }), 'd MMM', { locale: es })} - ${format(endOfWeek(today, { weekStartsOn: 1 }), 'd MMM', { locale: es })}`),
-        monthly: calculateStats(monthlyData, format(today, 'MMMM yyyy', { locale: es })),
+        weekly: calculateStats(weeklyData, weekLabel),
+        monthly: calculateStats(monthlyData, format(today, 'MMMM yyyy', { locale: dateLocale })),
         yearly: calculateStats(yearlyData, format(today, 'yyyy'))
       });
     } catch (error) {
