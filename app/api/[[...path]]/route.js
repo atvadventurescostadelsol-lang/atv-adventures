@@ -512,6 +512,12 @@ async function handlePost(request, path) {
     try {
       const { entries, userId = 'system', userName = 'System' } = body;
 
+      console.log('Batch request received:', {
+        entriesCount: entries?.length,
+        userId,
+        firstEntry: entries?.[0]
+      });
+
       if (!Array.isArray(entries) || entries.length === 0) {
         return NextResponse.json({ error: 'Invalid entries array' }, { status: 400 });
       }
@@ -520,6 +526,7 @@ async function handlePost(request, path) {
       const errors = [];
 
       for (const entryData of entries) {
+        console.log('Processing entry:', entryData);
         try {
           const {
             date,
