@@ -102,8 +102,8 @@ El sistema utiliza un Google Sheet con 7 pestañas:
 
 ## 🚀 URLs
 
-- **Aplicación**: https://atv-ops-control.preview.emergentagent.com
-- **API Base**: https://atv-ops-control.preview.emergentagent.com/api
+- **Aplicación**: https://departure-hub-2.preview.emergentagent.com
+- **API Base**: https://departure-hub-2.preview.emergentagent.com/api
 - **Google Sheet**: https://docs.google.com/spreadsheets/d/1WeP9I6Phj28xsIqVHefg599u5tZerGj88P0dx4Pn9tA/edit
 
 ## 📡 Endpoints API
@@ -159,7 +159,7 @@ MONGO_URL=mongodb://localhost:27017
 DB_NAME=atv_ops_control
 
 # App URL
-NEXT_PUBLIC_BASE_URL=https://atv-ops-control.preview.emergentagent.com
+NEXT_PUBLIC_BASE_URL=https://departure-hub-2.preview.emergentagent.com
 
 # Google OAuth
 GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com

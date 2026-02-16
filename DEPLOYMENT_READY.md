@@ -50,8 +50,8 @@
 
 ## 🔗 Production URLs
 
-- **Application**: https://atv-ops-control.preview.emergentagent.com
-- **API Base**: https://atv-ops-control.preview.emergentagent.com/api
+- **Application**: https://departure-hub-2.preview.emergentagent.com
+- **API Base**: https://departure-hub-2.preview.emergentagent.com/api
 - **Google Sheet**: https://docs.google.com/spreadsheets/d/1WeP9I6Phj28xsIqVHefg599u5tZerGj88P0dx4Pn9tA/edit
 
 ---
