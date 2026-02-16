@@ -145,7 +145,7 @@ async function handleGet(request, path) {
       }
 
       // Get existing departures for this slot
-      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AG');
+      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AO');
       const departures = parseSheetToObjects(departuresData);
       
       const existingDepartures = departures.filter(d => 
