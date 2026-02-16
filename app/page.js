@@ -125,7 +125,7 @@ export default function App() {
           </TabsList>
 
           <TabsContent value="dashboard">
-            <Dashboard />
+            <Dashboard selectedDate={selectedDate} onDateChange={setSelectedDate} />
           </TabsContent>
 
           <TabsContent value="entry">
@@ -133,7 +133,7 @@ export default function App() {
           </TabsContent>
 
           <TabsContent value="calendar">
-            <CalendarView />
+            <CalendarView onDateSelect={handleDateSelect} />
           </TabsContent>
 
           <TabsContent value="reports">
