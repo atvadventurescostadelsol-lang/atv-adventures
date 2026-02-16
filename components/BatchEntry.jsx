@@ -178,15 +178,40 @@ export default function BatchEntry() {
     const quadAvailable = capacity.quad.available;
     const buggyAvailable = capacity.buggy.available;
 
+    // Debug logging
+    console.log('Validating save:', {
+      quadTotal,
+      buggyTotal,
+      quadAvailable,
+      buggyAvailable,
+      entries: entries.length
+    });
+
     const allValid = entries.every(e => {
-      if (!e.productId || !e.vehiclesCount) return false;
+      if (!e.productId || !e.vehiclesCount) {
+        console.log('Entry missing product or vehicles:', e);
+        return false;
+      }
       const entryTotal = getEntryTotal(e);
       const splitTotal = getPaymentSplitTotal(e);
-      // Validar que el split total coincida con el total (con tolerancia de 0.01 para decimales)
-      return Math.abs(splitTotal - entryTotal) < 0.01;
+      const diff = Math.abs(splitTotal - entryTotal);
+      
+      console.log('Entry validation:', {
+        id: e.id,
+        productId: e.productId,
+        vehicles: e.vehiclesCount,
+        entryTotal,
+        splitTotal,
+        diff,
+        valid: diff < 0.01
+      });
+      
+      return diff < 0.01;
     });
     
     const capacityOk = quadTotal <= quadAvailable && buggyTotal <= buggyAvailable;
+
+    console.log('Final validation:', { allValid, capacityOk, date, timeSlot });
 
     return allValid && capacityOk && date && timeSlot;
   }
