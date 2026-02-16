@@ -20,11 +20,18 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-export default function Dashboard() {
+export default function Dashboard({ selectedDate: propDate, onDateChange }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(propDate || new Date().toISOString().split('T')[0]);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, departureId: null, departureName: '' });
+
+  // Sync with prop when it changes
+  useEffect(() => {
+    if (propDate && propDate !== selectedDate) {
+      setSelectedDate(propDate);
+    }
+  }, [propDate]);
 
   useEffect(() => {
     loadDashboard();
