@@ -33,23 +33,35 @@ async function addAuditLog(action, entityType, entityId, changes, userId = 'syst
   }
 }
 
-// Calculate financial values
+// Calculate financial values with proper decimal precision
 function calculateFinancials(vehiclesCount, pricePerVehicle, depositPercent = 0.20) {
   const totalGross = vehiclesCount * pricePerVehicle;
   const vatRate = 0.21;
+  // IVA calculation: totalGross = netBase * (1 + vatRate)
+  // So: netBase = totalGross / (1 + vatRate)
   const netBase = totalGross / (1 + vatRate);
   const vatAmount = totalGross - netBase;
   const depositAmount = totalGross * depositPercent;
   const remainingAmount = totalGross - depositAmount;
 
   return {
-    totalGross: Math.round(totalGross * 100) / 100,
+    totalGross: parseFloat(totalGross.toFixed(2)),
     vatRate,
-    netBase: Math.round(netBase * 100) / 100,
-    vatAmount: Math.round(vatAmount * 100) / 100,
-    depositAmount: Math.round(depositAmount * 100) / 100,
-    remainingAmount: Math.round(remainingAmount * 100) / 100,
+    netBase: parseFloat(netBase.toFixed(2)),
+    vatAmount: parseFloat(vatAmount.toFixed(2)),
+    depositAmount: parseFloat(depositAmount.toFixed(2)),
+    remainingAmount: parseFloat(remainingAmount.toFixed(2)),
   };
+}
+
+// Calculate IVA2 (excluding cash payments) - IVA only on non-cash payments
+function calculateIVA2(totalGross, cashAmount) {
+  const vatRate = 0.21;
+  const nonCashGross = totalGross - cashAmount;
+  if (nonCashGross <= 0) return 0;
+  const netBase = nonCashGross / (1 + vatRate);
+  const vatAmount = nonCashGross - netBase;
+  return parseFloat(vatAmount.toFixed(2));
 }
 
 // Calculate expected payout date
