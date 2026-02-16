@@ -702,7 +702,7 @@ export default function AdminPanel() {
                       ) : (
                         <Button onClick={() => setEditingCapacity(true)}>
                           <Edit2 className="h-4 w-4 mr-2" />
-                          Modificar Capacidades
+                          {t('modifyCapacity')}
                         </Button>
                       )}
                     </div>
@@ -715,20 +715,20 @@ export default function AdminPanel() {
             <TabsContent value="categories" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Gestión de Categorías</CardTitle>
-                  <CardDescription>Añade o elimina categorías de vehículos</CardDescription>
+                  <CardTitle>{t('categories')}</CardTitle>
+                  <CardDescription>{t('addCategory')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex gap-2">
                     <Input 
                       value={newCategory} 
                       onChange={(e) => setNewCategory(e.target.value)} 
-                      placeholder="Nueva categoría (ej: moto, jet ski)"
+                      placeholder={t('categoryName')}
                       className="max-w-xs"
                     />
                     <Button onClick={handleAddCategory}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Añadir
+                      {t('addCategory')}
                     </Button>
                   </div>
 
@@ -742,17 +742,22 @@ export default function AdminPanel() {
                           <div className="flex items-center justify-between">
                             <div>
                               <div className="font-medium capitalize">{cat}</div>
-                              <div className="text-xs text-muted-foreground">{productCount} producto(s)</div>
+                              <div className="text-xs text-muted-foreground">{productCount} {t('products').toLowerCase()}</div>
                             </div>
-                            {!isDefault && (
+                            {!isDefault && productCount === 0 && (
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
                                 className="text-red-600 hover:text-red-700"
-                                onClick={() => handleDeleteCategory(cat)}
+                                onClick={() => setDeleteDialog({ open: true, type: 'category', id: cat, name: cat })}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
+                            )}
+                            {!isDefault && productCount > 0 && (
+                              <Badge variant="outline" className="text-xs">
+                                {t('active')}
+                              </Badge>
                             )}
                           </div>
                         </Card>
