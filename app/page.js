@@ -17,10 +17,18 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isInitialized, setIsInitialized] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(null);
 
   useEffect(() => {
     checkInitialization();
   }, []);
+
+  // Handle date selection from calendar
+  function handleDateSelect(date) {
+    setSelectedDate(date);
+    setActiveTab('dashboard');
+    toast.success(`Mostrando datos del ${date}`);
+  }
 
   async function checkInitialization() {
     try {
