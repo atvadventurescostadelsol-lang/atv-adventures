@@ -135,15 +135,18 @@ backend:
 
   - task: "GET /api/dashboard - Dashboard stats"
     implemented: true
-    working: true
+    working: false
     file: "app/api/[[...path]]/route.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: true
         agent: "main"
         comment: "Returns departures and aggregated stats correctly"
+      - working: false
+        agent: "testing"
+        comment: "Dashboard calculation broken for Cruceros payments. cruiseTotal remains 0 because paymentSplitCruise field is missing from parsed sheet data due to header column mismatch. Stats calculation logic is correct but data input is incomplete."
 
   - task: "GET /api/products - List products"
     implemented: true
