@@ -139,16 +139,6 @@ export default function Reports() {
 
     return stats;
   }
-      stats.cruiseTotal += parseFloat(d.paymentSplitCruise || 0);
-      
-      // Count pending cruise payments
-      if (d.isPendingCruise === 'true' || d.isPendingCruise === true) {
-        stats.pendingCruise += gross;
-      }
-    });
-
-    return stats;
-  }
 
   async function runReport() {
     if (!startDate || !endDate) {
