@@ -449,12 +449,20 @@ export default function BatchEntry() {
                         <Select
                           value={entry.productId}
                           onValueChange={(value) => {
-                            updateEntry(entry.id, 'productId', value);
-                            // Auto-calculate payment split to default (all cash)
                             const product = products.find(p => p.id === value);
                             if (product) {
                               const total = parseFloat(product.basePrice) * parseInt(entry.vehiclesCount);
-                              updateEntry(entry.id, 'paymentSplit', [{ method: 'cash', amount: total }]);
+                              // Update both productId and paymentSplit
+                              setEntries(entries.map(e => {
+                                if (e.id === entry.id) {
+                                  return {
+                                    ...e,
+                                    productId: value,
+                                    paymentSplit: [{ method: 'cash', amount: total }]
+                                  };
+                                }
+                                return e;
+                              }));
                             }
                           }}
                         >
@@ -481,14 +489,23 @@ export default function BatchEntry() {
                           value={entry.vehiclesCount}
                           onChange={(e) => {
                             const newCount = e.target.value;
-                            updateEntry(entry.id, 'vehiclesCount', newCount);
-                            // Update payment split with new total
                             if (entry.productId) {
                               const product = products.find(p => p.id === entry.productId);
                               if (product) {
                                 const newTotal = parseFloat(product.basePrice) * parseInt(newCount || 0);
-                                updateEntry(entry.id, 'paymentSplit', [{ method: 'cash', amount: newTotal }]);
+                                setEntries(entries.map(en => {
+                                  if (en.id === entry.id) {
+                                    return {
+                                      ...en,
+                                      vehiclesCount: newCount,
+                                      paymentSplit: [{ method: 'cash', amount: newTotal }]
+                                    };
+                                  }
+                                  return en;
+                                }));
                               }
+                            } else {
+                              updateEntry(entry.id, 'vehiclesCount', newCount);
                             }
                           }}
                           className="mt-1"
