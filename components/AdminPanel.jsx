@@ -419,18 +419,18 @@ export default function AdminPanel() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Productos Actuales</CardTitle>
+                  <CardTitle>{t('products')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Categoría</TableHead>
-                        <TableHead>Nombre</TableHead>
-                        <TableHead>Duración</TableHead>
-                        <TableHead>Precio</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
+                        <TableHead>{t('category')}</TableHead>
+                        <TableHead>{t('name')}</TableHead>
+                        <TableHead>{t('duration')}</TableHead>
+                        <TableHead>{t('basePrice')}</TableHead>
+                        <TableHead>{t('active')}</TableHead>
+                        <TableHead className="text-right">{t('actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -482,13 +482,13 @@ export default function AdminPanel() {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="true">Activo</SelectItem>
-                                    <SelectItem value="false">Inactivo</SelectItem>
+                                    <SelectItem value="true">{t('active')}</SelectItem>
+                                    <SelectItem value="false">Inactive</SelectItem>
                                   </SelectContent>
                                 </Select>
                               ) : (
                                 <Badge variant={(product.active === 'TRUE' || product.active === true) ? 'default' : 'secondary'}>
-                                  {(product.active === 'TRUE' || product.active === true) ? 'Activo' : 'Inactivo'}
+                                  {(product.active === 'TRUE' || product.active === true) ? t('active') : 'Inactive'}
                                 </Badge>
                               )}
                             </TableCell>
