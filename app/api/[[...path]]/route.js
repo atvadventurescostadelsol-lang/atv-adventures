@@ -859,7 +859,7 @@ async function handlePut(request, path) {
       // Update in sheet
       const headers = data[0];
       const rowData = headers.map(header => updated[header] || '');
-      await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AG${index + 2}`, [rowData]);
+      await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AO${index + 2}`, [rowData]);
 
       await addAuditLog('UPDATE', 'Departure', id, { before: current, after: updated }, userId, userName);
 
