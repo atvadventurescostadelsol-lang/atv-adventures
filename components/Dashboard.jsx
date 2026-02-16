@@ -112,8 +112,8 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Dashboard - {format(new Date(selectedDate), 'EEEE, d MMMM yyyy', { locale: es })}</CardTitle>
-              <CardDescription>Resumen de operaciones del día</CardDescription>
+              <CardTitle>{t('dashboard')} - {format(new Date(selectedDate), 'EEEE, d MMMM yyyy', { locale: dateLocale })}</CardTitle>
+              <CardDescription>{t('dailyOperationsSummary')}</CardDescription>
             </div>
             <div className="flex gap-2">
               <Button
@@ -125,14 +125,14 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                   setSelectedDate(prev.toISOString().split('T')[0]);
                 }}
               >
-                ← Anterior
+                {t('previous')}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
               >
-                Hoy
+                {t('today')}
               </Button>
               <Button
                 variant="outline"
@@ -143,7 +143,7 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                   setSelectedDate(next.toISOString().split('T')[0]);
                 }}
               >
-                Siguiente →
+                {t('next')}
               </Button>
               <Button variant="ghost" size="icon" onClick={loadDashboard}>
                 <RefreshCw className="h-4 w-4" />
@@ -157,19 +157,19 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
           <CardHeader className="pb-2">
-            <CardDescription className="text-orange-100">Total Bruto</CardDescription>
+            <CardDescription className="text-orange-100">{t('totalGross')}</CardDescription>
             <CardTitle className="text-3xl">€{stats.totalGross.toFixed(2)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-sm text-orange-100">
-              Neto: €{stats.netBase.toFixed(2)} | IVA: €{stats.vatAmount.toFixed(2)}
+              {t('net')}: €{stats.netBase.toFixed(2)} | {t('vat')}: €{stats.vatAmount.toFixed(2)}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Vehículos</CardDescription>
+            <CardDescription>{t('vehicles')}</CardDescription>
             <CardTitle className="text-3xl">{stats.quadCount + stats.buggyCount}</CardTitle>
           </CardHeader>
           <CardContent>
@@ -177,7 +177,7 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
               <div className="flex items-center gap-1">
                 <Car className="h-4 w-4 text-blue-600" />
                 <span className="font-medium">{stats.quadCount}</span>
-                <span className="text-muted-foreground">Quads</span>
+                <span className="text-muted-foreground">{t('quads')}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Car className="h-4 w-4 text-green-600" />
