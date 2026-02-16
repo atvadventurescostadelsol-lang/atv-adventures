@@ -102,6 +102,33 @@ async function handleGet(request, path) {
     }
   }
 
+  // Update Departures headers to include new columns
+  if (path === 'fix-headers') {
+    try {
+      const newHeaders = [
+        'id', 'date', 'timeSlot', 'category', 'productId', 'productName',
+        'vehiclesCount', 'groupLabel', 'notes', 'pricePerVehicleGross',
+        'totalGross', 'vatRate', 'netBase', 'vatAmount', 'depositPercent',
+        'depositAmount', 'depositPaid', 'depositPaidMethod', 'depositPaidDate',
+        'remainingAmount', 'remainingPaid', 'remainingPaidMethod', 'remainingPaidDate',
+        'salesChannel', 'expectedPayoutDate', 
+        'paymentSplitWeb', 'paymentSplitCash', 'paymentSplitBank', 'paymentSplitGyg',
+        'paymentSplitCruise', 'gygDiscount', 'isPendingCruise',
+        'createdAt', 'createdBy', 'updatedAt', 'updatedBy'
+      ];
+      
+      await updateSheetData(SPREADSHEET_ID, 'Departures!A1:AJ1', [newHeaders]);
+      
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Headers updated successfully',
+        columns: newHeaders.length
+      });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   // Get all departures
   if (path === 'departures') {
     try {
