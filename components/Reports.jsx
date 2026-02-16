@@ -78,7 +78,10 @@ export default function Reports() {
       webTotal: 0,
       cashTotal: 0,
       bankTotal: 0,
-      gygTotal: 0
+      gygTotal: 0,
+      cruiseTotal: 0,
+      // Pending
+      pendingCruise: 0,
     };
 
     data.forEach(d => {
@@ -105,6 +108,12 @@ export default function Reports() {
       stats.cashTotal += parseFloat(d.paymentSplitCash || 0);
       stats.bankTotal += parseFloat(d.paymentSplitBank || 0);
       stats.gygTotal += parseFloat(d.paymentSplitGyg || 0);
+      stats.cruiseTotal += parseFloat(d.paymentSplitCruise || 0);
+      
+      // Count pending cruise payments
+      if (d.isPendingCruise === 'true' || d.isPendingCruise === true) {
+        stats.pendingCruise += gross;
+      }
     });
 
     return stats;
