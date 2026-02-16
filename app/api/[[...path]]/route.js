@@ -167,8 +167,8 @@ async function handleGet(request, path) {
       
       const category = searchParams.get('category');
       const filtered = category 
-        ? products.filter(p => p.category === category && p.active === 'true')
-        : products.filter(p => p.active === 'true');
+        ? products.filter(p => p.category === category && p.active.toLowerCase() === 'true')
+        : products.filter(p => p.active.toLowerCase() === 'true');
       
       return NextResponse.json(filtered);
     } catch (error) {
