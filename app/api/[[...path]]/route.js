@@ -356,6 +356,7 @@ async function handlePost(request, path) {
         notes,
         depositPercent,
         salesChannel,
+        paymentSplit, // New: array of {method: 'web'|'cash'|'bank'|'gyg', percentage: 20}
         userId = 'system',
         userName = 'System',
       } = body;
