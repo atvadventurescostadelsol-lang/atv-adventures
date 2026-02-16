@@ -763,11 +763,61 @@ async function handlePut(request, path) {
       // Update in sheet
       const headers = data[0];
       const rowData = headers.map(header => updated[header] || '');
-      await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AC${index + 2}`, [rowData]);
+      await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AG${index + 2}`, [rowData]);
 
       await addAuditLog('UPDATE', 'Departure', id, { before: current, after: updated }, userId, userName);
 
       return NextResponse.json({ success: true, updated });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
+  // Update product
+  if (path.startsWith('products/')) {
+    try {
+      const id = path.split('/')[1];
+      const { name, category, duration, basePrice, active, userId = 'system' } = body;
+
+      // Get current data
+      const data = await getSheetData(SPREADSHEET_ID, 'Products!A:H');
+      const products = parseSheetToObjects(data);
+      const index = products.findIndex(p => p.id === id);
+
+      if (index === -1) {
+        return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+      }
+
+      const current = products[index];
+      const now = new Date().toISOString();
+      
+      const updated = [
+        id,
+        category || current.category,
+        name || current.name,
+        duration || current.duration,
+        basePrice || current.basePrice,
+        active !== undefined ? (active ? 'TRUE' : 'FALSE') : current.active,
+        current.createdAt,
+        now,
+      ];
+
+      await updateSheetData(SPREADSHEET_ID, `Products!A${index + 2}:H${index + 2}`, [updated]);
+      await addAuditLog('UPDATE', 'Product', id, { before: current, after: updated }, userId, 'Admin');
+
+      return NextResponse.json({
+        success: true,
+        product: {
+          id,
+          category: updated[1],
+          name: updated[2],
+          duration: updated[3],
+          basePrice: updated[4],
+          active: updated[5] === 'TRUE',
+          createdAt: updated[6],
+          updatedAt: updated[7],
+        }
+      });
     } catch (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
