@@ -245,28 +245,93 @@ export default function AdminPanel() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {products.map((product) => (
-                        <TableRow key={product.id}>
-                          <TableCell>
-                            <Badge variant={product.category === 'quad' ? 'default' : 'secondary'}>
-                              {product.category === 'quad' ? 'Quad' : 'Buggy'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-medium">{product.name}</TableCell>
-                          <TableCell>{product.duration}</TableCell>
-                          <TableCell>€{product.basePrice}</TableCell>
-                          <TableCell>
-                            <Badge variant={product.active === 'TRUE' ? 'default' : 'secondary'}>
-                              {product.active === 'TRUE' ? 'Activo' : 'Inactivo'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm">
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {products.map((product) => {
+                        const isEditing = editingProduct?.id === product.id;
+                        
+                        return (
+                          <TableRow key={product.id}>
+                            <TableCell>
+                              {isEditing ? (
+                                <Select
+                                  value={editingProduct.category}
+                                  onValueChange={(value) => setEditingProduct({...editingProduct, category: value})}
+                                >
+                                  <SelectTrigger className="h-8 w-24">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="quad">Quad</SelectItem>
+                                    <SelectItem value="buggy">Buggy</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <Badge variant={product.category === 'quad' ? 'default' : 'secondary'}>
+                                  {product.category === 'quad' ? 'Quad' : 'Buggy'}
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {isEditing ? (
+                                <Input
+                                  value={editingProduct.name}
+                                  onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})}
+                                  className="h-8"
+                                />
+                              ) : (
+                                product.name
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input
+                                  value={editingProduct.duration}
+                                  onChange={(e) => setEditingProduct({...editingProduct, duration: e.target.value})}
+                                  className="h-8 w-20"
+                                />
+                              ) : (
+                                product.duration
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <div className="flex items-center gap-1">
+                                  <span>€</span>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={editingProduct.basePrice}
+                                    onChange={(e) => setEditingProduct({...editingProduct, basePrice: e.target.value})}
+                                    className="h-8 w-20"
+                                  />
+                                </div>
+                              ) : (
+                                `€${product.basePrice}`
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={product.active === 'TRUE' ? 'default' : 'secondary'}>
+                                {product.active === 'TRUE' ? 'Activo' : 'Inactivo'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {isEditing ? (
+                                <div className="flex gap-1 justify-end">
+                                  <Button onClick={saveEdit} size="sm" variant="default">
+                                    <Save className="h-4 w-4" />
+                                  </Button>
+                                  <Button onClick={cancelEdit} size="sm" variant="ghost">
+                                    Cancelar
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button onClick={() => startEdit(product)} variant="ghost" size="sm">
+                                  <Edit2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </CardContent>
