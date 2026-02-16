@@ -699,12 +699,12 @@ export default function BatchEntry() {
               {saving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Guardando...
+                  {t('saving')}
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Guardar {entries.length} Entrada(s)
+                  {t('saveTours')} {entries.length} {t('entries')}
                 </>
               )}
             </Button>
