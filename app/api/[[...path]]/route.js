@@ -13,6 +13,15 @@ import { v4 as uuidv4 } from 'uuid';
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
 
+// Helper to parse numbers that may use comma as decimal separator (Spanish format)
+function parseNumber(value) {
+  if (value === null || value === undefined || value === '') return 0;
+  // Convert string, replace comma with period for parsing
+  const strValue = String(value).replace(',', '.');
+  const parsed = parseFloat(strValue);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
 // Helper to add audit log
 async function addAuditLog(action, entityType, entityId, changes, userId = 'system', userName = 'System') {
   try {
