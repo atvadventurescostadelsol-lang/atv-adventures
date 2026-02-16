@@ -325,6 +325,24 @@ async function handleGet(request, path) {
     }
   }
 
+  // Get product by ID
+  if (path.startsWith('products/') && path.split('/').length === 2) {
+    try {
+      const productId = path.split('/')[1];
+      const data = await getSheetData(SPREADSHEET_ID, 'Products!A:H');
+      const products = parseSheetToObjects(data);
+      const product = products.find(p => p.id === productId);
+      
+      if (!product) {
+        return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+      }
+      
+      return NextResponse.json(product);
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   return NextResponse.json({ message: 'ATV Operations API' });
 }
 
