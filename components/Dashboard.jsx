@@ -20,6 +20,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+// Helper to parse numbers that may use comma as decimal separator (Spanish format)
+function parseNumber(value) {
+  if (value === null || value === undefined || value === '') return 0;
+  const strValue = String(value).replace(',', '.');
+  const parsed = parseFloat(strValue);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
 export default function Dashboard({ selectedDate: propDate, onDateChange }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
