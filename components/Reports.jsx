@@ -293,6 +293,10 @@ export default function Reports() {
             <div class="label">IVA (21%)</div>
             <div class="value">€${results.totals.vatAmount.toFixed(2)}</div>
           </div>
+          <div class="stat-card" style="background: #dbeafe;">
+            <div class="label">IVA2 (sin efectivo)</div>
+            <div class="value">€${results.totals.vatAmount2.toFixed(2)}</div>
+          </div>
           <div class="stat-card">
             <div class="label">Total Vehículos</div>
             <div class="value">${results.totals.quadCount + results.totals.buggyCount}</div>
@@ -336,9 +340,10 @@ export default function Reports() {
             <div class="value">€${results.totals.cruiseTotal.toFixed(2)}</div>
           </div>
         </div>
-        ${results.totals.pendingCruise > 0 ? `
+        ${(results.totals.pendingGYG > 0 || results.totals.pendingCruise > 0) ? `
         <div style="background: #fef3c7; padding: 10px; border-radius: 8px; margin: 15px 0;">
-          <strong>⏳ Pendiente de cobro (Cruceros):</strong> €${results.totals.pendingCruise.toFixed(2)}
+          ${results.totals.pendingGYG > 0 ? `<div><strong>⏳ Pendiente GYG:</strong> €${results.totals.pendingGYG.toFixed(2)}</div>` : ''}
+          ${results.totals.pendingCruise > 0 ? `<div><strong>⏳ Pendiente Cruceros:</strong> €${results.totals.pendingCruise.toFixed(2)}</div>` : ''}
         </div>
         ` : ''}
         
