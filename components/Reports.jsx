@@ -624,17 +624,17 @@ export default function Reports() {
             <div>
               <h3 className="font-semibold mb-3 flex items-center gap-2">
                 <Car className="h-5 w-5" />
-                Desglose por Tipo de Vehículo
+                {t('vehicleTypeBreakdown')}
               </h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="text-sm opacity-90">Quads - Ingresos</div>
+                        <div className="text-sm opacity-90">{t('quads')} - {t('income')}</div>
                         <div className="text-3xl font-bold">€{results.totals.quadGross.toFixed(2)}</div>
                         <div className="text-sm opacity-80 mt-1">
-                          {results.totals.quadCount} vehículos | Neto: €{results.totals.quadNet.toFixed(2)}
+                          {results.totals.quadCount} {t('vehicles').toLowerCase()} | {t('net')}: €{results.totals.quadNet.toFixed(2)}
                         </div>
                       </div>
                       <div className="text-4xl opacity-30">🏍️</div>
@@ -645,10 +645,10 @@ export default function Reports() {
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="text-sm opacity-90">Buggies - Ingresos</div>
+                        <div className="text-sm opacity-90">{t('buggies')} - {t('income')}</div>
                         <div className="text-3xl font-bold">€{results.totals.buggyGross.toFixed(2)}</div>
                         <div className="text-sm opacity-80 mt-1">
-                          {results.totals.buggyCount} vehículos | Neto: €{results.totals.buggyNet.toFixed(2)}
+                          {results.totals.buggyCount} {t('vehicles').toLowerCase()} | {t('net')}: €{results.totals.buggyNet.toFixed(2)}
                         </div>
                       </div>
                       <div className="text-4xl opacity-30">🚙</div>
@@ -660,18 +660,18 @@ export default function Reports() {
 
             {/* Payment Breakdown */}
             <div>
-              <h3 className="font-semibold mb-3">Desglose por Canal de Pago</h3>
+              <h3 className="font-semibold mb-3">{t('paymentChannelBreakdown')}</h3>
               <div className="grid gap-4 md:grid-cols-5">
-                <StatCard label="💵 Efectivo" value={`€${results.totals.cashTotal.toFixed(2)}`} />
-                <StatCard label="🏦 Banco" value={`€${results.totals.bankTotal.toFixed(2)}`} />
-                <StatCard label="🌐 Web" value={`€${results.totals.webTotal.toFixed(2)}`} />
+                <StatCard label={`💵 ${t('cash')}`} value={`€${results.totals.cashTotal.toFixed(2)}`} />
+                <StatCard label={`🏦 ${t('bank')}`} value={`€${results.totals.bankTotal.toFixed(2)}`} />
+                <StatCard label={`🌐 ${t('web')}`} value={`€${results.totals.webTotal.toFixed(2)}`} />
                 <StatCard label="🎫 GYG" value={`€${results.totals.gygTotal.toFixed(2)}`} />
-                <StatCard label="🚢 Cruceros" value={`€${results.totals.cruiseTotal.toFixed(2)}`} />
+                <StatCard label={`🚢 ${t('cruises')}`} value={`€${results.totals.cruiseTotal.toFixed(2)}`} />
               </div>
               {results.totals.pendingCruise > 0 && (
                 <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                   <span className="text-amber-800 font-medium">
-                    ⏳ Pendiente de cobro (Cruceros): €{results.totals.pendingCruise.toFixed(2)}
+                    ⏳ {t('pendingCollection')} ({t('cruises')}): €{results.totals.pendingCruise.toFixed(2)}
                   </span>
                 </div>
               )}
@@ -680,13 +680,13 @@ export default function Reports() {
             {/* Pending Payments */}
             {(results.totals.pendingGYG > 0 || results.totals.pendingCruise > 0) && (
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <h4 className="font-semibold text-amber-800 mb-2">⏳ Pagos Pendientes de Llegar</h4>
+                <h4 className="font-semibold text-amber-800 mb-2">⏳ {t('pendingPayments')}</h4>
                 <div className="grid gap-2 md:grid-cols-2">
                   {results.totals.pendingGYG > 0 && (
                     <div className="text-amber-700">🎫 GYG: €{results.totals.pendingGYG.toFixed(2)}</div>
                   )}
                   {results.totals.pendingCruise > 0 && (
-                    <div className="text-amber-700">🚢 Cruceros: €{results.totals.pendingCruise.toFixed(2)}</div>
+                    <div className="text-amber-700">🚢 {t('cruises')}: €{results.totals.pendingCruise.toFixed(2)}</div>
                   )}
                 </div>
               </div>
