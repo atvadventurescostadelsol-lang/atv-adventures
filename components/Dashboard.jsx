@@ -179,25 +179,21 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Pagos Recibidos</CardDescription>
-            <CardTitle className="text-3xl">€{((stats.cashTotal || 0) + (stats.bankTotal || 0) + (stats.webTotal || 0) + (stats.gygTotal || 0)).toFixed(2)}</CardTitle>
+            <CardTitle className="text-3xl">€{((stats.cashTotal || 0) + (stats.bankTotal || 0) + (stats.webTotal || 0)).toFixed(2)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
                 <span className="font-medium">€{(stats.cashTotal || 0).toFixed(2)}</span>
-                <span className="text-muted-foreground"> Efectivo</span>
+                <span className="text-muted-foreground"> 💵 Efectivo</span>
               </div>
               <div>
                 <span className="font-medium">€{(stats.bankTotal || 0).toFixed(2)}</span>
-                <span className="text-muted-foreground"> Banco</span>
+                <span className="text-muted-foreground"> 🏦 Banco</span>
               </div>
               <div>
                 <span className="font-medium">€{(stats.webTotal || 0).toFixed(2)}</span>
-                <span className="text-muted-foreground"> Web</span>
-              </div>
-              <div>
-                <span className="font-medium">€{(stats.gygTotal || 0).toFixed(2)}</span>
-                <span className="text-muted-foreground"> GYG</span>
+                <span className="text-muted-foreground"> 🌐 Web</span>
               </div>
             </div>
           </CardContent>
@@ -206,17 +202,12 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
         <Card className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white">
           <CardHeader className="pb-2">
             <CardDescription className="text-yellow-100">Pendiente al Llegar</CardDescription>
-            <CardTitle className="text-3xl">€{((stats.gygTotal || 0) + (stats.cruiseTotal || 0) + stats.remainingExpected).toFixed(2)}</CardTitle>
+            <CardTitle className="text-3xl">€{((stats.gygTotal || 0) + (stats.cruiseTotal || 0)).toFixed(2)}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-1 text-xs text-yellow-100">
-              {(stats.gygTotal || 0) > 0 && (
-                <div>🎫 GYG: €{(stats.gygTotal || 0).toFixed(2)}</div>
-              )}
-              {(stats.cruiseTotal || 0) > 0 && (
-                <div>🚢 Cruceros: €{(stats.cruiseTotal || 0).toFixed(2)}</div>
-              )}
-              <div>Depósitos: €{stats.depositsCollected.toFixed(2)}</div>
+            <div className="grid grid-cols-1 gap-1 text-xs text-yellow-100">
+              <div>🎫 GYG: €{(stats.gygTotal || 0).toFixed(2)}</div>
+              <div>🚢 Cruceros: €{(stats.cruiseTotal || 0).toFixed(2)}</div>
             </div>
           </CardContent>
         </Card>
