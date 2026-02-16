@@ -66,6 +66,7 @@ export default function Reports() {
       totalGross: 0,
       netBase: 0,
       vatAmount: 0,
+      vatAmount2: 0, // IVA2: excluding cash payments
       // Quad stats
       quadCount: 0,
       quadGross: 0,
@@ -80,34 +81,64 @@ export default function Reports() {
       bankTotal: 0,
       gygTotal: 0,
       cruiseTotal: 0,
-      // Pending
+      // Pending (GYG and Cruceros)
+      pendingGYG: 0,
       pendingCruise: 0,
     };
 
     data.forEach(d => {
       const gross = parseFloat(d.totalGross || 0);
-      const net = parseFloat(d.netBase || 0);
-      const vat = parseFloat(d.vatAmount || 0);
       const vehicles = parseInt(d.vehiclesCount || 0);
       
+      // Calculate IVA with proper decimals
+      const vatRate = 0.21;
+      const netBase = gross / (1 + vatRate);
+      const vatAmount = gross - netBase;
+      
       stats.totalGross += gross;
-      stats.netBase += net;
-      stats.vatAmount += vat;
+      stats.netBase += netBase;
+      stats.vatAmount += vatAmount;
       
       if (d.category === 'quad') {
         stats.quadCount += vehicles;
         stats.quadGross += gross;
-        stats.quadNet += net;
+        stats.quadNet += netBase;
       } else {
         stats.buggyCount += vehicles;
         stats.buggyGross += gross;
-        stats.buggyNet += net;
+        stats.buggyNet += netBase;
       }
 
-      stats.webTotal += parseFloat(d.paymentSplitWeb || 0);
-      stats.cashTotal += parseFloat(d.paymentSplitCash || 0);
-      stats.bankTotal += parseFloat(d.paymentSplitBank || 0);
-      stats.gygTotal += parseFloat(d.paymentSplitGyg || 0);
+      const cashAmount = parseFloat(d.paymentSplitCash || 0);
+      const webAmount = parseFloat(d.paymentSplitWeb || 0);
+      const bankAmount = parseFloat(d.paymentSplitBank || 0);
+      const gygAmount = parseFloat(d.paymentSplitGyg || 0);
+      const cruiseAmount = parseFloat(d.paymentSplitCruise || 0);
+      
+      stats.webTotal += webAmount;
+      stats.cashTotal += cashAmount;
+      stats.bankTotal += bankAmount;
+      stats.gygTotal += gygAmount;
+      stats.cruiseTotal += cruiseAmount;
+      
+      // Calculate IVA2 (excluding cash payments)
+      const nonCashGross = gross - cashAmount;
+      if (nonCashGross > 0) {
+        const nonCashNet = nonCashGross / (1 + vatRate);
+        stats.vatAmount2 += (nonCashGross - nonCashNet);
+      }
+      
+      // Count pending payments (GYG and Cruceros)
+      if (gygAmount > 0) {
+        stats.pendingGYG += gygAmount;
+      }
+      if (cruiseAmount > 0 || d.isPendingCruise === 'true' || d.isPendingCruise === true) {
+        stats.pendingCruise += cruiseAmount > 0 ? cruiseAmount : gross;
+      }
+    });
+
+    return stats;
+  }
       stats.cruiseTotal += parseFloat(d.paymentSplitCruise || 0);
       
       // Count pending cruise payments
