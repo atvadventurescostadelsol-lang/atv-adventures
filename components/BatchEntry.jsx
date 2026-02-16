@@ -448,8 +448,8 @@ export default function BatchEntry() {
                 <AlertDescription>
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="font-semibold">Buggies:</span>
-                      <span className="ml-2">{buggyTotal} / {capacity.buggy.available} disponibles</span>
+                      <span className="font-semibold">{t('buggies')}:</span>
+                      <span className="ml-2">{buggyTotal} / {capacity.buggy.available} {t('available')}</span>
                     </div>
                     {buggyExceeds ? (
                       <AlertCircle className="h-5 w-5 text-red-600" />
@@ -471,10 +471,10 @@ export default function BatchEntry() {
           {/* Entries */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Entradas ({entries.length})</h3>
+              <h3 className="font-semibold">{t('entriesCount')} ({entries.length})</h3>
               <Button onClick={addEntry} size="sm" variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
-                Agregar Entrada
+                {t('addEntry')}
               </Button>
             </div>
 
@@ -491,7 +491,7 @@ export default function BatchEntry() {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex flex-wrap gap-2 items-center">
-                        <Badge>Entrada #{index + 1}</Badge>
+                        <Badge>{t('entry')} #{index + 1}</Badge>
                         {baseTotal > 0 && (
                           <>
                             {hasDiscount ? (
@@ -506,7 +506,7 @@ export default function BatchEntry() {
                               </>
                             ) : (
                               <Badge variant="outline">
-                                Total: €{entryTotal.toFixed(2)}
+                                {t('total')}: €{entryTotal.toFixed(2)}
                               </Badge>
                             )}
                           </>
