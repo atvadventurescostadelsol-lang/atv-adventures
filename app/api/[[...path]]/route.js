@@ -1003,6 +1003,58 @@ async function handleDelete(request, path) {
     }
   }
 
+  // Delete product
+  if (path.startsWith('products/')) {
+    try {
+      const id = path.split('/')[1];
+
+      const data = await getSheetData(SPREADSHEET_ID, 'Products!A:H');
+      const products = parseSheetToObjects(data);
+      const index = products.findIndex(p => p.id === id);
+
+      if (index === -1) {
+        return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+      }
+
+      const product = products[index];
+      const headers = data[0];
+      const emptyRow = headers.map(() => '');
+      
+      await updateSheetData(SPREADSHEET_ID, `Products!A${index + 2}:H${index + 2}`, [emptyRow]);
+      await addAuditLog('DELETE', 'Product', id, { deleted: product }, 'system', 'Admin');
+
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
+  // Delete time slot
+  if (path.startsWith('timeslots/')) {
+    try {
+      const id = path.split('/')[1];
+
+      const data = await getSheetData(SPREADSHEET_ID, 'TimeSlots!A:E');
+      const slots = parseSheetToObjects(data);
+      const index = slots.findIndex(s => s.id === id);
+
+      if (index === -1) {
+        return NextResponse.json({ error: 'Time slot not found' }, { status: 404 });
+      }
+
+      const slot = slots[index];
+      const headers = data[0];
+      const emptyRow = headers.map(() => '');
+      
+      await updateSheetData(SPREADSHEET_ID, `TimeSlots!A${index + 2}:E${index + 2}`, [emptyRow]);
+      await addAuditLog('DELETE', 'TimeSlot', id, { deleted: slot }, 'system', 'Admin');
+
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   return NextResponse.json({ error: 'Not found' }, { status: 404 });
 }
 
