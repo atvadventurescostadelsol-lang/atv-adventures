@@ -275,3 +275,28 @@ agent_communication:
       - All created entries have proper UUID, timestamps, and complete data structure
       
       The bug in /app/lib/safe-append.js has been completely resolved.
+      
+  - agent: "main"
+    message: |
+      CRITICAL FIX: Updated all Departures sheet read/write ranges from A:AG to A:AO.
+      
+      The problem was that new columns (paymentSplitCruise, gygDiscount, isPendingCruise)
+      were added to the batch creation logic, but the READ operations were still using
+      the old A:AG range (33 columns). This caused data misalignment on reads.
+      
+      Changes made in /app/api/[[...path]]/route.js:
+      - GET /api/departures: A:AG → A:AO
+      - GET /api/capacity: A:AG → A:AO
+      - GET /api/dashboard: already was A:AO (correct)
+      - PUT /api/departures/:id: A:AG → A:AO
+      - DELETE /api/departures/:id: A:AG → A:AO
+      - POST /api/departures (single): Added 3 new columns, A:AG → A:AO
+      
+      Also updated /app/lib/init-sheets.js to include the 3 new columns in SHEET_STRUCTURES.
+      
+      TESTING NEEDED:
+      1. Test POST /api/departures/batch with a cruceros payment to verify cruiseTotal works
+      2. Verify GET /api/dashboard correctly shows gygTotal and cruiseTotal
+      3. Verify GET /api/departures returns correctly aligned data
+      
+      NOTE: Existing data in the sheet may still be misaligned if the headers don't match.
