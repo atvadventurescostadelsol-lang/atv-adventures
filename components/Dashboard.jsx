@@ -206,11 +206,17 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
         <Card className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white">
           <CardHeader className="pb-2">
             <CardDescription className="text-yellow-100">Pendiente al Llegar</CardDescription>
-            <CardTitle className="text-3xl">€{stats.remainingExpected.toFixed(2)}</CardTitle>
+            <CardTitle className="text-3xl">€{((stats.gygTotal || 0) + (stats.cruiseTotal || 0) + stats.remainingExpected).toFixed(2)}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-sm text-yellow-100">
-              Depósitos: €{stats.depositsCollected.toFixed(2)}
+            <div className="grid grid-cols-2 gap-1 text-xs text-yellow-100">
+              {(stats.gygTotal || 0) > 0 && (
+                <div>🎫 GYG: €{(stats.gygTotal || 0).toFixed(2)}</div>
+              )}
+              {(stats.cruiseTotal || 0) > 0 && (
+                <div>🚢 Cruceros: €{(stats.cruiseTotal || 0).toFixed(2)}</div>
+              )}
+              <div>Depósitos: €{stats.depositsCollected.toFixed(2)}</div>
             </div>
           </CardContent>
         </Card>
