@@ -11,6 +11,7 @@ import Dashboard from '@/components/Dashboard';
 import BatchEntry from '@/components/BatchEntry';
 import CalendarView from '@/components/CalendarView';
 import Reports from '@/components/Reports';
+import AdminPanel from '@/components/AdminPanel';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
