@@ -24,6 +24,7 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, departureId: null, departureName: '' });
 
   useEffect(() => {
     loadDashboard();
@@ -41,6 +42,27 @@ export default function Dashboard() {
       console.error('Error loading dashboard:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDelete(departureId) {
+    try {
+      const res = await fetch(`/api/departures/${departureId}?userId=user-1&userName=Usuario`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        toast.success('Entrada eliminada exitosamente');
+        loadDashboard(); // Reload data
+      } else {
+        const error = await res.json();
+        toast.error(error.error || 'Error al eliminar');
+      }
+    } catch (error) {
+      toast.error('Error al eliminar la entrada');
+      console.error(error);
+    } finally {
+      setDeleteDialog({ open: false, departureId: null, departureName: '' });
     }
   }
 
