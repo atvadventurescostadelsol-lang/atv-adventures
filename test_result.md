@@ -133,6 +133,18 @@ backend:
         agent: "testing"
         comment: "CRITICAL ISSUE: Cruceros payment feature partially broken. Entry creation works (✅) but data alignment fails (❌). The Google Sheet header row has only 33 columns but writes 36 columns. Missing headers: paymentSplitCruise, gygDiscount, isPendingCruise. This causes parseSheetToObjects to ignore last 3 columns, making cruiseTotal=0 in dashboard."
 
+  - task: "GET /api/departures - List departures with Cruceros data"
+    implemented: true
+    working: false
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "Departures endpoint missing critical Cruceros fields. Reads only 33 columns but should read 36. Missing: paymentSplitCruise, gygDiscount, isPendingCruise. Data is written to 36 columns but sheet headers only define 33, causing parseSheetToObjects to skip the new columns."
+
   - task: "GET /api/dashboard - Dashboard stats"
     implemented: true
     working: false
