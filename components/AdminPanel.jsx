@@ -275,13 +275,27 @@ export default function AdminPanel() {
       );
 
       await Promise.all(updatePromises);
-      toast.success('Capacidades actualizadas para todas las franjas');
+      toast.success(t('deletedSuccess'));
       setEditingCapacity(false);
       loadData();
     } catch (error) {
-      toast.error('Error al actualizar capacidades');
+      toast.error(t('deleteError'));
       console.error(error);
     }
+  }
+
+  function handleDeleteCategory(categoryToDelete) {
+    // Check if category has products
+    const categoryProducts = products.filter(p => p.category === categoryToDelete);
+    if (categoryProducts.length > 0) {
+      toast.error(`Cannot delete category with ${categoryProducts.length} products`);
+      return;
+    }
+    
+    // Remove category from list
+    setCategories(categories.filter(c => c !== categoryToDelete));
+    toast.success(t('deletedSuccess'));
+    setDeleteDialog({ open: false, type: '', id: '', name: '' });
   }
 
   function startEditProduct(product) {
@@ -319,24 +333,26 @@ export default function AdminPanel() {
       <AlertDialog open={deleteDialog.open} onOpenChange={(open) => !open && setDeleteDialog({ open: false, type: '', id: '', name: '' })}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar {deleteDialog.type}?</AlertDialogTitle>
+            <AlertDialogTitle>{t('delete')} {deleteDialog.type}?</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Estás seguro de que quieres eliminar "{deleteDialog.name}"? Esta acción no se puede deshacer.
+              {t('deleteConfirmation')}: "{deleteDialog.name}". {t('deleteWarning')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               onClick={() => {
-                if (deleteDialog.type === 'producto') {
+                if (deleteDialog.type === 'producto' || deleteDialog.type === 'product') {
                   handleDeleteProduct(deleteDialog.id);
-                } else if (deleteDialog.type === 'franja horaria') {
+                } else if (deleteDialog.type === 'franja horaria' || deleteDialog.type === 'time slot') {
                   handleDeleteSlot(deleteDialog.id);
+                } else if (deleteDialog.type === 'categoría' || deleteDialog.type === 'category') {
+                  handleDeleteCategory(deleteDialog.id);
                 }
               }}
             >
-              Eliminar
+              {t('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
