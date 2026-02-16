@@ -558,7 +558,12 @@ async function handlePost(request, path) {
             continue;
           }
 
-          const effectivePrice = parseFloat(product.basePrice);
+          // Apply GYG discount if present
+          const gygDiscount = parseFloat(entryData.gygDiscount || 0);
+          let effectivePrice = parseFloat(product.basePrice);
+          if (gygDiscount > 0) {
+            effectivePrice = effectivePrice * (1 - gygDiscount);
+          }
 
           // Calculate financials
           const financials = calculateFinancials(
@@ -576,6 +581,7 @@ async function handlePost(request, path) {
           let paymentSplitCash = 0;
           let paymentSplitBank = 0;
           let paymentSplitGyg = 0;
+          let paymentSplitCruise = 0;
 
           if (paymentSplit && Array.isArray(paymentSplit)) {
             paymentSplit.forEach(split => {
@@ -593,12 +599,18 @@ async function handlePost(request, path) {
                 case 'gyg':
                   paymentSplitGyg = amount;
                   break;
+                case 'cruceros':
+                  paymentSplitCruise = amount;
+                  break;
               }
             });
           } else {
             // Default: all to cash
             paymentSplitCash = totalGross;
           }
+
+          // Check if pending cruise
+          const isPendingCruise = entryData.isPendingCruise || false;
 
           // Create entry
           const id = uuidv4();
