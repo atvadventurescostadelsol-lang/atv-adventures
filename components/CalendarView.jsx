@@ -78,6 +78,10 @@ export default function CalendarView({ onDateSelect }) {
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  
+  const weekDays = language === 'es' 
+    ? ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+    : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
     <div className="space-y-6">
@@ -85,23 +89,23 @@ export default function CalendarView({ onDateSelect }) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl">
-              {format(currentDate, 'MMMM yyyy', { locale: es })}
+              {format(currentDate, 'MMMM yyyy', { locale: dateLocale })}
             </CardTitle>
             <div className="flex gap-2">
               <Button onClick={previousMonth} variant="outline" size="sm">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <Button onClick={() => setCurrentDate(new Date())} variant="outline" size="sm">
-                Hoy
+                {t('today')}
               </Button>
               <Button onClick={nextMonth} variant="outline" size="sm">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            Haz clic en un día para ver el dashboard de esa fecha
-          </p>
+          <CardDescription className="mt-2">
+            {t('calendarDescription')}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -110,7 +114,7 @@ export default function CalendarView({ onDateSelect }) {
             </div>
           ) : (
             <div className="grid grid-cols-7 gap-2">
-              {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
+              {weekDays.map(day => (
                 <div key={day} className="text-center font-semibold text-sm text-muted-foreground p-2">
                   {day}
                 </div>
