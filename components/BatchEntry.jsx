@@ -11,10 +11,12 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Save, AlertCircle, CheckCircle2, Euro, Ship, Percent } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const GYG_DISCOUNT = 0.25; // 25% discount for GYG
 
 export default function BatchEntry() {
+  const { t } = useLanguage();
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [timeSlot, setTimeSlot] = useState('');
   const [entries, setEntries] = useState([{
