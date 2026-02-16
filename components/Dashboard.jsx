@@ -266,7 +266,7 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                           )}
                           <div className="flex items-center justify-between text-sm mt-2 pt-2 border-t">
                             <span className="text-muted-foreground">Total:</span>
-                            <span className="font-semibold">€{parseFloat(dep.totalGross || 0).toFixed(2)}</span>
+                            <span className="font-semibold">€{parseNumber(dep.totalGross).toFixed(2)}</span>
                           </div>
                           <div className="flex gap-2 mt-2">
                             {dep.depositPaid === 'true' && (
