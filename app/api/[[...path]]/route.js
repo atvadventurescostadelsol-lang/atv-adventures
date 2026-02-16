@@ -825,7 +825,7 @@ async function handlePut(request, path) {
       const { userId = 'system', userName = 'System', ...updates } = body;
 
       // Get current data
-      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AG');
+      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AO');
       const departures = parseSheetToObjects(data);
       const index = departures.findIndex(d => d.id === id);
 
@@ -977,7 +977,7 @@ async function handleDelete(request, path) {
       const userName = searchParams.get('userName') || 'System';
 
       // Get current data
-      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AG');
+      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AO');
       const departures = parseSheetToObjects(data);
       const departure = departures.find(d => d.id === id);
 
