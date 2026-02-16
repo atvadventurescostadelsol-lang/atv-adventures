@@ -1,17 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function CalendarView({ onDateSelect }) {
+  const { language, t } = useLanguage();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [departures, setDepartures] = useState([]);
   const [loading, setLoading] = useState(false);
+  
+  const dateLocale = language === 'es' ? es : enUS;
 
   useEffect(() => {
     loadMonthDepartures();
