@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw, TrendingUp, Car, DollarSign, Clock, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,10 +30,13 @@ function parseNumber(value) {
 }
 
 export default function Dashboard({ selectedDate: propDate, onDateChange }) {
+  const { language, t } = useLanguage();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(propDate || new Date().toISOString().split('T')[0]);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, departureId: null, departureName: '' });
+  
+  const dateLocale = language === 'es' ? es : enUS;
 
   // Sync with prop when it changes
   useEffect(() => {
