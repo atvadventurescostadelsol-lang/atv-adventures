@@ -410,7 +410,7 @@ async function handlePost(request, path) {
       // Calculate payout date
       const expectedPayoutDate = calculatePayoutDate(salesChannel || 'otros', date);
 
-      // Process payment splits
+      // Process payment splits (now using exact amounts instead of percentages)
       const totalGross = financials.totalGross;
       let paymentSplitWeb = 0;
       let paymentSplitCash = 0;
@@ -419,7 +419,7 @@ async function handlePost(request, path) {
 
       if (paymentSplit && Array.isArray(paymentSplit)) {
         paymentSplit.forEach(split => {
-          const amount = (totalGross * split.percentage) / 100;
+          const amount = parseFloat(split.amount || 0);
           switch(split.method) {
             case 'web':
               paymentSplitWeb = amount;
@@ -436,17 +436,8 @@ async function handlePost(request, path) {
           }
         });
       } else {
-        // Default: all to sales channel
-        switch(salesChannel) {
-          case 'web':
-            paymentSplitWeb = totalGross;
-            break;
-          case 'gyg':
-            paymentSplitGyg = totalGross;
-            break;
-          default:
-            paymentSplitCash = totalGross;
-        }
+        // Default: all to cash
+        paymentSplitCash = totalGross;
       }
 
       // Create entry
