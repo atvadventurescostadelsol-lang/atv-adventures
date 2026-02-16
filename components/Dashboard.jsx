@@ -182,7 +182,7 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
               <div className="flex items-center gap-1">
                 <Car className="h-4 w-4 text-green-600" />
                 <span className="font-medium">{stats.buggyCount}</span>
-                <span className="text-muted-foreground">Buggies</span>
+                <span className="text-muted-foreground">{t('buggies')}</span>
               </div>
             </div>
           </CardContent>
@@ -190,22 +190,22 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Pagos Recibidos</CardDescription>
+            <CardDescription>{t('paymentsReceived')}</CardDescription>
             <CardTitle className="text-3xl">€{((stats.cashTotal || 0) + (stats.bankTotal || 0) + (stats.webTotal || 0)).toFixed(2)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
                 <span className="font-medium">€{(stats.cashTotal || 0).toFixed(2)}</span>
-                <span className="text-muted-foreground"> 💵 Efectivo</span>
+                <span className="text-muted-foreground"> 💵 {t('cash')}</span>
               </div>
               <div>
                 <span className="font-medium">€{(stats.bankTotal || 0).toFixed(2)}</span>
-                <span className="text-muted-foreground"> 🏦 Banco</span>
+                <span className="text-muted-foreground"> 🏦 {t('bank')}</span>
               </div>
               <div>
                 <span className="font-medium">€{(stats.webTotal || 0).toFixed(2)}</span>
-                <span className="text-muted-foreground"> 🌐 Web</span>
+                <span className="text-muted-foreground"> 🌐 {t('web')}</span>
               </div>
             </div>
           </CardContent>
@@ -213,26 +213,26 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
 
         <Card className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white">
           <CardHeader className="pb-2">
-            <CardDescription className="text-yellow-100">Pendiente al Llegar</CardDescription>
+            <CardDescription className="text-yellow-100">{t('pendingArrival')}</CardDescription>
             <CardTitle className="text-3xl">€{((stats.gygTotal || 0) + (stats.cruiseTotal || 0)).toFixed(2)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-1 text-xs text-yellow-100">
               <div>🎫 GYG: €{(stats.gygTotal || 0).toFixed(2)}</div>
-              <div>🚢 Cruceros: €{(stats.cruiseTotal || 0).toFixed(2)}</div>
+              <div>🚢 {t('cruises')}: €{(stats.cruiseTotal || 0).toFixed(2)}</div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Departures by Time Slot */}
+      {/* Tours by Time Slot */}
       <Card>
         <CardHeader>
-          <CardTitle>Salidas por Franja Horaria</CardTitle>
+          <CardTitle>{t('toursByTimeSlot')}</CardTitle>
         </CardHeader>
         <CardContent>
           {Object.keys(stats.departuresBySlot).length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No hay salidas programadas para este día</p>
+            <p className="text-center text-muted-foreground py-8">{t('noToursScheduled')}</p>
           ) : (
             <div className="space-y-6">
               {Object.entries(stats.departuresBySlot).sort((a, b) => a[0].localeCompare(b[0])).map(([timeSlot, slotDepartures]) => (
