@@ -605,12 +605,20 @@ export default function Reports() {
             {/* Payment Breakdown */}
             <div>
               <h3 className="font-semibold mb-3">Desglose por Canal de Pago</h3>
-              <div className="grid gap-4 md:grid-cols-4">
-                <StatCard label="Efectivo" value={`€${results.totals.cashTotal.toFixed(2)}`} />
-                <StatCard label="Banco" value={`€${results.totals.bankTotal.toFixed(2)}`} />
-                <StatCard label="Web" value={`€${results.totals.webTotal.toFixed(2)}`} />
-                <StatCard label="GYG" value={`€${results.totals.gygTotal.toFixed(2)}`} />
+              <div className="grid gap-4 md:grid-cols-5">
+                <StatCard label="💵 Efectivo" value={`€${results.totals.cashTotal.toFixed(2)}`} />
+                <StatCard label="🏦 Banco" value={`€${results.totals.bankTotal.toFixed(2)}`} />
+                <StatCard label="🌐 Web" value={`€${results.totals.webTotal.toFixed(2)}`} />
+                <StatCard label="🎫 GYG" value={`€${results.totals.gygTotal.toFixed(2)}`} />
+                <StatCard label="🚢 Cruceros" value={`€${results.totals.cruiseTotal.toFixed(2)}`} />
               </div>
+              {results.totals.pendingCruise > 0 && (
+                <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <span className="text-amber-800 font-medium">
+                    ⏳ Pendiente de cobro (Cruceros): €{results.totals.pendingCruise.toFixed(2)}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Table */}
