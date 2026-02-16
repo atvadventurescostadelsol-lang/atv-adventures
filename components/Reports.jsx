@@ -567,12 +567,12 @@ export default function Reports() {
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Generando...
+                  {t('generating')}
                 </>
               ) : (
                 <>
                   <Search className="h-4 w-4 mr-2" />
-                  Generar Reporte
+                  {t('generateReport')}
                 </>
               )}
             </Button>
@@ -580,11 +580,11 @@ export default function Reports() {
               <>
                 <Button onClick={exportToCSV} variant="outline">
                   <Download className="h-4 w-4 mr-2" />
-                  Exportar CSV
+                  {t('exportCSV')}
                 </Button>
                 <Button onClick={exportToPDF} variant="outline">
                   <FileText className="h-4 w-4 mr-2" />
-                  Exportar PDF
+                  {t('exportPDF')}
                 </Button>
               </>
             )}
@@ -596,26 +596,26 @@ export default function Reports() {
       {results && (
         <Card>
           <CardHeader>
-            <CardTitle>Resultados</CardTitle>
+            <CardTitle>{t('results')}</CardTitle>
             <CardDescription>
-              {results.totals.count} entrada(s) encontrada(s) 
-              {category !== 'all' && ` - Filtro: ${category === 'quad' ? 'Solo Quads' : 'Solo Buggies'}`}
+              {results.totals.count} {t('entriesFound')} 
+              {category !== 'all' && ` - ${t('filter')}: ${category === 'quad' ? t('onlyQuads') : t('onlyBuggies')}`}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* General Summary */}
             <div className="grid gap-4 md:grid-cols-5">
-              <StatCard label="Total Bruto" value={`€${results.totals.totalGross.toFixed(2)}`} primary />
-              <StatCard label="Base Neta" value={`€${results.totals.netBase.toFixed(2)}`} />
-              <StatCard label="IVA (21%)" value={`€${results.totals.vatAmount.toFixed(2)}`} />
+              <StatCard label={t('totalGross')} value={`€${results.totals.totalGross.toFixed(2)}`} primary />
+              <StatCard label={t('netBase')} value={`€${results.totals.netBase.toFixed(2)}`} />
+              <StatCard label={`${t('vat')} (21%)`} value={`€${results.totals.vatAmount.toFixed(2)}`} />
               <Card className="bg-blue-50 border-blue-200">
                 <CardContent className="p-4">
-                  <div className="text-sm text-blue-600">IVA2 (sin efectivo)</div>
+                  <div className="text-sm text-blue-600">{t('iva2')}</div>
                   <div className="text-2xl font-bold text-blue-700">€{results.totals.vatAmount2.toFixed(2)}</div>
                 </CardContent>
               </Card>
               <StatCard 
-                label="Vehículos" 
+                label={t('vehicles')} 
                 value={results.totals.quadCount + results.totals.buggyCount}
               />
             </div>
