@@ -87,6 +87,56 @@ export default function AdminPanel() {
     }
   }
 
+  async function handleUpdateProduct(productId, updates) {
+    try {
+      const res = await fetch(`/api/products/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+
+      if (res.ok) {
+        toast.success('Producto actualizado exitosamente');
+        setEditingProduct(null);
+        loadData();
+      } else {
+        const error = await res.json();
+        toast.error(error.error || 'Error al actualizar producto');
+      }
+    } catch (error) {
+      toast.error('Error al actualizar producto');
+      console.error(error);
+    }
+  }
+
+  function startEdit(product) {
+    setEditingProduct({
+      id: product.id,
+      name: product.name,
+      category: product.category,
+      duration: product.duration,
+      basePrice: product.basePrice,
+      active: product.active === 'TRUE'
+    });
+  }
+
+  function cancelEdit() {
+    setEditingProduct(null);
+  }
+
+  function saveEdit() {
+    if (editingProduct) {
+      handleUpdateProduct(editingProduct.id, {
+        name: editingProduct.name,
+        category: editingProduct.category,
+        duration: editingProduct.duration,
+        basePrice: editingProduct.basePrice,
+        active: editingProduct.active,
+        userId: 'admin'
+      });
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
