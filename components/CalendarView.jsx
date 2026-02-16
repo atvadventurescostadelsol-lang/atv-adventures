@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-export default function CalendarView() {
+export default function CalendarView({ onDateSelect }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [departures, setDepartures] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -23,11 +23,9 @@ export default function CalendarView() {
       const start = format(startOfMonth(currentDate), 'yyyy-MM-dd');
       const end = format(endOfMonth(currentDate), 'yyyy-MM-dd');
       
-      // Load all departures for the month
       const res = await fetch(`/api/departures`);
       if (res.ok) {
         const allDepartures = await res.json();
-        // Filter by month
         const filtered = allDepartures.filter(d => d.date >= start && d.date <= end);
         setDepartures(filtered);
       }
@@ -64,7 +62,13 @@ export default function CalendarView() {
     return { count: dayDepartures.length, totalGross, quadCount, buggyCount };
   }
 
-  // Get calendar days (including padding)
+  function handleDayClick(date) {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    if (onDateSelect) {
+      onDateSelect(dateStr);
+    }
+  }
+
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -91,6 +95,9 @@ export default function CalendarView() {
               </Button>
             </div>
           </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            Haz clic en un día para ver el dashboard de esa fecha
+          </p>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -99,14 +106,12 @@ export default function CalendarView() {
             </div>
           ) : (
             <div className="grid grid-cols-7 gap-2">
-              {/* Day headers */}
               {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
                 <div key={day} className="text-center font-semibold text-sm text-muted-foreground p-2">
                   {day}
                 </div>
               ))}
 
-              {/* Calendar days */}
               {calendarDays.map(day => {
                 const stats = getDayStats(day);
                 const isCurrentMonth = isSameMonth(day, currentDate);
@@ -115,7 +120,8 @@ export default function CalendarView() {
                 return (
                   <Card
                     key={day.toISOString()}
-                    className={`min-h-[100px] p-2 ${
+                    onClick={() => handleDayClick(day)}
+                    className={`min-h-[100px] p-2 cursor-pointer transition-all hover:ring-2 hover:ring-orange-400 ${
                       !isCurrentMonth ? 'opacity-40' : ''
                     } ${
                       isCurrentDay ? 'ring-2 ring-orange-600' : ''

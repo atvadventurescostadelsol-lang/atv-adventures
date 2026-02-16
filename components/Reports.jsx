@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Search } from 'lucide-react';
+import { Download, Search, FileText, Calendar, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export default function Reports() {
   const [startDate, setStartDate] = useState('');
@@ -17,6 +19,80 @@ export default function Reports() {
   const [channel, setChannel] = useState('all');
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [periodStats, setPeriodStats] = useState(null);
+  const reportRef = useRef(null);
+
+  useEffect(() => {
+    loadPeriodStats();
+  }, []);
+
+  async function loadPeriodStats() {
+    try {
+      const res = await fetch('/api/departures');
+      if (!res.ok) return;
+      
+      const allDepartures = await res.json();
+      const today = new Date();
+      
+      // Weekly (Monday to Sunday)
+      const weekStart = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+      const weekEnd = format(endOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+      const weeklyData = allDepartures.filter(d => d.date >= weekStart && d.date <= weekEnd);
+      
+      // Monthly
+      const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
+      const monthEnd = format(endOfMonth(today), 'yyyy-MM-dd');
+      const monthlyData = allDepartures.filter(d => d.date >= monthStart && d.date <= monthEnd);
+      
+      // Yearly
+      const yearStart = format(startOfYear(today), 'yyyy-MM-dd');
+      const yearEnd = format(endOfYear(today), 'yyyy-MM-dd');
+      const yearlyData = allDepartures.filter(d => d.date >= yearStart && d.date <= yearEnd);
+      
+      setPeriodStats({
+        weekly: calculateStats(weeklyData, `Semana: ${format(startOfWeek(today, { weekStartsOn: 1 }), 'd MMM', { locale: es })} - ${format(endOfWeek(today, { weekStartsOn: 1 }), 'd MMM', { locale: es })}`),
+        monthly: calculateStats(monthlyData, format(today, 'MMMM yyyy', { locale: es })),
+        yearly: calculateStats(yearlyData, format(today, 'yyyy'))
+      });
+    } catch (error) {
+      console.error('Error loading period stats:', error);
+    }
+  }
+
+  function calculateStats(data, label) {
+    const stats = {
+      label,
+      count: data.length,
+      totalGross: 0,
+      netBase: 0,
+      vatAmount: 0,
+      quadCount: 0,
+      buggyCount: 0,
+      webTotal: 0,
+      cashTotal: 0,
+      bankTotal: 0,
+      gygTotal: 0
+    };
+
+    data.forEach(d => {
+      stats.totalGross += parseFloat(d.totalGross || 0);
+      stats.netBase += parseFloat(d.netBase || 0);
+      stats.vatAmount += parseFloat(d.vatAmount || 0);
+      
+      if (d.category === 'quad') {
+        stats.quadCount += parseInt(d.vehiclesCount || 0);
+      } else {
+        stats.buggyCount += parseInt(d.vehiclesCount || 0);
+      }
+
+      stats.webTotal += parseFloat(d.paymentSplitWeb || 0);
+      stats.cashTotal += parseFloat(d.paymentSplitCash || 0);
+      stats.bankTotal += parseFloat(d.paymentSplitBank || 0);
+      stats.gygTotal += parseFloat(d.paymentSplitGyg || 0);
+    });
+
+    return stats;
+  }
 
   async function runReport() {
     if (!startDate || !endDate) {
@@ -37,50 +113,8 @@ export default function Reports() {
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        
-        // Filter by date range
         const filtered = data.filter(d => d.date >= startDate && d.date <= endDate);
-        
-        // Calculate totals
-        const totals = {
-          count: filtered.length,
-          totalGross: 0,
-          netBase: 0,
-          vatAmount: 0,
-          quadCount: 0,
-          buggyCount: 0,
-          cashTotal: 0,
-          bankTotal: 0,
-        };
-
-        filtered.forEach(d => {
-          totals.totalGross += parseFloat(d.totalGross || 0);
-          totals.netBase += parseFloat(d.netBase || 0);
-          totals.vatAmount += parseFloat(d.vatAmount || 0);
-          
-          if (d.category === 'quad') {
-            totals.quadCount += parseInt(d.vehiclesCount || 0);
-          } else {
-            totals.buggyCount += parseInt(d.vehiclesCount || 0);
-          }
-
-          if (d.depositPaid === 'true') {
-            if (d.depositPaidMethod === 'cash') {
-              totals.cashTotal += parseFloat(d.depositAmount || 0);
-            } else {
-              totals.bankTotal += parseFloat(d.depositAmount || 0);
-            }
-          }
-
-          if (d.remainingPaid === 'true') {
-            if (d.remainingPaidMethod === 'cash') {
-              totals.cashTotal += parseFloat(d.remainingAmount || 0);
-            } else {
-              totals.bankTotal += parseFloat(d.remainingAmount || 0);
-            }
-          }
-        });
-
+        const totals = calculateStats(filtered, `${startDate} - ${endDate}`);
         setResults({ data: filtered, totals });
       }
     } catch (error) {
@@ -91,12 +125,37 @@ export default function Reports() {
     }
   }
 
+  function setQuickDate(period) {
+    const today = new Date();
+    let start, end;
+    
+    switch(period) {
+      case 'week':
+        start = startOfWeek(today, { weekStartsOn: 1 });
+        end = endOfWeek(today, { weekStartsOn: 1 });
+        break;
+      case 'month':
+        start = startOfMonth(today);
+        end = endOfMonth(today);
+        break;
+      case 'year':
+        start = startOfYear(today);
+        end = endOfYear(today);
+        break;
+      default:
+        return;
+    }
+    
+    setStartDate(format(start, 'yyyy-MM-dd'));
+    setEndDate(format(end, 'yyyy-MM-dd'));
+  }
+
   function exportToCSV() {
     if (!results) return;
 
     const headers = [
       'Fecha', 'Hora', 'Categoría', 'Producto', 'Vehículos', 'Precio Unit.',
-      'Total Bruto', 'Base Neta', 'IVA', 'Canal', 'Depósito Pagado', 'Restante Pagado'
+      'Total Bruto', 'Base Neta', 'IVA', 'Canal', 'Web', 'Efectivo', 'Banco', 'GYG'
     ];
 
     const rows = results.data.map(d => [
@@ -110,8 +169,10 @@ export default function Reports() {
       d.netBase,
       d.vatAmount,
       d.salesChannel,
-      d.depositPaid,
-      d.remainingPaid,
+      d.paymentSplitWeb || 0,
+      d.paymentSplitCash || 0,
+      d.paymentSplitBank || 0,
+      d.paymentSplitGyg || 0,
     ]);
 
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
@@ -123,17 +184,228 @@ export default function Reports() {
     a.click();
     URL.revokeObjectURL(url);
 
-    toast.success('Reporte exportado');
+    toast.success('Reporte CSV exportado');
+  }
+
+  function exportToPDF() {
+    if (!results) return;
+
+    // Create printable HTML
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Reporte ATV Operations</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+          h1 { color: #ea580c; border-bottom: 2px solid #ea580c; padding-bottom: 10px; }
+          h2 { color: #374151; margin-top: 30px; }
+          .summary { display: flex; flex-wrap: wrap; gap: 15px; margin: 20px 0; }
+          .stat-card { background: #f3f4f6; padding: 15px; border-radius: 8px; min-width: 150px; }
+          .stat-card .label { font-size: 12px; color: #6b7280; }
+          .stat-card .value { font-size: 24px; font-weight: bold; color: #111827; }
+          .stat-card.primary { background: linear-gradient(135deg, #ea580c, #f97316); color: white; }
+          .stat-card.primary .label, .stat-card.primary .value { color: white; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+          th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+          th { background: #f9fafb; font-weight: 600; }
+          tr:nth-child(even) { background: #f9fafb; }
+          .text-right { text-align: right; }
+          .footer { margin-top: 30px; text-align: center; color: #9ca3af; font-size: 11px; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <h1>Reporte de Operaciones ATV</h1>
+        <p><strong>Período:</strong> ${startDate} al ${endDate}</p>
+        <p><strong>Generado:</strong> ${new Date().toLocaleString('es-ES')}</p>
+        
+        <h2>Resumen</h2>
+        <div class="summary">
+          <div class="stat-card primary">
+            <div class="label">Total Bruto</div>
+            <div class="value">€${results.totals.totalGross.toFixed(2)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Base Neta</div>
+            <div class="value">€${results.totals.netBase.toFixed(2)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">IVA (21%)</div>
+            <div class="value">€${results.totals.vatAmount.toFixed(2)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Total Vehículos</div>
+            <div class="value">${results.totals.quadCount + results.totals.buggyCount}</div>
+          </div>
+        </div>
+        
+        <h2>Desglose por Tipo</h2>
+        <div class="summary">
+          <div class="stat-card">
+            <div class="label">Quads</div>
+            <div class="value">${results.totals.quadCount}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Buggies</div>
+            <div class="value">${results.totals.buggyCount}</div>
+          </div>
+        </div>
+
+        <h2>Desglose por Canal de Pago</h2>
+        <div class="summary">
+          <div class="stat-card">
+            <div class="label">Efectivo</div>
+            <div class="value">€${results.totals.cashTotal.toFixed(2)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Banco</div>
+            <div class="value">€${results.totals.bankTotal.toFixed(2)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Web</div>
+            <div class="value">€${results.totals.webTotal.toFixed(2)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">GYG</div>
+            <div class="value">€${results.totals.gygTotal.toFixed(2)}</div>
+          </div>
+        </div>
+        
+        <h2>Detalle de Entradas (${results.data.length})</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Categoría</th>
+              <th>Producto</th>
+              <th class="text-right">Veh.</th>
+              <th class="text-right">Total</th>
+              <th>Canal</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${results.data.map(d => `
+              <tr>
+                <td>${d.date}</td>
+                <td>${d.timeSlot}</td>
+                <td>${d.category === 'quad' ? 'Quad' : 'Buggy'}</td>
+                <td>${d.productName}</td>
+                <td class="text-right">${d.vehiclesCount}</td>
+                <td class="text-right">€${parseFloat(d.totalGross || 0).toFixed(2)}</td>
+                <td>${d.salesChannel}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="footer">
+          <p>ATV Operations - Sistema de Gestión</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.onload = function() {
+      printWindow.print();
+    };
+
+    toast.success('Preparando PDF para impresión');
+  }
+
+  function StatCard({ label, value, subValue, primary }) {
+    return (
+      <Card className={primary ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white' : ''}>
+        <CardContent className="p-4">
+          <div className={`text-sm ${primary ? 'opacity-90' : 'text-muted-foreground'}`}>{label}</div>
+          <div className="text-2xl font-bold">{value}</div>
+          {subValue && <div className={`text-xs mt-1 ${primary ? 'opacity-80' : 'text-muted-foreground'}`}>{subValue}</div>}
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" ref={reportRef}>
+      {/* Period Stats Cards */}
+      {periodStats && (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="border-l-4 border-l-blue-500">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-blue-500" />
+                <CardTitle className="text-sm font-medium">Esta Semana</CardTitle>
+              </div>
+              <CardDescription className="text-xs">{periodStats.weekly.label}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">€{periodStats.weekly.totalGross.toFixed(2)}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Q:{periodStats.weekly.quadCount} B:{periodStats.weekly.buggyCount} | 
+                Efectivo: €{periodStats.weekly.cashTotal.toFixed(0)} | Banco: €{periodStats.weekly.bankTotal.toFixed(0)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-green-500">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-green-500" />
+                <CardTitle className="text-sm font-medium">Este Mes</CardTitle>
+              </div>
+              <CardDescription className="text-xs">{periodStats.monthly.label}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">€{periodStats.monthly.totalGross.toFixed(2)}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Q:{periodStats.monthly.quadCount} B:{periodStats.monthly.buggyCount} | 
+                Efectivo: €{periodStats.monthly.cashTotal.toFixed(0)} | Banco: €{periodStats.monthly.bankTotal.toFixed(0)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-purple-500">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-purple-500" />
+                <CardTitle className="text-sm font-medium">Este Año</CardTitle>
+              </div>
+              <CardDescription className="text-xs">{periodStats.yearly.label}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">€{periodStats.yearly.totalGross.toFixed(2)}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Q:{periodStats.yearly.quadCount} B:{periodStats.yearly.buggyCount} | 
+                Efectivo: €{periodStats.yearly.cashTotal.toFixed(0)} | Banco: €{periodStats.yearly.bankTotal.toFixed(0)}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Generador de Reportes</CardTitle>
           <CardDescription>Genera reportes personalizados de tus operaciones</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Quick Date Buttons */}
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setQuickDate('week')}>
+              Esta Semana
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setQuickDate('month')}>
+              Este Mes
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setQuickDate('year')}>
+              Este Año
+            </Button>
+          </div>
+
           {/* Filters */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div>
@@ -188,7 +460,7 @@ export default function Reports() {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button onClick={runReport} disabled={loading}>
               {loading ? (
                 <>
@@ -203,10 +475,16 @@ export default function Reports() {
               )}
             </Button>
             {results && (
-              <Button onClick={exportToCSV} variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Exportar CSV
-              </Button>
+              <>
+                <Button onClick={exportToCSV} variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar CSV
+                </Button>
+                <Button onClick={exportToPDF} variant="outline">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Exportar PDF
+                </Button>
+              </>
             )}
           </div>
         </CardContent>
@@ -224,33 +502,25 @@ export default function Reports() {
           <CardContent className="space-y-6">
             {/* Summary */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-                <CardContent className="p-4">
-                  <div className="text-sm opacity-90">Total Bruto</div>
-                  <div className="text-2xl font-bold">€{results.totals.totalGross.toFixed(2)}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">Base Neta</div>
-                  <div className="text-2xl font-bold">€{results.totals.netBase.toFixed(2)}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">IVA (21%)</div>
-                  <div className="text-2xl font-bold">€{results.totals.vatAmount.toFixed(2)}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground">Vehículos</div>
-                  <div className="text-2xl font-bold">{results.totals.quadCount + results.totals.buggyCount}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Q: {results.totals.quadCount} | B: {results.totals.buggyCount}
-                  </div>
-                </CardContent>
-              </Card>
+              <StatCard label="Total Bruto" value={`€${results.totals.totalGross.toFixed(2)}`} primary />
+              <StatCard label="Base Neta" value={`€${results.totals.netBase.toFixed(2)}`} />
+              <StatCard label="IVA (21%)" value={`€${results.totals.vatAmount.toFixed(2)}`} />
+              <StatCard 
+                label="Vehículos" 
+                value={results.totals.quadCount + results.totals.buggyCount}
+                subValue={`Q: ${results.totals.quadCount} | B: ${results.totals.buggyCount}`}
+              />
+            </div>
+
+            {/* Payment Breakdown */}
+            <div>
+              <h3 className="font-semibold mb-3">Desglose por Canal de Pago</h3>
+              <div className="grid gap-4 md:grid-cols-4">
+                <StatCard label="Efectivo" value={`€${results.totals.cashTotal.toFixed(2)}`} />
+                <StatCard label="Banco" value={`€${results.totals.bankTotal.toFixed(2)}`} />
+                <StatCard label="Web" value={`€${results.totals.webTotal.toFixed(2)}`} />
+                <StatCard label="GYG" value={`€${results.totals.gygTotal.toFixed(2)}`} />
+              </div>
             </div>
 
             {/* Table */}

@@ -9,19 +9,27 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit2, Trash2, Save } from 'lucide-react';
+import { Plus, Edit2, Save, X, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AdminPanel() {
   const [products, setProducts] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
+  const [categories, setCategories] = useState(['quad', 'buggy']);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [editingSlot, setEditingSlot] = useState(null);
+  const [newCategory, setNewCategory] = useState('');
+  const [showNewCategory, setShowNewCategory] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: '',
     category: 'quad',
     duration: '',
     basePrice: '',
+    active: true
+  });
+  const [newSlot, setNewSlot] = useState({
+    time: '',
     active: true
   });
 
@@ -40,6 +48,11 @@ export default function AdminPanel() {
       if (productsRes.ok) {
         const productsData = await productsRes.json();
         setProducts(productsData);
+        // Extract unique categories
+        const uniqueCategories = [...new Set(productsData.map(p => p.category))];
+        if (uniqueCategories.length > 0) {
+          setCategories(uniqueCategories);
+        }
       }
 
       if (slotsRes.ok) {
@@ -54,8 +67,26 @@ export default function AdminPanel() {
     }
   }
 
+  // Add new category
+  function handleAddCategory() {
+    if (!newCategory.trim()) {
+      toast.error('Ingresa un nombre para la categoría');
+      return;
+    }
+    const categorySlug = newCategory.toLowerCase().trim().replace(/\s+/g, '_');
+    if (categories.includes(categorySlug)) {
+      toast.error('Esta categoría ya existe');
+      return;
+    }
+    setCategories([...categories, categorySlug]);
+    setNewProduct({ ...newProduct, category: categorySlug });
+    setNewCategory('');
+    setShowNewCategory(false);
+    toast.success(`Categoría "${newCategory}" agregada`);
+  }
+
   async function handleCreateProduct() {
-    if (!newProduct.name || !newProduct.basePrice) {
+    if (!newProduct.name || !newProduct.basePrice || !newProduct.duration) {
       toast.error('Por favor completa todos los campos');
       return;
     }
@@ -96,12 +127,12 @@ export default function AdminPanel() {
       });
 
       if (res.ok) {
-        toast.success('Producto actualizado exitosamente');
+        toast.success('Producto actualizado');
         setEditingProduct(null);
         loadData();
       } else {
         const error = await res.json();
-        toast.error(error.error || 'Error al actualizar producto');
+        toast.error(error.error || 'Error al actualizar');
       }
     } catch (error) {
       toast.error('Error al actualizar producto');
@@ -109,32 +140,72 @@ export default function AdminPanel() {
     }
   }
 
-  function startEdit(product) {
+  async function handleUpdateSlot(slotId, updates) {
+    try {
+      const res = await fetch(`/api/timeslots/${slotId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+
+      if (res.ok) {
+        toast.success('Franja horaria actualizada');
+        setEditingSlot(null);
+        loadData();
+      } else {
+        const error = await res.json();
+        toast.error(error.error || 'Error al actualizar');
+      }
+    } catch (error) {
+      toast.error('Error al actualizar franja');
+      console.error(error);
+    }
+  }
+
+  async function handleCreateSlot() {
+    if (!newSlot.time) {
+      toast.error('Por favor ingresa la hora');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/timeslots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSlot)
+      });
+
+      if (res.ok) {
+        toast.success('Franja horaria creada');
+        setNewSlot({ time: '', active: true });
+        loadData();
+      } else {
+        const error = await res.json();
+        toast.error(error.error || 'Error al crear franja');
+      }
+    } catch (error) {
+      toast.error('Error al crear franja');
+      console.error(error);
+    }
+  }
+
+  function startEditProduct(product) {
     setEditingProduct({
       id: product.id,
       name: product.name,
       category: product.category,
       duration: product.duration,
       basePrice: product.basePrice,
-      active: product.active === 'TRUE'
+      active: product.active === 'TRUE' || product.active === true
     });
   }
 
-  function cancelEdit() {
-    setEditingProduct(null);
-  }
-
-  function saveEdit() {
-    if (editingProduct) {
-      handleUpdateProduct(editingProduct.id, {
-        name: editingProduct.name,
-        category: editingProduct.category,
-        duration: editingProduct.duration,
-        basePrice: editingProduct.basePrice,
-        active: editingProduct.active,
-        userId: 'admin'
-      });
-    }
+  function startEditSlot(slot) {
+    setEditingSlot({
+      id: slot.id,
+      time: slot.time,
+      active: slot.active === 'TRUE' || slot.active === true
+    });
   }
 
   if (loading) {
@@ -169,21 +240,46 @@ export default function AdminPanel() {
                   <CardTitle>Agregar Nuevo Producto</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
                     <div>
                       <Label>Categoría</Label>
-                      <Select
-                        value={newProduct.category}
-                        onValueChange={(value) => setNewProduct({...newProduct, category: value})}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="quad">Quad</SelectItem>
-                          <SelectItem value="buggy">Buggy</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {showNewCategory ? (
+                        <div className="flex gap-1 mt-1">
+                          <Input
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                            placeholder="Nueva categoría"
+                            className="h-10"
+                          />
+                          <Button size="sm" onClick={handleAddCategory} className="h-10 px-2">
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setShowNewCategory(false)} className="h-10 px-2">
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-1 mt-1">
+                          <Select
+                            value={newProduct.category}
+                            onValueChange={(value) => setNewProduct({...newProduct, category: value})}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map(cat => (
+                                <SelectItem key={cat} value={cat}>
+                                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button size="sm" variant="outline" onClick={() => setShowNewCategory(true)} className="h-10 px-2" title="Nueva categoría">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
 
                     <div>
@@ -256,17 +352,20 @@ export default function AdminPanel() {
                                   value={editingProduct.category}
                                   onValueChange={(value) => setEditingProduct({...editingProduct, category: value})}
                                 >
-                                  <SelectTrigger className="h-8 w-24">
+                                  <SelectTrigger className="h-8 w-28">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="quad">Quad</SelectItem>
-                                    <SelectItem value="buggy">Buggy</SelectItem>
+                                    {categories.map(cat => (
+                                      <SelectItem key={cat} value={cat}>
+                                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                                      </SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               ) : (
                                 <Badge variant={product.category === 'quad' ? 'default' : 'secondary'}>
-                                  {product.category === 'quad' ? 'Quad' : 'Buggy'}
+                                  {product.category.charAt(0).toUpperCase() + product.category.slice(1)}
                                 </Badge>
                               )}
                             </TableCell>
@@ -309,22 +408,41 @@ export default function AdminPanel() {
                               )}
                             </TableCell>
                             <TableCell>
-                              <Badge variant={product.active === 'TRUE' ? 'default' : 'secondary'}>
-                                {product.active === 'TRUE' ? 'Activo' : 'Inactivo'}
-                              </Badge>
+                              {isEditing ? (
+                                <Select
+                                  value={editingProduct.active ? 'true' : 'false'}
+                                  onValueChange={(value) => setEditingProduct({...editingProduct, active: value === 'true'})}
+                                >
+                                  <SelectTrigger className="h-8 w-24">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="true">Activo</SelectItem>
+                                    <SelectItem value="false">Inactivo</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <Badge variant={(product.active === 'TRUE' || product.active === true) ? 'default' : 'secondary'}>
+                                  {(product.active === 'TRUE' || product.active === true) ? 'Activo' : 'Inactivo'}
+                                </Badge>
+                              )}
                             </TableCell>
                             <TableCell className="text-right">
                               {isEditing ? (
                                 <div className="flex gap-1 justify-end">
-                                  <Button onClick={saveEdit} size="sm" variant="default">
+                                  <Button 
+                                    onClick={() => handleUpdateProduct(editingProduct.id, editingProduct)} 
+                                    size="sm" 
+                                    variant="default"
+                                  >
                                     <Save className="h-4 w-4" />
                                   </Button>
-                                  <Button onClick={cancelEdit} size="sm" variant="ghost">
-                                    Cancelar
+                                  <Button onClick={() => setEditingProduct(null)} size="sm" variant="ghost">
+                                    <X className="h-4 w-4" />
                                   </Button>
                                 </div>
                               ) : (
-                                <Button onClick={() => startEdit(product)} variant="ghost" size="sm">
+                                <Button onClick={() => startEditProduct(product)} variant="ghost" size="sm">
                                   <Edit2 className="h-4 w-4" />
                                 </Button>
                               )}
@@ -342,6 +460,29 @@ export default function AdminPanel() {
             <TabsContent value="timeslots" className="space-y-4">
               <Card>
                 <CardHeader>
+                  <CardTitle>Agregar Nueva Franja Horaria</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-4 items-end">
+                    <div className="flex-1">
+                      <Label>Hora (formato 24h)</Label>
+                      <Input
+                        type="time"
+                        value={newSlot.time}
+                        onChange={(e) => setNewSlot({...newSlot, time: e.target.value})}
+                        className="mt-1"
+                      />
+                    </div>
+                    <Button onClick={handleCreateSlot}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Agregar
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
                   <CardTitle>Franjas Horarias</CardTitle>
                   <CardDescription>
                     Gestiona las franjas horarias disponibles para salidas
@@ -357,21 +498,66 @@ export default function AdminPanel() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {timeSlots.map((slot) => (
-                        <TableRow key={slot.id}>
-                          <TableCell className="font-medium text-lg">{slot.time}</TableCell>
-                          <TableCell>
-                            <Badge variant={slot.active === 'TRUE' ? 'default' : 'secondary'}>
-                              {slot.active === 'TRUE' ? 'Activo' : 'Inactivo'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm">
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {timeSlots.map((slot) => {
+                        const isEditing = editingSlot?.id === slot.id;
+                        
+                        return (
+                          <TableRow key={slot.id}>
+                            <TableCell className="font-medium text-lg">
+                              {isEditing ? (
+                                <Input
+                                  type="time"
+                                  value={editingSlot.time}
+                                  onChange={(e) => setEditingSlot({...editingSlot, time: e.target.value})}
+                                  className="h-8 w-32"
+                                />
+                              ) : (
+                                slot.time
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Select
+                                  value={editingSlot.active ? 'true' : 'false'}
+                                  onValueChange={(value) => setEditingSlot({...editingSlot, active: value === 'true'})}
+                                >
+                                  <SelectTrigger className="h-8 w-24">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="true">Activo</SelectItem>
+                                    <SelectItem value="false">Inactivo</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <Badge variant={(slot.active === 'TRUE' || slot.active === true) ? 'default' : 'secondary'}>
+                                  {(slot.active === 'TRUE' || slot.active === true) ? 'Activo' : 'Inactivo'}
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {isEditing ? (
+                                <div className="flex gap-1 justify-end">
+                                  <Button 
+                                    onClick={() => handleUpdateSlot(editingSlot.id, editingSlot)} 
+                                    size="sm" 
+                                    variant="default"
+                                  >
+                                    <Save className="h-4 w-4" />
+                                  </Button>
+                                  <Button onClick={() => setEditingSlot(null)} size="sm" variant="ghost">
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button onClick={() => startEditSlot(slot)} variant="ghost" size="sm">
+                                  <Edit2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </CardContent>
