@@ -256,7 +256,7 @@ async function handleGet(request, path) {
     try {
       const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
       
-      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AG');
+      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AK');
       const departures = parseSheetToObjects(departuresData);
       
       const todayDepartures = departures.filter(d => d.date === date);
@@ -271,6 +271,7 @@ async function handleGet(request, path) {
         bankTotal: 0,
         webTotal: 0,
         gygTotal: 0,
+        cruiseTotal: 0,
         depositsCollected: 0,
         remainingExpected: 0,
         departuresBySlot: {},
@@ -278,8 +279,10 @@ async function handleGet(request, path) {
 
       todayDepartures.forEach(d => {
         const gross = parseFloat(d.totalGross || 0);
-        const net = parseFloat(d.netBase || 0);
-        const vat = parseFloat(d.vatAmount || 0);
+        // Calculate IVA with proper decimals
+        const vatRate = 0.21;
+        const net = gross / (1 + vatRate);
+        const vat = gross - net;
 
         stats.totalGross += gross;
         stats.netBase += net;
@@ -296,19 +299,13 @@ async function handleGet(request, path) {
         stats.cashTotal += parseFloat(d.paymentSplitCash || 0);
         stats.bankTotal += parseFloat(d.paymentSplitBank || 0);
         stats.gygTotal += parseFloat(d.paymentSplitGyg || 0);
+        stats.cruiseTotal += parseFloat(d.paymentSplitCruise || 0);
 
         // Group by time slot
         if (!stats.departuresBySlot[d.timeSlot]) {
           stats.departuresBySlot[d.timeSlot] = [];
         }
         stats.departuresBySlot[d.timeSlot].push(d);
-      });
-
-      // Round values
-      Object.keys(stats).forEach(key => {
-        if (typeof stats[key] === 'number') {
-          stats[key] = Math.round(stats[key] * 100) / 100;
-        }
       });
 
       return NextResponse.json({
