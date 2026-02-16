@@ -185,7 +185,7 @@ export default function Reports() {
         setResults({ data, totals });
       }
     } catch (error) {
-      toast.error('Error al generar el reporte');
+      toast.error(t('reportError'));
       console.error(error);
     } finally {
       setLoading(false);
@@ -220,10 +220,9 @@ export default function Reports() {
   function exportToCSV() {
     if (!results) return;
 
-    const headers = [
-      'Fecha', 'Hora', 'Categoría', 'Producto', 'Vehículos', 'Precio Unit.',
-      'Total Bruto', 'Base Neta', 'IVA', 'Canal', 'Web', 'Efectivo', 'Banco', 'GYG'
-    ];
+    const headers = language === 'es' 
+      ? ['Fecha', 'Hora', 'Categoría', 'Producto', 'Vehículos', 'Precio Unit.', 'Total Bruto', 'Base Neta', 'IVA', 'Canal', 'Web', 'Efectivo', 'Banco', 'GYG']
+      : ['Date', 'Time', 'Category', 'Product', 'Vehicles', 'Unit Price', 'Total Gross', 'Net Base', 'VAT', 'Channel', 'Web', 'Cash', 'Bank', 'GYG'];
 
     const rows = results.data.map(d => [
       d.date,
@@ -247,7 +246,7 @@ export default function Reports() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `reporte-${category}-${startDate}-${endDate}.csv`;
+    a.download = `report-${category}-${startDate}-${endDate}.csv`;
     a.click();
     URL.revokeObjectURL(url);
 
