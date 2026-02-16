@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Save, X, Check, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +24,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function AdminPanel() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
   const [categories, setCategories] = useState(['quad', 'buggy']);
