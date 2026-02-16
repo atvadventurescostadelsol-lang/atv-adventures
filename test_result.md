@@ -227,6 +227,35 @@ agent_communication:
       - Entry appears in GET /api/dashboard response
       
       Please verify the batch creation endpoint works correctly with multiple entries.
+
+  - agent: "main"
+    message: |
+      Implemented 4 new features:
+      
+      1. Admin Panel - Edit Products/Time Slots:
+         - PUT /api/products/:id endpoint works
+         - PUT /api/timeslots/:id endpoint works
+         - POST /api/timeslots endpoint to create new slots
+         - UI allows editing name, price, duration, category, active status
+         - Added ability to create new product categories
+      
+      2. Calendar Navigation to Dashboard:
+         - Click on any day in calendar navigates to Dashboard with that date
+         - Shows toast notification with selected date
+         - Dashboard displays data for the selected date
+      
+      3. Accumulated Reports (Weekly/Monthly/Annual):
+         - Reports page shows 3 summary cards at top
+         - Weekly: Current week totals
+         - Monthly: Current month totals  
+         - Annual: Current year totals
+         - Each shows breakdown by vehicle type and payment channel
+         - Quick date selection buttons
+      
+      4. PDF Export:
+         - Added "Exportar PDF" button to reports
+         - Opens print dialog with formatted HTML report
+         - Includes summary, breakdowns by type and payment channel, detail table
   - agent: "testing"
     message: |
       BATCH DEPARTURES ENDPOINT TESTING COMPLETE ✅
