@@ -590,11 +590,11 @@ export default function BatchEntry() {
                       </div>
 
                       <div className="md:col-span-2">
-                        <Label>Notas (Opcional)</Label>
+                        <Label>{t('notes')}</Label>
                         <Textarea
                           value={entry.notes}
                           onChange={(e) => updateEntry(entry.id, 'notes', e.target.value)}
-                          placeholder="Notas adicionales..."
+                          placeholder={t('notesPlaceholder')}
                           className="mt-1"
                           rows={2}
                         />
@@ -607,15 +607,15 @@ export default function BatchEntry() {
                         <div className="flex items-center justify-between mb-3">
                           <Label className="flex items-center gap-2">
                             <Euro className="h-4 w-4" />
-                            Forma de Pago
+                            {t('paymentMethod')}
                             {!splitValid && splitDiff !== 0 && (
                               <Badge variant="destructive" className="text-xs">
-                                Faltan: €{splitDiff.toFixed(2)}
+                                {t('missing')}: €{splitDiff.toFixed(2)}
                               </Badge>
                             )}
                             {splitValid && (
                               <Badge variant="default" className="text-xs bg-green-600">
-                                ✓ Completo
+                                ✓ {t('complete')}
                               </Badge>
                             )}
                           </Label>
@@ -626,7 +626,7 @@ export default function BatchEntry() {
                             className="h-7"
                           >
                             <Plus className="h-3 w-3 mr-1" />
-                            Dividir Pago
+                            {t('splitPayment')}
                           </Button>
                         </div>
 
@@ -642,11 +642,11 @@ export default function BatchEntry() {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="cash">💵 Efectivo</SelectItem>
-                                    <SelectItem value="bank">🏦 Banco</SelectItem>
-                                    <SelectItem value="web">🌐 Web</SelectItem>
-                                    <SelectItem value="gyg">🎫 GetYourGuide (-25%)</SelectItem>
-                                    <SelectItem value="cruceros">🚢 Cruceros (Pendiente)</SelectItem>
+                                    <SelectItem value="cash">💵 {t('cash')}</SelectItem>
+                                    <SelectItem value="bank">🏦 {t('bank')}</SelectItem>
+                                    <SelectItem value="web">🌐 {t('web')}</SelectItem>
+                                    <SelectItem value="gyg">🎫 {t('gygDiscount')}</SelectItem>
+                                    <SelectItem value="cruceros">🚢 {t('cruisesPending')}</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
