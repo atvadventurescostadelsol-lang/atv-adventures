@@ -227,3 +227,22 @@ agent_communication:
       - Entry appears in GET /api/dashboard response
       
       Please verify the batch creation endpoint works correctly with multiple entries.
+  - agent: "testing"
+    message: |
+      BATCH DEPARTURES ENDPOINT TESTING COMPLETE ✅
+      
+      Comprehensive testing performed on POST /api/departures/batch:
+      
+      ✅ Single Entry Creation: Successfully created single departure entry
+      ✅ Multiple Entries Batch: Successfully created 3 entries in one batch request  
+      ✅ Dashboard Integration: All created entries appear correctly in GET /api/dashboard
+      ✅ Departures List Integration: All entries appear in GET /api/departures with full data
+      ✅ Error Handling: Empty arrays and missing fields properly rejected
+      
+      CRITICAL FIX VERIFIED:
+      - Data correctly written to Departures!A:AG range (all 33 columns)
+      - Column letter calculation working for AG (column 33) 
+      - Financial calculations and payment splits working correctly
+      - All created entries have proper UUID, timestamps, and complete data structure
+      
+      The bug in /app/lib/safe-append.js has been completely resolved.
