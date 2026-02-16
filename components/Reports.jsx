@@ -662,6 +662,21 @@ export default function Reports() {
               )}
             </div>
 
+            {/* Pending Payments */}
+            {(results.totals.pendingGYG > 0 || results.totals.pendingCruise > 0) && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <h4 className="font-semibold text-amber-800 mb-2">⏳ Pagos Pendientes de Llegar</h4>
+                <div className="grid gap-2 md:grid-cols-2">
+                  {results.totals.pendingGYG > 0 && (
+                    <div className="text-amber-700">🎫 GYG: €{results.totals.pendingGYG.toFixed(2)}</div>
+                  )}
+                  {results.totals.pendingCruise > 0 && (
+                    <div className="text-amber-700">🚢 Cruceros: €{results.totals.pendingCruise.toFixed(2)}</div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Table */}
             <div className="rounded-md border overflow-hidden">
               <div className="max-h-[500px] overflow-y-auto">
@@ -670,31 +685,49 @@ export default function Reports() {
                     <TableRow>
                       <TableHead>Fecha</TableHead>
                       <TableHead>Hora</TableHead>
-                      <TableHead>Categoría</TableHead>
+                      <TableHead>Tipo</TableHead>
                       <TableHead>Producto</TableHead>
                       <TableHead className="text-right">Veh.</TableHead>
                       <TableHead className="text-right">Total</TableHead>
-                      <TableHead>Canal</TableHead>
+                      <TableHead>Desglose de Pago</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {results.data.map((d, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>{d.date}</TableCell>
-                        <TableCell>{d.timeSlot}</TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            d.category === 'quad' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                          }`}>
-                            {d.category === 'quad' ? '🏍️ Quad' : '🚙 Buggy'}
-                          </span>
-                        </TableCell>
-                        <TableCell>{d.productName}</TableCell>
-                        <TableCell className="text-right">{d.vehiclesCount}</TableCell>
-                        <TableCell className="text-right font-medium">€{parseFloat(d.totalGross || 0).toFixed(2)}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{d.salesChannel}</TableCell>
-                      </TableRow>
-                    ))}
+                    {results.data.map((d, idx) => {
+                      // Build payment breakdown
+                      const payments = [];
+                      if (parseFloat(d.paymentSplitCash || 0) > 0) payments.push(`💵€${parseFloat(d.paymentSplitCash).toFixed(0)}`);
+                      if (parseFloat(d.paymentSplitBank || 0) > 0) payments.push(`🏦€${parseFloat(d.paymentSplitBank).toFixed(0)}`);
+                      if (parseFloat(d.paymentSplitWeb || 0) > 0) payments.push(`🌐€${parseFloat(d.paymentSplitWeb).toFixed(0)}`);
+                      if (parseFloat(d.paymentSplitGyg || 0) > 0) payments.push(`🎫€${parseFloat(d.paymentSplitGyg).toFixed(0)}`);
+                      if (parseFloat(d.paymentSplitCruise || 0) > 0) payments.push(`🚢€${parseFloat(d.paymentSplitCruise).toFixed(0)}`);
+                      
+                      return (
+                        <TableRow key={idx}>
+                          <TableCell className="text-sm">{d.date}</TableCell>
+                          <TableCell className="text-sm">{d.timeSlot}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              d.category === 'quad' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                            }`}>
+                              {d.category === 'quad' ? 'Q' : 'B'}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-sm">{d.productName}</TableCell>
+                          <TableCell className="text-right text-sm">{d.vehiclesCount}</TableCell>
+                          <TableCell className="text-right font-medium">€{parseFloat(d.totalGross || 0).toFixed(2)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1 text-xs">
+                              {payments.length > 0 ? payments.map((p, i) => (
+                                <span key={i} className="bg-gray-100 px-1 py-0.5 rounded">{p}</span>
+                              )) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
