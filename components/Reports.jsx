@@ -702,13 +702,13 @@ export default function Reports() {
                   </TableHeader>
                   <TableBody>
                     {results.data.map((d, idx) => {
-                      // Build payment breakdown with decimals
+                      // Build payment breakdown with decimals using parseNumber
                       const payments = [];
-                      if (parseFloat(d.paymentSplitCash || 0) > 0) payments.push(`💵€${parseFloat(d.paymentSplitCash).toFixed(2)}`);
-                      if (parseFloat(d.paymentSplitBank || 0) > 0) payments.push(`🏦€${parseFloat(d.paymentSplitBank).toFixed(2)}`);
-                      if (parseFloat(d.paymentSplitWeb || 0) > 0) payments.push(`🌐€${parseFloat(d.paymentSplitWeb).toFixed(2)}`);
-                      if (parseFloat(d.paymentSplitGyg || 0) > 0) payments.push(`🎫€${parseFloat(d.paymentSplitGyg).toFixed(2)}`);
-                      if (parseFloat(d.paymentSplitCruise || 0) > 0) payments.push(`🚢€${parseFloat(d.paymentSplitCruise).toFixed(2)}`);
+                      if (parseNumber(d.paymentSplitCash) > 0) payments.push(`💵€${parseNumber(d.paymentSplitCash).toFixed(2)}`);
+                      if (parseNumber(d.paymentSplitBank) > 0) payments.push(`🏦€${parseNumber(d.paymentSplitBank).toFixed(2)}`);
+                      if (parseNumber(d.paymentSplitWeb) > 0) payments.push(`🌐€${parseNumber(d.paymentSplitWeb).toFixed(2)}`);
+                      if (parseNumber(d.paymentSplitGyg) > 0) payments.push(`🎫€${parseNumber(d.paymentSplitGyg).toFixed(2)}`);
+                      if (parseNumber(d.paymentSplitCruise) > 0) payments.push(`🚢€${parseNumber(d.paymentSplitCruise).toFixed(2)}`);
                       
                       return (
                         <TableRow key={idx}>
@@ -723,7 +723,7 @@ export default function Reports() {
                           </TableCell>
                           <TableCell className="text-sm">{d.productName}</TableCell>
                           <TableCell className="text-right text-sm">{d.vehiclesCount}</TableCell>
-                          <TableCell className="text-right font-medium">€{parseFloat(d.totalGross || 0).toFixed(2)}</TableCell>
+                          <TableCell className="text-right font-medium">€{parseNumber(d.totalGross).toFixed(2)}</TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1 text-xs">
                               {payments.length > 0 ? payments.map((p, i) => (
