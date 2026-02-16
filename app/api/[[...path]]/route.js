@@ -650,8 +650,14 @@ async function handlePost(request, path) {
             entryLength: entry.length
           });
 
-          await appendSheetData(SPREADSHEET_ID, 'Departures!A:AG', [entry]);
-          console.log('Entry appended successfully');
+          try {
+            const appendResult = await appendSheetData(SPREADSHEET_ID, 'Departures!A:AG', [entry]);
+            console.log('Entry appended successfully, result:', appendResult);
+          } catch (appendError) {
+            console.error('ERROR appending to sheet:', appendError);
+            throw appendError;
+          }
+          
           await addAuditLog('CREATE', 'Departure', id, { entry }, userId, userName);
 
           created.push({
