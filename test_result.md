@@ -300,3 +300,22 @@ agent_communication:
       3. Verify GET /api/departures returns correctly aligned data
       
       NOTE: Existing data in the sheet may still be misaligned if the headers don't match.
+  - agent: "testing"
+    message: |
+      CRITICAL ISSUE IDENTIFIED: Sheet header mismatch causing column misalignment.
+      
+      TESTING RESULTS:
+      ✅ POST /api/departures/batch: Successfully creates entries with cruceros payment (writes 36 columns to A:AJ)
+      ❌ GET /api/departures: Only reads 33 columns, missing paymentSplitCruise, gygDiscount, isPendingCruise
+      ❌ GET /api/dashboard: cruiseTotal = 0 because paymentSplitCruise data is not accessible
+      
+      ROOT CAUSE: The Google Sheet header row only contains 33 column headers, but the write operations 
+      are writing 36 columns of data. The parseSheetToObjects function only maps data to existing headers.
+      
+      EVIDENCE:
+      - Write operation: Creates entries with 36 columns (A:AJ range)
+      - Read operation: Sheet returns only 33 headers, so last 3 columns (paymentSplitCruise, gygDiscount, isPendingCruise) are ignored
+      - Dashboard calculation: cruiseTotal stays 0 because paymentSplitCruise field is missing from parsed data
+      
+      IMMEDIATE FIX REQUIRED: Update Google Sheet header row to include the 3 missing column headers:
+      paymentSplitCruise, gygDiscount, isPendingCruise between paymentSplitGyg and createdAt columns.
