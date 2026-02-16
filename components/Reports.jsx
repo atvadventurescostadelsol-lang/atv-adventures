@@ -698,13 +698,13 @@ export default function Reports() {
                 <Table>
                   <TableHeader className="sticky top-0 bg-background">
                     <TableRow>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Hora</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Producto</TableHead>
-                      <TableHead className="text-right">Veh.</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead>Desglose de Pago</TableHead>
+                      <TableHead>{t('date')}</TableHead>
+                      <TableHead>{t('time')}</TableHead>
+                      <TableHead>{t('type')}</TableHead>
+                      <TableHead>{t('product')}</TableHead>
+                      <TableHead className="text-right">{t('veh')}</TableHead>
+                      <TableHead className="text-right">{t('total')}</TableHead>
+                      <TableHead>{t('paymentBreakdown')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -746,6 +746,11 @@ export default function Reports() {
                   </TableBody>
                 </Table>
               </div>
+            </div>
+
+            {/* Detail section title */}
+            <div className="mt-4">
+              <h3 className="font-semibold mb-3">{t('detailEntries')}</h3>
             </div>
           </CardContent>
         </Card>
