@@ -694,13 +694,13 @@ export default function Reports() {
                   </TableHeader>
                   <TableBody>
                     {results.data.map((d, idx) => {
-                      // Build payment breakdown
+                      // Build payment breakdown with decimals
                       const payments = [];
-                      if (parseFloat(d.paymentSplitCash || 0) > 0) payments.push(`💵€${parseFloat(d.paymentSplitCash).toFixed(0)}`);
-                      if (parseFloat(d.paymentSplitBank || 0) > 0) payments.push(`🏦€${parseFloat(d.paymentSplitBank).toFixed(0)}`);
-                      if (parseFloat(d.paymentSplitWeb || 0) > 0) payments.push(`🌐€${parseFloat(d.paymentSplitWeb).toFixed(0)}`);
-                      if (parseFloat(d.paymentSplitGyg || 0) > 0) payments.push(`🎫€${parseFloat(d.paymentSplitGyg).toFixed(0)}`);
-                      if (parseFloat(d.paymentSplitCruise || 0) > 0) payments.push(`🚢€${parseFloat(d.paymentSplitCruise).toFixed(0)}`);
+                      if (parseFloat(d.paymentSplitCash || 0) > 0) payments.push(`💵€${parseFloat(d.paymentSplitCash).toFixed(2)}`);
+                      if (parseFloat(d.paymentSplitBank || 0) > 0) payments.push(`🏦€${parseFloat(d.paymentSplitBank).toFixed(2)}`);
+                      if (parseFloat(d.paymentSplitWeb || 0) > 0) payments.push(`🌐€${parseFloat(d.paymentSplitWeb).toFixed(2)}`);
+                      if (parseFloat(d.paymentSplitGyg || 0) > 0) payments.push(`🎫€${parseFloat(d.paymentSplitGyg).toFixed(2)}`);
+                      if (parseFloat(d.paymentSplitCruise || 0) > 0) payments.push(`🚢€${parseFloat(d.paymentSplitCruise).toFixed(2)}`);
                       
                       return (
                         <TableRow key={idx}>
