@@ -132,7 +132,7 @@ async function handleGet(request, path) {
       }
 
       // Get existing departures for this slot
-      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AC');
+      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AG');
       const departures = parseSheetToObjects(departuresData);
       
       const existingDepartures = departures.filter(d => 
@@ -243,7 +243,7 @@ async function handleGet(request, path) {
     try {
       const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
       
-      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AC');
+      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AG');
       const departures = parseSheetToObjects(departuresData);
       
       const todayDepartures = departures.filter(d => d.date === date);
@@ -622,7 +622,7 @@ async function handlePut(request, path) {
       const { userId = 'system', userName = 'System', ...updates } = body;
 
       // Get current data
-      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AC');
+      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AG');
       const departures = parseSheetToObjects(data);
       const index = departures.findIndex(d => d.id === id);
 
@@ -680,7 +680,7 @@ async function handleDelete(request, path) {
       const userName = searchParams.get('userName') || 'System';
 
       // Get current data
-      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AC');
+      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AG');
       const departures = parseSheetToObjects(data);
       const departure = departures.find(d => d.id === id);
 
