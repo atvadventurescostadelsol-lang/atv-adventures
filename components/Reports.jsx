@@ -59,6 +59,14 @@ export default function Reports() {
     }
   }
 
+  // Helper to parse numbers that may use comma as decimal separator (Spanish format)
+  function parseNumber(value) {
+    if (value === null || value === undefined || value === '') return 0;
+    const strValue = String(value).replace(',', '.');
+    const parsed = parseFloat(strValue);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+
   function calculateStats(data, label) {
     const stats = {
       label,
@@ -87,7 +95,7 @@ export default function Reports() {
     };
 
     data.forEach(d => {
-      const gross = parseFloat(d.totalGross || 0);
+      const gross = parseNumber(d.totalGross);
       const vehicles = parseInt(d.vehiclesCount || 0);
       
       // Calculate IVA with proper decimals
@@ -109,11 +117,11 @@ export default function Reports() {
         stats.buggyNet += netBase;
       }
 
-      const cashAmount = parseFloat(d.paymentSplitCash || 0);
-      const webAmount = parseFloat(d.paymentSplitWeb || 0);
-      const bankAmount = parseFloat(d.paymentSplitBank || 0);
-      const gygAmount = parseFloat(d.paymentSplitGyg || 0);
-      const cruiseAmount = parseFloat(d.paymentSplitCruise || 0);
+      const cashAmount = parseNumber(d.paymentSplitCash);
+      const webAmount = parseNumber(d.paymentSplitWeb);
+      const bankAmount = parseNumber(d.paymentSplitBank);
+      const gygAmount = parseNumber(d.paymentSplitGyg);
+      const cruiseAmount = parseNumber(d.paymentSplitCruise);
       
       stats.webTotal += webAmount;
       stats.cashTotal += cashAmount;
