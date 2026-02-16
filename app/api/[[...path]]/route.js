@@ -315,7 +315,7 @@ async function handleGet(request, path) {
       };
 
       todayDepartures.forEach(d => {
-        const gross = parseFloat(d.totalGross || 0);
+        const gross = parseNumber(d.totalGross);
         // Calculate IVA with proper decimals
         const vatRate = 0.21;
         const net = gross / (1 + vatRate);
@@ -331,12 +331,12 @@ async function handleGet(request, path) {
           stats.buggyCount += parseInt(d.vehiclesCount || 0);
         }
 
-        // Accumulate payment splits
-        stats.webTotal += parseFloat(d.paymentSplitWeb || 0);
-        stats.cashTotal += parseFloat(d.paymentSplitCash || 0);
-        stats.bankTotal += parseFloat(d.paymentSplitBank || 0);
-        stats.gygTotal += parseFloat(d.paymentSplitGyg || 0);
-        stats.cruiseTotal += parseFloat(d.paymentSplitCruise || 0);
+        // Accumulate payment splits (already saved with point decimal)
+        stats.webTotal += parseNumber(d.paymentSplitWeb);
+        stats.cashTotal += parseNumber(d.paymentSplitCash);
+        stats.bankTotal += parseNumber(d.paymentSplitBank);
+        stats.gygTotal += parseNumber(d.paymentSplitGyg);
+        stats.cruiseTotal += parseNumber(d.paymentSplitCruise);
 
         // Group by time slot
         if (!stats.departuresBySlot[d.timeSlot]) {
