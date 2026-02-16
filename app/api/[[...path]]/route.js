@@ -651,6 +651,13 @@ async function handlePost(request, path) {
           });
 
           try {
+            console.log('About to append to sheet:', {
+              spreadsheetId: SPREADSHEET_ID,
+              range: 'Departures!A:AG',
+              valuesLength: [entry].length,
+              firstValues: entry.slice(0, 5)
+            });
+            
             const appendResult = await appendSheetData(SPREADSHEET_ID, 'Departures!A:AG', [entry]);
             console.log('Entry appended successfully, result:', appendResult);
           } catch (appendError) {
