@@ -403,6 +403,45 @@ async function handlePost(request, path) {
       // Calculate payout date
       const expectedPayoutDate = calculatePayoutDate(salesChannel || 'otros', date);
 
+      // Process payment splits
+      const totalGross = financials.totalGross;
+      let paymentSplitWeb = 0;
+      let paymentSplitCash = 0;
+      let paymentSplitBank = 0;
+      let paymentSplitGyg = 0;
+
+      if (paymentSplit && Array.isArray(paymentSplit)) {
+        paymentSplit.forEach(split => {
+          const amount = (totalGross * split.percentage) / 100;
+          switch(split.method) {
+            case 'web':
+              paymentSplitWeb = amount;
+              break;
+            case 'cash':
+              paymentSplitCash = amount;
+              break;
+            case 'bank':
+              paymentSplitBank = amount;
+              break;
+            case 'gyg':
+              paymentSplitGyg = amount;
+              break;
+          }
+        });
+      } else {
+        // Default: all to sales channel
+        switch(salesChannel) {
+          case 'web':
+            paymentSplitWeb = totalGross;
+            break;
+          case 'gyg':
+            paymentSplitGyg = totalGross;
+            break;
+          default:
+            paymentSplitCash = totalGross;
+        }
+      }
+
       // Create entry
       const id = uuidv4();
       const now = new Date().toISOString();
@@ -433,13 +472,17 @@ async function handlePost(request, path) {
         '', // remainingPaidDate
         salesChannel || 'otros',
         expectedPayoutDate,
+        paymentSplitWeb.toFixed(2),
+        paymentSplitCash.toFixed(2),
+        paymentSplitBank.toFixed(2),
+        paymentSplitGyg.toFixed(2),
         now,
         userId,
         now,
         userId,
       ];
 
-      await appendSheetData(SPREADSHEET_ID, 'Departures!A:AC', [entry]);
+      await appendSheetData(SPREADSHEET_ID, 'Departures!A:AG', [entry]);
       
       await addAuditLog('CREATE', 'Departure', id, { entry }, userId, userName);
 
