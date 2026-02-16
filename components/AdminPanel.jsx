@@ -9,8 +9,18 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit2, Save, X, Check } from 'lucide-react';
+import { Plus, Edit2, Save, X, Check, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function AdminPanel() {
   const [products, setProducts] = useState([]);
@@ -21,6 +31,10 @@ export default function AdminPanel() {
   const [editingSlot, setEditingSlot] = useState(null);
   const [newCategory, setNewCategory] = useState('');
   const [showNewCategory, setShowNewCategory] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, type: '', id: '', name: '' });
+  const [capacities, setCapacities] = useState({ quad: 10, buggy: 6 });
+  const [editingCapacity, setEditingCapacity] = useState(false);
+  
   const [newProduct, setNewProduct] = useState({
     name: '',
     category: 'quad',
@@ -30,6 +44,8 @@ export default function AdminPanel() {
   });
   const [newSlot, setNewSlot] = useState({
     time: '',
+    quadCapacity: 10,
+    buggyCapacity: 6,
     active: true
   });
 
@@ -48,7 +64,6 @@ export default function AdminPanel() {
       if (productsRes.ok) {
         const productsData = await productsRes.json();
         setProducts(productsData);
-        // Extract unique categories
         const uniqueCategories = [...new Set(productsData.map(p => p.category))];
         if (uniqueCategories.length > 0) {
           setCategories(uniqueCategories);
@@ -58,6 +73,13 @@ export default function AdminPanel() {
       if (slotsRes.ok) {
         const slotsData = await slotsRes.json();
         setTimeSlots(slotsData);
+        // Get default capacities from first slot
+        if (slotsData.length > 0) {
+          setCapacities({
+            quad: parseInt(slotsData[0].quadCapacity) || 10,
+            buggy: parseInt(slotsData[0].buggyCapacity) || 6
+          });
+        }
       }
     } catch (error) {
       toast.error('Error al cargar datos');
@@ -67,7 +89,6 @@ export default function AdminPanel() {
     }
   }
 
-  // Add new category
   function handleAddCategory() {
     if (!newCategory.trim()) {
       toast.error('Ingresa un nombre para la categoría');
@@ -85,6 +106,16 @@ export default function AdminPanel() {
     toast.success(`Categoría "${newCategory}" agregada`);
   }
 
+  function handleDeleteCategory(categoryToDelete) {
+    const productsInCategory = products.filter(p => p.category === categoryToDelete);
+    if (productsInCategory.length > 0) {
+      toast.error(`No se puede eliminar: hay ${productsInCategory.length} producto(s) en esta categoría`);
+      return;
+    }
+    setCategories(categories.filter(c => c !== categoryToDelete));
+    toast.success(`Categoría "${categoryToDelete}" eliminada`);
+  }
+
   async function handleCreateProduct() {
     if (!newProduct.name || !newProduct.basePrice || !newProduct.duration) {
       toast.error('Por favor completa todos los campos');
@@ -100,13 +131,7 @@ export default function AdminPanel() {
 
       if (res.ok) {
         toast.success('Producto creado exitosamente');
-        setNewProduct({
-          name: '',
-          category: 'quad',
-          duration: '',
-          basePrice: '',
-          active: true
-        });
+        setNewProduct({ name: '', category: 'quad', duration: '', basePrice: '', active: true });
         loadData();
       } else {
         const error = await res.json();
@@ -140,6 +165,27 @@ export default function AdminPanel() {
     }
   }
 
+  async function handleDeleteProduct(productId) {
+    try {
+      const res = await fetch(`/api/products/${productId}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        toast.success('Producto eliminado');
+        loadData();
+      } else {
+        const error = await res.json();
+        toast.error(error.error || 'Error al eliminar');
+      }
+    } catch (error) {
+      toast.error('Error al eliminar producto');
+      console.error(error);
+    } finally {
+      setDeleteDialog({ open: false, type: '', id: '', name: '' });
+    }
+  }
+
   async function handleUpdateSlot(slotId, updates) {
     try {
       const res = await fetch(`/api/timeslots/${slotId}`, {
@@ -162,6 +208,27 @@ export default function AdminPanel() {
     }
   }
 
+  async function handleDeleteSlot(slotId) {
+    try {
+      const res = await fetch(`/api/timeslots/${slotId}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        toast.success('Franja horaria eliminada');
+        loadData();
+      } else {
+        const error = await res.json();
+        toast.error(error.error || 'Error al eliminar');
+      }
+    } catch (error) {
+      toast.error('Error al eliminar franja');
+      console.error(error);
+    } finally {
+      setDeleteDialog({ open: false, type: '', id: '', name: '' });
+    }
+  }
+
   async function handleCreateSlot() {
     if (!newSlot.time) {
       toast.error('Por favor ingresa la hora');
@@ -177,7 +244,7 @@ export default function AdminPanel() {
 
       if (res.ok) {
         toast.success('Franja horaria creada');
-        setNewSlot({ time: '', active: true });
+        setNewSlot({ time: '', quadCapacity: capacities.quad, buggyCapacity: capacities.buggy, active: true });
         loadData();
       } else {
         const error = await res.json();
@@ -185,6 +252,32 @@ export default function AdminPanel() {
       }
     } catch (error) {
       toast.error('Error al crear franja');
+      console.error(error);
+    }
+  }
+
+  async function handleUpdateCapacities() {
+    try {
+      // Update capacities for all time slots
+      const updatePromises = timeSlots.map(slot => 
+        fetch(`/api/timeslots/${slot.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            time: slot.time,
+            quadCapacity: capacities.quad,
+            buggyCapacity: capacities.buggy,
+            active: slot.active === 'TRUE' || slot.active === true
+          })
+        })
+      );
+
+      await Promise.all(updatePromises);
+      toast.success('Capacidades actualizadas para todas las franjas');
+      setEditingCapacity(false);
+      loadData();
+    } catch (error) {
+      toast.error('Error al actualizar capacidades');
       console.error(error);
     }
   }
@@ -204,6 +297,8 @@ export default function AdminPanel() {
     setEditingSlot({
       id: slot.id,
       time: slot.time,
+      quadCapacity: slot.quadCapacity || 10,
+      buggyCapacity: slot.buggyCapacity || 6,
       active: slot.active === 'TRUE' || slot.active === true
     });
   }
@@ -218,12 +313,37 @@ export default function AdminPanel() {
 
   return (
     <div className="space-y-6">
+      {/* Delete Dialog */}
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => !open && setDeleteDialog({ open: false, type: '', id: '', name: '' })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar {deleteDialog.type}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que quieres eliminar "{deleteDialog.name}"? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => {
+                if (deleteDialog.type === 'producto') {
+                  handleDeleteProduct(deleteDialog.id);
+                } else if (deleteDialog.type === 'franja horaria') {
+                  handleDeleteSlot(deleteDialog.id);
+                }
+              }}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Card>
         <CardHeader>
           <CardTitle>Panel de Administración</CardTitle>
-          <CardDescription>
-            Gestiona productos, precios y configuración del sistema
-          </CardDescription>
+          <CardDescription>Gestiona productos, precios y configuración del sistema</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="products" className="space-y-4">
@@ -231,6 +351,7 @@ export default function AdminPanel() {
               <TabsTrigger value="products">Productos</TabsTrigger>
               <TabsTrigger value="timeslots">Franjas Horarias</TabsTrigger>
               <TabsTrigger value="capacity">Capacidades</TabsTrigger>
+              <TabsTrigger value="categories">Categorías</TabsTrigger>
             </TabsList>
 
             {/* Products Tab */}
@@ -243,77 +364,31 @@ export default function AdminPanel() {
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
                     <div>
                       <Label>Categoría</Label>
-                      {showNewCategory ? (
-                        <div className="flex gap-1 mt-1">
-                          <Input
-                            value={newCategory}
-                            onChange={(e) => setNewCategory(e.target.value)}
-                            placeholder="Nueva categoría"
-                            className="h-10"
-                          />
-                          <Button size="sm" onClick={handleAddCategory} className="h-10 px-2">
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => setShowNewCategory(false)} className="h-10 px-2">
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex gap-1 mt-1">
-                          <Select
-                            value={newProduct.category}
-                            onValueChange={(value) => setNewProduct({...newProduct, category: value})}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {categories.map(cat => (
-                                <SelectItem key={cat} value={cat}>
-                                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button size="sm" variant="outline" onClick={() => setShowNewCategory(true)} className="h-10 px-2" title="Nueva categoría">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
+                      <Select value={newProduct.category} onValueChange={(value) => setNewProduct({...newProduct, category: value})}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map(cat => (
+                            <SelectItem key={cat} value={cat}>
+                              {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-
                     <div>
                       <Label>Nombre</Label>
-                      <Input
-                        value={newProduct.name}
-                        onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                        placeholder="ej: 2 horas"
-                        className="mt-1"
-                      />
+                      <Input value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} placeholder="ej: 2 horas" className="mt-1" />
                     </div>
-
                     <div>
                       <Label>Duración</Label>
-                      <Input
-                        value={newProduct.duration}
-                        onChange={(e) => setNewProduct({...newProduct, duration: e.target.value})}
-                        placeholder="ej: 2h"
-                        className="mt-1"
-                      />
+                      <Input value={newProduct.duration} onChange={(e) => setNewProduct({...newProduct, duration: e.target.value})} placeholder="ej: 2h" className="mt-1" />
                     </div>
-
                     <div>
                       <Label>Precio Base (€)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={newProduct.basePrice}
-                        onChange={(e) => setNewProduct({...newProduct, basePrice: e.target.value})}
-                        placeholder="70"
-                        className="mt-1"
-                      />
+                      <Input type="number" step="0.01" value={newProduct.basePrice} onChange={(e) => setNewProduct({...newProduct, basePrice: e.target.value})} placeholder="70" className="mt-1" />
                     </div>
-
                     <div className="flex items-end">
                       <Button onClick={handleCreateProduct} className="w-full">
                         <Plus className="h-4 w-4 mr-2" />
@@ -348,18 +423,13 @@ export default function AdminPanel() {
                           <TableRow key={product.id}>
                             <TableCell>
                               {isEditing ? (
-                                <Select
-                                  value={editingProduct.category}
-                                  onValueChange={(value) => setEditingProduct({...editingProduct, category: value})}
-                                >
+                                <Select value={editingProduct.category} onValueChange={(value) => setEditingProduct({...editingProduct, category: value})}>
                                   <SelectTrigger className="h-8 w-28">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {categories.map(cat => (
-                                      <SelectItem key={cat} value={cat}>
-                                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                                      </SelectItem>
+                                      <SelectItem key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>
@@ -371,48 +441,25 @@ export default function AdminPanel() {
                             </TableCell>
                             <TableCell className="font-medium">
                               {isEditing ? (
-                                <Input
-                                  value={editingProduct.name}
-                                  onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})}
-                                  className="h-8"
-                                />
-                              ) : (
-                                product.name
-                              )}
+                                <Input value={editingProduct.name} onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})} className="h-8" />
+                              ) : product.name}
                             </TableCell>
                             <TableCell>
                               {isEditing ? (
-                                <Input
-                                  value={editingProduct.duration}
-                                  onChange={(e) => setEditingProduct({...editingProduct, duration: e.target.value})}
-                                  className="h-8 w-20"
-                                />
-                              ) : (
-                                product.duration
-                              )}
+                                <Input value={editingProduct.duration} onChange={(e) => setEditingProduct({...editingProduct, duration: e.target.value})} className="h-8 w-20" />
+                              ) : product.duration}
                             </TableCell>
                             <TableCell>
                               {isEditing ? (
                                 <div className="flex items-center gap-1">
                                   <span>€</span>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={editingProduct.basePrice}
-                                    onChange={(e) => setEditingProduct({...editingProduct, basePrice: e.target.value})}
-                                    className="h-8 w-20"
-                                  />
+                                  <Input type="number" step="0.01" value={editingProduct.basePrice} onChange={(e) => setEditingProduct({...editingProduct, basePrice: e.target.value})} className="h-8 w-20" />
                                 </div>
-                              ) : (
-                                `€${product.basePrice}`
-                              )}
+                              ) : `€${product.basePrice}`}
                             </TableCell>
                             <TableCell>
                               {isEditing ? (
-                                <Select
-                                  value={editingProduct.active ? 'true' : 'false'}
-                                  onValueChange={(value) => setEditingProduct({...editingProduct, active: value === 'true'})}
-                                >
+                                <Select value={editingProduct.active ? 'true' : 'false'} onValueChange={(value) => setEditingProduct({...editingProduct, active: value === 'true'})}>
                                   <SelectTrigger className="h-8 w-24">
                                     <SelectValue />
                                   </SelectTrigger>
@@ -430,11 +477,7 @@ export default function AdminPanel() {
                             <TableCell className="text-right">
                               {isEditing ? (
                                 <div className="flex gap-1 justify-end">
-                                  <Button 
-                                    onClick={() => handleUpdateProduct(editingProduct.id, editingProduct)} 
-                                    size="sm" 
-                                    variant="default"
-                                  >
+                                  <Button onClick={() => handleUpdateProduct(editingProduct.id, editingProduct)} size="sm" variant="default">
                                     <Save className="h-4 w-4" />
                                   </Button>
                                   <Button onClick={() => setEditingProduct(null)} size="sm" variant="ghost">
@@ -442,9 +485,19 @@ export default function AdminPanel() {
                                   </Button>
                                 </div>
                               ) : (
-                                <Button onClick={() => startEditProduct(product)} variant="ghost" size="sm">
-                                  <Edit2 className="h-4 w-4" />
-                                </Button>
+                                <div className="flex gap-1 justify-end">
+                                  <Button onClick={() => startEditProduct(product)} variant="ghost" size="sm">
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="text-red-600 hover:text-red-700"
+                                    onClick={() => setDeleteDialog({ open: true, type: 'producto', id: product.id, name: product.name })}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               )}
                             </TableCell>
                           </TableRow>
@@ -466,12 +519,7 @@ export default function AdminPanel() {
                   <div className="flex gap-4 items-end">
                     <div className="flex-1">
                       <Label>Hora (formato 24h)</Label>
-                      <Input
-                        type="time"
-                        value={newSlot.time}
-                        onChange={(e) => setNewSlot({...newSlot, time: e.target.value})}
-                        className="mt-1"
-                      />
+                      <Input type="time" value={newSlot.time} onChange={(e) => setNewSlot({...newSlot, time: e.target.value})} className="mt-1" />
                     </div>
                     <Button onClick={handleCreateSlot}>
                       <Plus className="h-4 w-4 mr-2" />
@@ -484,15 +532,14 @@ export default function AdminPanel() {
               <Card>
                 <CardHeader>
                   <CardTitle>Franjas Horarias</CardTitle>
-                  <CardDescription>
-                    Gestiona las franjas horarias disponibles para salidas
-                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Hora</TableHead>
+                        <TableHead>Cap. Quads</TableHead>
+                        <TableHead>Cap. Buggies</TableHead>
                         <TableHead>Estado</TableHead>
                         <TableHead className="text-right">Acciones</TableHead>
                       </TableRow>
@@ -505,22 +552,22 @@ export default function AdminPanel() {
                           <TableRow key={slot.id}>
                             <TableCell className="font-medium text-lg">
                               {isEditing ? (
-                                <Input
-                                  type="time"
-                                  value={editingSlot.time}
-                                  onChange={(e) => setEditingSlot({...editingSlot, time: e.target.value})}
-                                  className="h-8 w-32"
-                                />
-                              ) : (
-                                slot.time
-                              )}
+                                <Input type="time" value={editingSlot.time} onChange={(e) => setEditingSlot({...editingSlot, time: e.target.value})} className="h-8 w-32" />
+                              ) : slot.time}
                             </TableCell>
                             <TableCell>
                               {isEditing ? (
-                                <Select
-                                  value={editingSlot.active ? 'true' : 'false'}
-                                  onValueChange={(value) => setEditingSlot({...editingSlot, active: value === 'true'})}
-                                >
+                                <Input type="number" value={editingSlot.quadCapacity} onChange={(e) => setEditingSlot({...editingSlot, quadCapacity: e.target.value})} className="h-8 w-16" />
+                              ) : (slot.quadCapacity || capacities.quad)}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input type="number" value={editingSlot.buggyCapacity} onChange={(e) => setEditingSlot({...editingSlot, buggyCapacity: e.target.value})} className="h-8 w-16" />
+                              ) : (slot.buggyCapacity || capacities.buggy)}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Select value={editingSlot.active ? 'true' : 'false'} onValueChange={(value) => setEditingSlot({...editingSlot, active: value === 'true'})}>
                                   <SelectTrigger className="h-8 w-24">
                                     <SelectValue />
                                   </SelectTrigger>
@@ -538,11 +585,7 @@ export default function AdminPanel() {
                             <TableCell className="text-right">
                               {isEditing ? (
                                 <div className="flex gap-1 justify-end">
-                                  <Button 
-                                    onClick={() => handleUpdateSlot(editingSlot.id, editingSlot)} 
-                                    size="sm" 
-                                    variant="default"
-                                  >
+                                  <Button onClick={() => handleUpdateSlot(editingSlot.id, editingSlot)} size="sm" variant="default">
                                     <Save className="h-4 w-4" />
                                   </Button>
                                   <Button onClick={() => setEditingSlot(null)} size="sm" variant="ghost">
@@ -550,9 +593,19 @@ export default function AdminPanel() {
                                   </Button>
                                 </div>
                               ) : (
-                                <Button onClick={() => startEditSlot(slot)} variant="ghost" size="sm">
-                                  <Edit2 className="h-4 w-4" />
-                                </Button>
+                                <div className="flex gap-1 justify-end">
+                                  <Button onClick={() => startEditSlot(slot)} variant="ghost" size="sm">
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="text-red-600 hover:text-red-700"
+                                    onClick={() => setDeleteDialog({ open: true, type: 'franja horaria', id: slot.id, name: slot.time })}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               )}
                             </TableCell>
                           </TableRow>
@@ -568,47 +621,125 @@ export default function AdminPanel() {
             <TabsContent value="capacity" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Capacidades por Categoría</CardTitle>
-                  <CardDescription>
-                    Define el número máximo de vehículos por franja horaria
-                  </CardDescription>
+                  <CardTitle>Capacidades por Defecto</CardTitle>
+                  <CardDescription>Define el número máximo de vehículos por franja horaria (se aplicará a todas las franjas)</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
-                      <Card>
+                      <Card className={editingCapacity ? 'ring-2 ring-blue-500' : ''}>
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <h3 className="text-lg font-semibold">Quads</h3>
+                              <h3 className="text-lg font-semibold">🏍️ Quads</h3>
                               <p className="text-sm text-muted-foreground">Capacidad máxima por slot</p>
                             </div>
-                            <div className="text-3xl font-bold text-blue-600">10</div>
+                            {editingCapacity ? (
+                              <Input 
+                                type="number" 
+                                value={capacities.quad} 
+                                onChange={(e) => setCapacities({...capacities, quad: parseInt(e.target.value) || 0})}
+                                className="w-20 text-2xl font-bold text-center"
+                              />
+                            ) : (
+                              <div className="text-3xl font-bold text-blue-600">{capacities.quad}</div>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
 
-                      <Card>
+                      <Card className={editingCapacity ? 'ring-2 ring-green-500' : ''}>
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <h3 className="text-lg font-semibold">Buggies</h3>
+                              <h3 className="text-lg font-semibold">🚙 Buggies</h3>
                               <p className="text-sm text-muted-foreground">Capacidad máxima por slot</p>
                             </div>
-                            <div className="text-3xl font-bold text-green-600">6</div>
+                            {editingCapacity ? (
+                              <Input 
+                                type="number" 
+                                value={capacities.buggy} 
+                                onChange={(e) => setCapacities({...capacities, buggy: parseInt(e.target.value) || 0})}
+                                className="w-20 text-2xl font-bold text-center"
+                              />
+                            ) : (
+                              <div className="text-3xl font-bold text-green-600">{capacities.buggy}</div>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
                     </div>
 
-                    <Card className="bg-blue-50 border-blue-200">
-                      <CardContent className="p-4">
-                        <p className="text-sm text-blue-800">
-                          <strong>Nota:</strong> Las capacidades controlan cuántos vehículos pueden salir en cada franja horaria.
-                          Para cambiar estos valores, edita la hoja "Capacity" en Google Sheets.
-                        </p>
-                      </CardContent>
-                    </Card>
+                    <div className="flex gap-2">
+                      {editingCapacity ? (
+                        <>
+                          <Button onClick={handleUpdateCapacities}>
+                            <Save className="h-4 w-4 mr-2" />
+                            Guardar Capacidades
+                          </Button>
+                          <Button variant="outline" onClick={() => setEditingCapacity(false)}>
+                            Cancelar
+                          </Button>
+                        </>
+                      ) : (
+                        <Button onClick={() => setEditingCapacity(true)}>
+                          <Edit2 className="h-4 w-4 mr-2" />
+                          Modificar Capacidades
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Categories Tab */}
+            <TabsContent value="categories" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Gestión de Categorías</CardTitle>
+                  <CardDescription>Añade o elimina categorías de vehículos</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input 
+                      value={newCategory} 
+                      onChange={(e) => setNewCategory(e.target.value)} 
+                      placeholder="Nueva categoría (ej: moto, jet ski)"
+                      className="max-w-xs"
+                    />
+                    <Button onClick={handleAddCategory}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Añadir
+                    </Button>
+                  </div>
+
+                  <div className="grid gap-2 md:grid-cols-3">
+                    {categories.map(cat => {
+                      const productCount = products.filter(p => p.category === cat).length;
+                      const isDefault = cat === 'quad' || cat === 'buggy';
+                      
+                      return (
+                        <Card key={cat} className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium capitalize">{cat}</div>
+                              <div className="text-xs text-muted-foreground">{productCount} producto(s)</div>
+                            </div>
+                            {!isDefault && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-red-600 hover:text-red-700"
+                                onClick={() => handleDeleteCategory(cat)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
