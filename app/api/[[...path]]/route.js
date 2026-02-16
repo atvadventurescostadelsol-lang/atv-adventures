@@ -256,7 +256,8 @@ async function handleGet(request, path) {
     try {
       const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
       
-      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AK');
+      // Read all columns including paymentSplitCruise, gygDiscount, isPendingCruise
+      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AO');
       const departures = parseSheetToObjects(departuresData);
       
       const todayDepartures = departures.filter(d => d.date === date);
