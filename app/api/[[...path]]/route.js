@@ -633,12 +633,12 @@ async function handlePost(request, path) {
             financials.vatAmount,
             depositPercent || 0.20,
             financials.depositAmount,
-            'false',
+            isPendingCruise ? 'false' : 'false', // depositPaid
             '',
             '',
             financials.remainingAmount,
-            'false',
-            '',
+            isPendingCruise ? 'false' : 'false', // remainingPaid
+            isPendingCruise ? 'cruceros' : '', // remainingPaidMethod
             '',
             salesChannel || 'otros',
             expectedPayoutDate,
@@ -646,6 +646,9 @@ async function handlePost(request, path) {
             paymentSplitCash.toFixed(2),
             paymentSplitBank.toFixed(2),
             paymentSplitGyg.toFixed(2),
+            (paymentSplitCruise || 0).toFixed(2), // cruise split
+            gygDiscount.toFixed(2), // gygDiscount
+            isPendingCruise ? 'true' : 'false', // isPendingCruise flag
             now,
             userId,
             now,
