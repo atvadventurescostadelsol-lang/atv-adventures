@@ -589,10 +589,16 @@ export default function Reports() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* General Summary */}
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-5">
               <StatCard label="Total Bruto" value={`€${results.totals.totalGross.toFixed(2)}`} primary />
               <StatCard label="Base Neta" value={`€${results.totals.netBase.toFixed(2)}`} />
               <StatCard label="IVA (21%)" value={`€${results.totals.vatAmount.toFixed(2)}`} />
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-4">
+                  <div className="text-sm text-blue-600">IVA2 (sin efectivo)</div>
+                  <div className="text-2xl font-bold text-blue-700">€{results.totals.vatAmount2.toFixed(2)}</div>
+                </CardContent>
+              </Card>
               <StatCard 
                 label="Vehículos" 
                 value={results.totals.quadCount + results.totals.buggyCount}
