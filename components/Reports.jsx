@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Search, FileText, Calendar, TrendingUp } from 'lucide-react';
+import { Download, Search, FileText, Calendar, TrendingUp, Car } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -66,8 +66,15 @@ export default function Reports() {
       totalGross: 0,
       netBase: 0,
       vatAmount: 0,
+      // Quad stats
       quadCount: 0,
+      quadGross: 0,
+      quadNet: 0,
+      // Buggy stats
       buggyCount: 0,
+      buggyGross: 0,
+      buggyNet: 0,
+      // Payment channels
       webTotal: 0,
       cashTotal: 0,
       bankTotal: 0,
@@ -75,14 +82,23 @@ export default function Reports() {
     };
 
     data.forEach(d => {
-      stats.totalGross += parseFloat(d.totalGross || 0);
-      stats.netBase += parseFloat(d.netBase || 0);
-      stats.vatAmount += parseFloat(d.vatAmount || 0);
+      const gross = parseFloat(d.totalGross || 0);
+      const net = parseFloat(d.netBase || 0);
+      const vat = parseFloat(d.vatAmount || 0);
+      const vehicles = parseInt(d.vehiclesCount || 0);
+      
+      stats.totalGross += gross;
+      stats.netBase += net;
+      stats.vatAmount += vat;
       
       if (d.category === 'quad') {
-        stats.quadCount += parseInt(d.vehiclesCount || 0);
+        stats.quadCount += vehicles;
+        stats.quadGross += gross;
+        stats.quadNet += net;
       } else {
-        stats.buggyCount += parseInt(d.vehiclesCount || 0);
+        stats.buggyCount += vehicles;
+        stats.buggyGross += gross;
+        stats.buggyNet += net;
       }
 
       stats.webTotal += parseFloat(d.paymentSplitWeb || 0);
@@ -102,20 +118,25 @@ export default function Reports() {
 
     setLoading(true);
     try {
-      let url = `/api/departures?`;
-      const params = [];
-      
-      if (category !== 'all') params.push(`category=${category}`);
-      if (channel !== 'all') params.push(`channel=${channel}`);
-      
-      url += params.join('&');
-
-      const res = await fetch(url);
+      const res = await fetch('/api/departures');
       if (res.ok) {
-        const data = await res.json();
-        const filtered = data.filter(d => d.date >= startDate && d.date <= endDate);
-        const totals = calculateStats(filtered, `${startDate} - ${endDate}`);
-        setResults({ data: filtered, totals });
+        let data = await res.json();
+        
+        // Filter by date range
+        data = data.filter(d => d.date >= startDate && d.date <= endDate);
+        
+        // Filter by category if selected
+        if (category !== 'all') {
+          data = data.filter(d => d.category === category);
+        }
+        
+        // Filter by channel if selected
+        if (channel !== 'all') {
+          data = data.filter(d => d.salesChannel === channel);
+        }
+        
+        const totals = calculateStats(data, `${startDate} - ${endDate}`);
+        setResults({ data, totals });
       }
     } catch (error) {
       toast.error('Error al generar el reporte');
@@ -180,7 +201,7 @@ export default function Reports() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `reporte-${startDate}-${endDate}.csv`;
+    a.download = `reporte-${category}-${startDate}-${endDate}.csv`;
     a.click();
     URL.revokeObjectURL(url);
 
@@ -189,6 +210,8 @@ export default function Reports() {
 
   function exportToPDF() {
     if (!results) return;
+
+    const categoryLabel = category === 'all' ? 'Todos' : category === 'quad' ? 'Solo Quads' : 'Solo Buggies';
 
     // Create printable HTML
     const printContent = `
@@ -206,21 +229,27 @@ export default function Reports() {
           .stat-card .value { font-size: 24px; font-weight: bold; color: #111827; }
           .stat-card.primary { background: linear-gradient(135deg, #ea580c, #f97316); color: white; }
           .stat-card.primary .label, .stat-card.primary .value { color: white; }
+          .stat-card.quad { background: linear-gradient(135deg, #3b82f6, #60a5fa); color: white; }
+          .stat-card.quad .label, .stat-card.quad .value { color: white; }
+          .stat-card.buggy { background: linear-gradient(135deg, #22c55e, #4ade80); color: white; }
+          .stat-card.buggy .label, .stat-card.buggy .value { color: white; }
           table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
           th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
           th { background: #f9fafb; font-weight: 600; }
           tr:nth-child(even) { background: #f9fafb; }
           .text-right { text-align: right; }
           .footer { margin-top: 30px; text-align: center; color: #9ca3af; font-size: 11px; }
+          .filter-info { background: #fef3c7; padding: 10px; border-radius: 8px; margin-bottom: 20px; }
           @media print { body { padding: 0; } }
         </style>
       </head>
       <body>
         <h1>Reporte de Operaciones ATV</h1>
         <p><strong>Período:</strong> ${startDate} al ${endDate}</p>
+        <p><strong>Filtro:</strong> ${categoryLabel}</p>
         <p><strong>Generado:</strong> ${new Date().toLocaleString('es-ES')}</p>
         
-        <h2>Resumen</h2>
+        <h2>Resumen General</h2>
         <div class="summary">
           <div class="stat-card primary">
             <div class="label">Total Bruto</div>
@@ -240,15 +269,17 @@ export default function Reports() {
           </div>
         </div>
         
-        <h2>Desglose por Tipo</h2>
+        <h2>Desglose por Tipo de Vehículo</h2>
         <div class="summary">
-          <div class="stat-card">
-            <div class="label">Quads</div>
-            <div class="value">${results.totals.quadCount}</div>
+          <div class="stat-card quad">
+            <div class="label">Quads - Ingresos</div>
+            <div class="value">€${results.totals.quadGross.toFixed(2)}</div>
+            <div class="label" style="margin-top: 5px;">${results.totals.quadCount} vehículos</div>
           </div>
-          <div class="stat-card">
-            <div class="label">Buggies</div>
-            <div class="value">${results.totals.buggyCount}</div>
+          <div class="stat-card buggy">
+            <div class="label">Buggies - Ingresos</div>
+            <div class="value">€${results.totals.buggyGross.toFixed(2)}</div>
+            <div class="label" style="margin-top: 5px;">${results.totals.buggyCount} vehículos</div>
           </div>
         </div>
 
@@ -317,9 +348,9 @@ export default function Reports() {
     toast.success('Preparando PDF para impresión');
   }
 
-  function StatCard({ label, value, subValue, primary }) {
+  function StatCard({ label, value, subValue, primary, className }) {
     return (
-      <Card className={primary ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white' : ''}>
+      <Card className={primary ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white' : className || ''}>
         <CardContent className="p-4">
           <div className={`text-sm ${primary ? 'opacity-90' : 'text-muted-foreground'}`}>{label}</div>
           <div className="text-2xl font-bold">{value}</div>
@@ -344,9 +375,13 @@ export default function Reports() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">€{periodStats.weekly.totalGross.toFixed(2)}</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Q:{periodStats.weekly.quadCount} B:{periodStats.weekly.buggyCount} | 
-                Efectivo: €{periodStats.weekly.cashTotal.toFixed(0)} | Banco: €{periodStats.weekly.bankTotal.toFixed(0)}
+              <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                <div className="bg-blue-50 p-2 rounded">
+                  <span className="text-blue-700 font-medium">Quads:</span> €{periodStats.weekly.quadGross.toFixed(0)} ({periodStats.weekly.quadCount})
+                </div>
+                <div className="bg-green-50 p-2 rounded">
+                  <span className="text-green-700 font-medium">Buggies:</span> €{periodStats.weekly.buggyGross.toFixed(0)} ({periodStats.weekly.buggyCount})
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -361,9 +396,13 @@ export default function Reports() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">€{periodStats.monthly.totalGross.toFixed(2)}</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Q:{periodStats.monthly.quadCount} B:{periodStats.monthly.buggyCount} | 
-                Efectivo: €{periodStats.monthly.cashTotal.toFixed(0)} | Banco: €{periodStats.monthly.bankTotal.toFixed(0)}
+              <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                <div className="bg-blue-50 p-2 rounded">
+                  <span className="text-blue-700 font-medium">Quads:</span> €{periodStats.monthly.quadGross.toFixed(0)} ({periodStats.monthly.quadCount})
+                </div>
+                <div className="bg-green-50 p-2 rounded">
+                  <span className="text-green-700 font-medium">Buggies:</span> €{periodStats.monthly.buggyGross.toFixed(0)} ({periodStats.monthly.buggyCount})
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -378,9 +417,13 @@ export default function Reports() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">€{periodStats.yearly.totalGross.toFixed(2)}</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Q:{periodStats.yearly.quadCount} B:{periodStats.yearly.buggyCount} | 
-                Efectivo: €{periodStats.yearly.cashTotal.toFixed(0)} | Banco: €{periodStats.yearly.bankTotal.toFixed(0)}
+              <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                <div className="bg-blue-50 p-2 rounded">
+                  <span className="text-blue-700 font-medium">Quads:</span> €{periodStats.yearly.quadGross.toFixed(0)} ({periodStats.yearly.quadCount})
+                </div>
+                <div className="bg-green-50 p-2 rounded">
+                  <span className="text-green-700 font-medium">Buggies:</span> €{periodStats.yearly.buggyGross.toFixed(0)} ({periodStats.yearly.buggyCount})
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -429,15 +472,15 @@ export default function Reports() {
               />
             </div>
             <div>
-              <Label htmlFor="category">Categoría</Label>
+              <Label htmlFor="category">Tipo de Vehículo</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="quad">Quads</SelectItem>
-                  <SelectItem value="buggy">Buggies</SelectItem>
+                  <SelectItem value="all">🚗 Todos (Quads + Buggies)</SelectItem>
+                  <SelectItem value="quad">🏍️ Solo Quads</SelectItem>
+                  <SelectItem value="buggy">🚙 Solo Buggies</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -496,20 +539,58 @@ export default function Reports() {
           <CardHeader>
             <CardTitle>Resultados</CardTitle>
             <CardDescription>
-              {results.totals.count} entrada(s) encontrada(s)
+              {results.totals.count} entrada(s) encontrada(s) 
+              {category !== 'all' && ` - Filtro: ${category === 'quad' ? 'Solo Quads' : 'Solo Buggies'}`}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Summary */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {/* General Summary */}
+            <div className="grid gap-4 md:grid-cols-4">
               <StatCard label="Total Bruto" value={`€${results.totals.totalGross.toFixed(2)}`} primary />
               <StatCard label="Base Neta" value={`€${results.totals.netBase.toFixed(2)}`} />
               <StatCard label="IVA (21%)" value={`€${results.totals.vatAmount.toFixed(2)}`} />
               <StatCard 
                 label="Vehículos" 
                 value={results.totals.quadCount + results.totals.buggyCount}
-                subValue={`Q: ${results.totals.quadCount} | B: ${results.totals.buggyCount}`}
               />
+            </div>
+
+            {/* Vehicle Type Breakdown */}
+            <div>
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Car className="h-5 w-5" />
+                Desglose por Tipo de Vehículo
+              </h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="text-sm opacity-90">Quads - Ingresos</div>
+                        <div className="text-3xl font-bold">€{results.totals.quadGross.toFixed(2)}</div>
+                        <div className="text-sm opacity-80 mt-1">
+                          {results.totals.quadCount} vehículos | Neto: €{results.totals.quadNet.toFixed(2)}
+                        </div>
+                      </div>
+                      <div className="text-4xl opacity-30">🏍️</div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="text-sm opacity-90">Buggies - Ingresos</div>
+                        <div className="text-3xl font-bold">€{results.totals.buggyGross.toFixed(2)}</div>
+                        <div className="text-sm opacity-80 mt-1">
+                          {results.totals.buggyCount} vehículos | Neto: €{results.totals.buggyNet.toFixed(2)}
+                        </div>
+                      </div>
+                      <div className="text-4xl opacity-30">🚙</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
 
             {/* Payment Breakdown */}
@@ -547,7 +628,7 @@ export default function Reports() {
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
                             d.category === 'quad' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
                           }`}>
-                            {d.category === 'quad' ? 'Quad' : 'Buggy'}
+                            {d.category === 'quad' ? '🏍️ Quad' : '🚙 Buggy'}
                           </span>
                         </TableCell>
                         <TableCell>{d.productName}</TableCell>
