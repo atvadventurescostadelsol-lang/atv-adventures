@@ -181,7 +181,7 @@ async function handleGet(request, path) {
     try {
       const data = await getSheetData(SPREADSHEET_ID, 'TimeSlots!A:E');
       const slots = parseSheetToObjects(data);
-      const active = slots.filter(s => s.active === 'true');
+      const active = slots.filter(s => s.active.toLowerCase() === 'true');
       return NextResponse.json(active);
     } catch (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
