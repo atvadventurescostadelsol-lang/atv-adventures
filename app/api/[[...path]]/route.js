@@ -105,7 +105,7 @@ async function handleGet(request, path) {
   // Get all departures
   if (path === 'departures') {
     try {
-      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AG');
+      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AO');
       const departures = parseSheetToObjects(data);
       
       // Apply filters
