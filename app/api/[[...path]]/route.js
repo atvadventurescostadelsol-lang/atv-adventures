@@ -856,6 +856,50 @@ async function handlePut(request, path) {
     }
   }
 
+  // Update time slot
+  if (path.startsWith('timeslots/')) {
+    try {
+      const id = path.split('/')[1];
+      const { time, active, userId = 'system' } = body;
+
+      // Get current data
+      const data = await getSheetData(SPREADSHEET_ID, 'TimeSlots!A:E');
+      const slots = parseSheetToObjects(data);
+      const index = slots.findIndex(s => s.id === id);
+
+      if (index === -1) {
+        return NextResponse.json({ error: 'Time slot not found' }, { status: 404 });
+      }
+
+      const current = slots[index];
+      const now = new Date().toISOString();
+      
+      const updated = [
+        id,
+        time || current.time,
+        current.quadCapacity || '10',
+        current.buggyCapacity || '6',
+        active !== undefined ? (active ? 'TRUE' : 'FALSE') : current.active,
+      ];
+
+      await updateSheetData(SPREADSHEET_ID, `TimeSlots!A${index + 2}:E${index + 2}`, [updated]);
+      await addAuditLog('UPDATE', 'TimeSlot', id, { before: current, after: updated }, userId, 'Admin');
+
+      return NextResponse.json({
+        success: true,
+        slot: {
+          id,
+          time: updated[1],
+          quadCapacity: updated[2],
+          buggyCapacity: updated[3],
+          active: updated[4] === 'TRUE',
+        }
+      });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   return NextResponse.json({ error: 'Not found' }, { status: 404 });
 }
 
