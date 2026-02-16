@@ -491,27 +491,27 @@ export default function Reports() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Generador de Reportes</CardTitle>
-          <CardDescription>Genera reportes personalizados de tus operaciones</CardDescription>
+          <CardTitle>{t('reportGenerator')}</CardTitle>
+          <CardDescription>{t('generateCustomReports')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Quick Date Buttons */}
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={() => setQuickDate('week')}>
-              Esta Semana
+              {t('thisWeek')}
             </Button>
             <Button variant="outline" size="sm" onClick={() => setQuickDate('month')}>
-              Este Mes
+              {t('thisMonth')}
             </Button>
             <Button variant="outline" size="sm" onClick={() => setQuickDate('year')}>
-              Este Año
+              {t('thisYear')}
             </Button>
           </div>
 
           {/* Filters */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div>
-              <Label htmlFor="startDate">Fecha Inicio</Label>
+              <Label htmlFor="startDate">{t('startDate')}</Label>
               <Input
                 id="startDate"
                 type="date"
@@ -521,7 +521,7 @@ export default function Reports() {
               />
             </div>
             <div>
-              <Label htmlFor="endDate">Fecha Fin</Label>
+              <Label htmlFor="endDate">{t('endDate')}</Label>
               <Input
                 id="endDate"
                 type="date"
@@ -531,31 +531,31 @@ export default function Reports() {
               />
             </div>
             <div>
-              <Label htmlFor="category">Tipo de Vehículo</Label>
+              <Label htmlFor="category">{t('vehicleType')}</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">🚗 Todos (Quads + Buggies)</SelectItem>
-                  <SelectItem value="quad">🏍️ Solo Quads</SelectItem>
-                  <SelectItem value="buggy">🚙 Solo Buggies</SelectItem>
+                  <SelectItem value="all">🚗 {t('allVehicles')}</SelectItem>
+                  <SelectItem value="quad">🏍️ {t('onlyQuads')}</SelectItem>
+                  <SelectItem value="buggy">🚙 {t('onlyBuggies')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="channel">Canal</Label>
+              <Label htmlFor="channel">{t('channel')}</Label>
               <Select value={channel} onValueChange={setChannel}>
                 <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="web">Web</SelectItem>
+                  <SelectItem value="all">{t('all')}</SelectItem>
+                  <SelectItem value="web">{t('web')}</SelectItem>
                   <SelectItem value="gyg">GetYourGuide</SelectItem>
-                  <SelectItem value="cruceros">Cruceros</SelectItem>
-                  <SelectItem value="colaborador">Colaborador</SelectItem>
-                  <SelectItem value="otros">Otros</SelectItem>
+                  <SelectItem value="cruceros">{t('cruises')}</SelectItem>
+                  <SelectItem value="colaborador">{t('collaborator')}</SelectItem>
+                  <SelectItem value="otros">{t('others')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
