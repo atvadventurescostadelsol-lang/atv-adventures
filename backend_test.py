@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 import time
 
 # Base URL from environment
-BASE_URL = "https://departure-hub-2.preview.emergentagent.com"
+BASE_URL = "https://departure-income-hub.preview.emergentagent.com"
 
 def test_api_endpoint(method, endpoint, data=None, expected_status=200):
     """Helper function to test API endpoints"""
