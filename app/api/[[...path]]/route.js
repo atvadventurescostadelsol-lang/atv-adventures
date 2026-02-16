@@ -8,6 +8,7 @@ const {
   parseSheetToObjects,
   objectsToSheetRows,
 } = require('@/lib/google-sheets');
+const { safeAppendSheetData } = require('@/lib/safe-append');
 import { v4 as uuidv4 } from 'uuid';
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
