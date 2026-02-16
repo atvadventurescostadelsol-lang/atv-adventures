@@ -619,7 +619,7 @@ export default function AdminPanel() {
                                     variant="ghost" 
                                     size="sm" 
                                     className="text-red-600 hover:text-red-700"
-                                    onClick={() => setDeleteDialog({ open: true, type: 'franja horaria', id: slot.id, name: slot.time })}
+                                    onClick={() => setDeleteDialog({ open: true, type: 'time slot', id: slot.id, name: slot.time })}
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
@@ -639,8 +639,8 @@ export default function AdminPanel() {
             <TabsContent value="capacity" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Capacidades por Defecto</CardTitle>
-                  <CardDescription>Define el número máximo de vehículos por franja horaria (se aplicará a todas las franjas)</CardDescription>
+                  <CardTitle>{t('capacities')}</CardTitle>
+                  <CardDescription>{t('maxVehicles')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -649,8 +649,8 @@ export default function AdminPanel() {
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <h3 className="text-lg font-semibold">🏍️ Quads</h3>
-                              <p className="text-sm text-muted-foreground">Capacidad máxima por slot</p>
+                              <h3 className="text-lg font-semibold">🏍️ {t('quads')}</h3>
+                              <p className="text-sm text-muted-foreground">{t('quadCapacity')}</p>
                             </div>
                             {editingCapacity ? (
                               <Input 
@@ -670,8 +670,8 @@ export default function AdminPanel() {
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between">
                             <div>
-                              <h3 className="text-lg font-semibold">🚙 Buggies</h3>
-                              <p className="text-sm text-muted-foreground">Capacidad máxima por slot</p>
+                              <h3 className="text-lg font-semibold">🚙 {t('buggies')}</h3>
+                              <p className="text-sm text-muted-foreground">{t('buggyCapacity')}</p>
                             </div>
                             {editingCapacity ? (
                               <Input 
@@ -693,10 +693,10 @@ export default function AdminPanel() {
                         <>
                           <Button onClick={handleUpdateCapacities}>
                             <Save className="h-4 w-4 mr-2" />
-                            Guardar Capacidades
+                            {t('modifyCapacity')}
                           </Button>
                           <Button variant="outline" onClick={() => setEditingCapacity(false)}>
-                            Cancelar
+                            {t('cancel')}
                           </Button>
                         </>
                       ) : (
