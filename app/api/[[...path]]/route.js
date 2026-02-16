@@ -256,6 +256,8 @@ async function handleGet(request, path) {
         buggyCount: 0,
         cashTotal: 0,
         bankTotal: 0,
+        webTotal: 0,
+        gygTotal: 0,
         depositsCollected: 0,
         remainingExpected: 0,
         departuresBySlot: {},
@@ -276,24 +278,11 @@ async function handleGet(request, path) {
           stats.buggyCount += parseInt(d.vehiclesCount || 0);
         }
 
-        if (d.depositPaid === 'true') {
-          stats.depositsCollected += parseFloat(d.depositAmount || 0);
-          if (d.depositPaidMethod === 'cash') {
-            stats.cashTotal += parseFloat(d.depositAmount || 0);
-          } else {
-            stats.bankTotal += parseFloat(d.depositAmount || 0);
-          }
-        }
-
-        if (d.remainingPaid === 'true') {
-          if (d.remainingPaidMethod === 'cash') {
-            stats.cashTotal += parseFloat(d.remainingAmount || 0);
-          } else {
-            stats.bankTotal += parseFloat(d.remainingAmount || 0);
-          }
-        } else {
-          stats.remainingExpected += parseFloat(d.remainingAmount || 0);
-        }
+        // Accumulate payment splits
+        stats.webTotal += parseFloat(d.paymentSplitWeb || 0);
+        stats.cashTotal += parseFloat(d.paymentSplitCash || 0);
+        stats.bankTotal += parseFloat(d.paymentSplitBank || 0);
+        stats.gygTotal += parseFloat(d.paymentSplitGyg || 0);
 
         // Group by time slot
         if (!stats.departuresBySlot[d.timeSlot]) {
