@@ -659,7 +659,7 @@ async function handlePost(request, path) {
               firstValues: entry.slice(0, 5)
             });
             
-            const appendResult = await appendSheetData(SPREADSHEET_ID, 'Departures!A:AG', [entry]);
+            const appendResult = await safeAppendSheetData(SPREADSHEET_ID, 'Departures', [entry]);
             console.log('Entry appended successfully, result:', appendResult);
           } catch (appendError) {
             console.error('ERROR appending to sheet:', appendError);
