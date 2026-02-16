@@ -485,13 +485,16 @@ async function handlePost(request, path) {
         paymentSplitCash.toFixed(2),
         paymentSplitBank.toFixed(2),
         paymentSplitGyg.toFixed(2),
+        '0.00', // paymentSplitCruise
+        '0.00', // gygDiscount
+        'false', // isPendingCruise
         now,
         userId,
         now,
         userId,
       ];
 
-      await appendSheetData(SPREADSHEET_ID, 'Departures!A:AG', [entry]);
+      await appendSheetData(SPREADSHEET_ID, 'Departures!A:AO', [entry]);
       
       await addAuditLog('CREATE', 'Departure', id, { entry }, userId, userName);
 
