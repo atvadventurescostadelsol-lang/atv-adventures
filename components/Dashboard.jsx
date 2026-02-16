@@ -139,17 +139,25 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Pagos Recibidos</CardDescription>
-            <CardTitle className="text-3xl">€{(stats.cashTotal + stats.bankTotal).toFixed(2)}</CardTitle>
+            <CardTitle className="text-3xl">€{((stats.cashTotal || 0) + (stats.bankTotal || 0) + (stats.webTotal || 0) + (stats.gygTotal || 0)).toFixed(2)}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <span className="font-medium">€{stats.cashTotal.toFixed(2)}</span>
+                <span className="font-medium">€{(stats.cashTotal || 0).toFixed(2)}</span>
                 <span className="text-muted-foreground"> Efectivo</span>
               </div>
               <div>
-                <span className="font-medium">€{stats.bankTotal.toFixed(2)}</span>
+                <span className="font-medium">€{(stats.bankTotal || 0).toFixed(2)}</span>
                 <span className="text-muted-foreground"> Banco</span>
+              </div>
+              <div>
+                <span className="font-medium">€{(stats.webTotal || 0).toFixed(2)}</span>
+                <span className="text-muted-foreground"> Web</span>
+              </div>
+              <div>
+                <span className="font-medium">€{(stats.gygTotal || 0).toFixed(2)}</span>
+                <span className="text-muted-foreground"> GYG</span>
               </div>
             </div>
           </CardContent>
