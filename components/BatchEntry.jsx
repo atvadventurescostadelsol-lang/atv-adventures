@@ -386,16 +386,16 @@ export default function BatchEntry() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Nueva Entrada de Salidas</CardTitle>
+          <CardTitle>{t('newTourEntry')}</CardTitle>
           <CardDescription>
-            Crea una o múltiples salidas con fraccionamiento de pagos por cantidad
+            {t('createSingleOrMultiple')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Date and Time Selection */}
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label htmlFor="date">Fecha</Label>
+              <Label htmlFor="date">{t('date')}</Label>
               <Input
                 id="date"
                 type="date"
@@ -405,10 +405,10 @@ export default function BatchEntry() {
               />
             </div>
             <div>
-              <Label htmlFor="timeSlot">Franja Horaria</Label>
+              <Label htmlFor="timeSlot">{t('timeSlot')}</Label>
               <Select value={timeSlot} onValueChange={setTimeSlot}>
                 <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Selecciona hora" />
+                  <SelectValue placeholder={t('selectTime')} />
                 </SelectTrigger>
                 <SelectContent>
                   {timeSlots.map(slot => (
@@ -426,8 +426,8 @@ export default function BatchEntry() {
                 <AlertDescription>
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="font-semibold">Quads:</span>
-                      <span className="ml-2">{quadTotal} / {capacity.quad.available} disponibles</span>
+                      <span className="font-semibold">{t('quads')}:</span>
+                      <span className="ml-2">{quadTotal} / {capacity.quad.available} {t('available')}</span>
                     </div>
                     {quadExceeds ? (
                       <AlertCircle className="h-5 w-5 text-red-600" />
