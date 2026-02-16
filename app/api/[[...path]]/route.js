@@ -530,22 +530,147 @@ async function handlePost(request, path) {
 
       for (const entryData of entries) {
         try {
-          const createUrl = new URL(request.url);
-          createUrl.pathname = '/api/departures';
-          
-          const res = await fetch(createUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...entryData, userId, userName }),
-          });
+          const {
+            date,
+            timeSlot,
+            category,
+            productId,
+            vehiclesCount,
+            groupLabel,
+            notes,
+            depositPercent,
+            salesChannel,
+            paymentSplit,
+          } = entryData;
 
-          const result = await res.json();
-          
-          if (res.ok) {
-            created.push(result);
-          } else {
-            errors.push({ entry: entryData, error: result.error });
+          // Validate required fields
+          if (!date || !timeSlot || !category || !productId || !vehiclesCount) {
+            errors.push({ entry: entryData, error: 'Missing required fields' });
+            continue;
           }
+
+          // Get product and pricing
+          const productsData = await getSheetData(SPREADSHEET_ID, 'Products!A:H');
+          const products = parseSheetToObjects(productsData);
+          const product = products.find(p => p.id === productId);
+
+          if (!product) {
+            errors.push({ entry: entryData, error: 'Product not found' });
+            continue;
+          }
+
+          const effectivePrice = parseFloat(product.basePrice);
+
+          // Calculate financials
+          const financials = calculateFinancials(
+            parseInt(vehiclesCount),
+            effectivePrice,
+            parseFloat(depositPercent || 0.20)
+          );
+
+          // Calculate payout date
+          const expectedPayoutDate = calculatePayoutDate(salesChannel || 'otros', date);
+
+          // Process payment splits
+          const totalGross = financials.totalGross;
+          let paymentSplitWeb = 0;
+          let paymentSplitCash = 0;
+          let paymentSplitBank = 0;
+          let paymentSplitGyg = 0;
+
+          if (paymentSplit && Array.isArray(paymentSplit)) {
+            paymentSplit.forEach(split => {
+              const amount = (totalGross * split.percentage) / 100;
+              switch(split.method) {
+                case 'web':
+                  paymentSplitWeb = amount;
+                  break;
+                case 'cash':
+                  paymentSplitCash = amount;
+                  break;
+                case 'bank':
+                  paymentSplitBank = amount;
+                  break;
+                case 'gyg':
+                  paymentSplitGyg = amount;
+                  break;
+              }
+            });
+          } else {
+            // Default: all to sales channel
+            switch(salesChannel) {
+              case 'web':
+                paymentSplitWeb = totalGross;
+                break;
+              case 'gyg':
+                paymentSplitGyg = totalGross;
+                break;
+              default:
+                paymentSplitCash = totalGross;
+            }
+          }
+
+          // Create entry
+          const id = uuidv4();
+          const now = new Date().toISOString();
+          
+          const entry = [
+            id,
+            date,
+            timeSlot,
+            category,
+            productId,
+            product.name,
+            vehiclesCount,
+            groupLabel || '',
+            notes || '',
+            effectivePrice,
+            financials.totalGross,
+            financials.vatRate,
+            financials.netBase,
+            financials.vatAmount,
+            depositPercent || 0.20,
+            financials.depositAmount,
+            'false',
+            '',
+            '',
+            financials.remainingAmount,
+            'false',
+            '',
+            '',
+            salesChannel || 'otros',
+            expectedPayoutDate,
+            paymentSplitWeb.toFixed(2),
+            paymentSplitCash.toFixed(2),
+            paymentSplitBank.toFixed(2),
+            paymentSplitGyg.toFixed(2),
+            now,
+            userId,
+            now,
+            userId,
+          ];
+
+          await appendSheetData(SPREADSHEET_ID, 'Departures!A:AG', [entry]);
+          await addAuditLog('CREATE', 'Departure', id, { entry }, userId, userName);
+
+          created.push({
+            success: true,
+            id,
+            entry: {
+              id,
+              date,
+              timeSlot,
+              category,
+              productId,
+              productName: product.name,
+              vehiclesCount,
+              groupLabel,
+              notes,
+              ...financials,
+              salesChannel: salesChannel || 'otros',
+              expectedPayoutDate,
+            }
+          });
         } catch (error) {
           errors.push({ entry: entryData, error: error.message });
         }
