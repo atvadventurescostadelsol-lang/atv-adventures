@@ -240,7 +240,7 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                   <div className="flex items-center gap-2 mb-4">
                     <Clock className="h-5 w-5 text-orange-600" />
                     <h3 className="font-semibold text-lg">{timeSlot}</h3>
-                    <Badge variant="secondary">{slotDepartures.length} entrada(s)</Badge>
+                    <Badge variant="secondary">{slotDepartures.length} {t('entries')}</Badge>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {slotDepartures.map((dep, idx) => (
@@ -252,7 +252,7 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                           onClick={() => setDeleteDialog({
                             open: true,
                             departureId: dep.id,
-                            departureName: `${dep.productName} - ${dep.groupLabel || 'Sin grupo'}`
+                            departureName: `${dep.productName} - ${dep.groupLabel || (language === 'es' ? 'Sin grupo' : 'No group')}`
                           })}
                         >
                           <Trash2 className="h-3 w-3" />
@@ -266,18 +266,18 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                           </div>
                           <p className="text-sm font-medium mb-1">{dep.productName}</p>
                           {dep.groupLabel && (
-                            <p className="text-xs text-muted-foreground mb-1">Grupo: {dep.groupLabel}</p>
+                            <p className="text-xs text-muted-foreground mb-1">{t('group')}: {dep.groupLabel}</p>
                           )}
                           <div className="flex items-center justify-between text-sm mt-2 pt-2 border-t">
-                            <span className="text-muted-foreground">Total:</span>
+                            <span className="text-muted-foreground">{t('total')}:</span>
                             <span className="font-semibold">€{parseNumber(dep.totalGross).toFixed(2)}</span>
                           </div>
                           <div className="flex gap-2 mt-2">
                             {dep.depositPaid === 'true' && (
-                              <Badge variant="outline" className="text-xs">✓ Depósito</Badge>
+                              <Badge variant="outline" className="text-xs">✓ {t('deposit')}</Badge>
                             )}
                             {dep.remainingPaid === 'true' && (
-                              <Badge variant="outline" className="text-xs">✓ Completo</Badge>
+                              <Badge variant="outline" className="text-xs">✓ {t('complete')}</Badge>
                             )}
                           </div>
                         </CardContent>
