@@ -632,7 +632,19 @@ async function handlePost(request, path) {
             userId,
           ];
 
+          console.log('Appending entry:', {
+            id,
+            date,
+            timeSlot,
+            category,
+            productName: product.name,
+            vehiclesCount,
+            totalGross: financials.totalGross,
+            entryLength: entry.length
+          });
+
           await appendSheetData(SPREADSHEET_ID, 'Departures!A:AG', [entry]);
+          console.log('Entry appended successfully');
           await addAuditLog('CREATE', 'Departure', id, { entry }, userId, userName);
 
           created.push({
