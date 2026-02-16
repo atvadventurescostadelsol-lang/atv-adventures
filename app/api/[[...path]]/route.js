@@ -563,6 +563,51 @@ async function handlePost(request, path) {
     }
   }
 
+  // Create/Update product
+  if (path === 'products') {
+    try {
+      const { name, category, duration, basePrice, active = true, userId = 'system' } = body;
+
+      if (!name || !category || !duration || !basePrice) {
+        return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      }
+
+      const id = uuidv4();
+      const now = new Date().toISOString();
+
+      const productRow = [
+        id,
+        category,
+        name,
+        duration,
+        basePrice,
+        active ? 'TRUE' : 'FALSE',
+        now,
+        now,
+      ];
+
+      await appendSheetData(SPREADSHEET_ID, 'Products!A:H', [productRow]);
+      await addAuditLog('CREATE', 'Product', id, { product: productRow }, userId, 'Admin');
+
+      return NextResponse.json({
+        success: true,
+        id,
+        product: {
+          id,
+          name,
+          category,
+          duration,
+          basePrice,
+          active,
+          createdAt: now,
+          updatedAt: now,
+        }
+      });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   return NextResponse.json({ error: 'Not found' }, { status: 404 });
 }
 
