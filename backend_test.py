@@ -1,281 +1,282 @@
 #!/usr/bin/env python3
 """
-Backend API Test Suite for ATV Operations Control
-Tests the batch departure creation endpoint after the critical fix
+Backend API Testing Script for Cruceros Payment Feature
+Tests the specific functionality requested for Cruceros payment method.
 """
 
 import requests
 import json
-from datetime import datetime, timedelta
 import time
+from datetime import datetime
 
-# Base URL from environment
+# Configuration
 BASE_URL = "https://departure-income-hub.preview.emergentagent.com"
+API_BASE = f"{BASE_URL}/api"
 
-def test_api_endpoint(method, endpoint, data=None, expected_status=200):
-    """Helper function to test API endpoints"""
-    url = f"{BASE_URL}{endpoint}"
-    
-    try:
-        if method.upper() == 'GET':
-            response = requests.get(url)
-        elif method.upper() == 'POST':
-            response = requests.post(url, json=data, headers={'Content-Type': 'application/json'})
-        else:
-            print(f"❌ Unsupported method: {method}")
-            return None
-            
-        print(f"📡 {method} {endpoint}")
-        print(f"   Status: {response.status_code}")
-        
-        if response.status_code == expected_status:
-            print(f"   ✅ Expected status {expected_status}")
-        else:
-            print(f"   ❌ Expected {expected_status}, got {response.status_code}")
-            
-        try:
-            json_response = response.json()
-            print(f"   Response: {json.dumps(json_response, indent=2)[:200]}...")
-            return json_response
-        except:
-            print(f"   Response (text): {response.text[:200]}...")
-            return response.text
-            
-    except Exception as e:
-        print(f"❌ Error testing {method} {endpoint}: {str(e)}")
-        return None
+def log_test(test_name, status, details=""):
+    """Log test results with timestamp"""
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    status_icon = "✅" if status == "PASS" else "❌" if status == "FAIL" else "⚠️"
+    print(f"[{timestamp}] {status_icon} {test_name}: {status}")
+    if details:
+        print(f"    Details: {details}")
+    print()
 
-def test_batch_departures_single_entry():
-    """Test 1: Create a single departure entry via batch endpoint"""
-    print("\n🧪 TEST 1: Single Entry Batch Creation")
-    
-    today = datetime.now().strftime('%Y-%m-%d')
-    
-    test_data = {
-        "entries": [{
-            "date": today,
-            "timeSlot": "12:00",
-            "category": "quad", 
-            "productId": "1",  # Quad 1 hora (80€)
-            "vehiclesCount": 2,
-            "groupLabel": "Test Single Entry",
-            "salesChannel": "otros",
-            "paymentSplit": [{"method": "cash", "amount": 160}]
-        }],
-        "userId": "test_agent",
-        "userName": "Test Agent"
-    }
-    
-    response = test_api_endpoint('POST', '/api/departures/batch', test_data)
-    
-    if response and isinstance(response, dict):
-        if response.get('success') and response.get('created') == 1:
-            print("   ✅ Single entry created successfully")
-            return response.get('results', [{}])[0].get('id')
-        else:
-            print(f"   ❌ Single entry creation failed: {response}")
-            return None
-    return None
-
-def test_batch_departures_multiple_entries():
-    """Test 2: Create multiple departure entries in one batch"""
-    print("\n🧪 TEST 2: Multiple Entries Batch Creation")
-    
-    today = datetime.now().strftime('%Y-%m-%d')
+def test_cruceros_batch_creation():
+    """Test POST /api/departures/batch with Cruceros payment method"""
+    print("🔄 Testing Cruceros Batch Creation...")
     
     test_data = {
         "entries": [
             {
-                "date": today,
+                "date": "2026-02-16",
                 "timeSlot": "10:00",
                 "category": "quad",
-                "productId": "2",  # Quad 2 horas (120€)
+                "productId": "1",
                 "vehiclesCount": 1,
-                "groupLabel": "Test Multi Entry 1",
-                "salesChannel": "otros",
-                "paymentSplit": [{"method": "cash", "amount": 120}]
-            },
-            {
-                "date": today,
-                "timeSlot": "14:00", 
-                "category": "buggy",
-                "productId": "5",  # Buggy 1 hora (120€)
-                "vehiclesCount": 1,
-                "groupLabel": "Test Multi Entry 2",
-                "salesChannel": "web",
-                "paymentSplit": [{"method": "web", "amount": 120}]
-            },
-            {
-                "date": today,
-                "timeSlot": "16:00",
-                "category": "quad",
-                "productId": "1",  # Quad 1 hora (80€)
-                "vehiclesCount": 3,
-                "groupLabel": "Test Multi Entry 3",
-                "salesChannel": "gyg",
-                "paymentSplit": [{"method": "gyg", "amount": 240}]
+                "groupLabel": "Test Crucero Backend",
+                "paymentSplit": [
+                    {
+                        "method": "cruceros",
+                        "amount": 85
+                    }
+                ],
+                "isPendingCruise": True,
+                "salesChannel": "cruceros"
             }
         ],
-        "userId": "test_agent",
-        "userName": "Test Agent"
+        "userId": "test_user",
+        "userName": "Test User"
     }
     
-    response = test_api_endpoint('POST', '/api/departures/batch', test_data)
-    
-    if response and isinstance(response, dict):
-        if response.get('success') and response.get('created') == 3:
-            print("   ✅ Multiple entries created successfully")
-            return [result.get('id') for result in response.get('results', [])]
+    try:
+        response = requests.post(
+            f"{API_BASE}/departures/batch",
+            json=test_data,
+            headers={"Content-Type": "application/json"},
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("success") and result.get("created") == 1:
+                entry_id = result["results"][0]["id"] if result.get("results") else None
+                log_test(
+                    "Cruceros Batch Creation", 
+                    "PASS", 
+                    f"Entry created successfully with ID: {entry_id}"
+                )
+                return True, entry_id
+            else:
+                log_test(
+                    "Cruceros Batch Creation", 
+                    "FAIL", 
+                    f"Unexpected response structure: {result}"
+                )
+                return False, None
         else:
-            print(f"   ❌ Multiple entries creation failed: {response}")
-            return []
-    return []
+            log_test(
+                "Cruceros Batch Creation", 
+                "FAIL", 
+                f"HTTP {response.status_code}: {response.text[:200]}"
+            )
+            return False, None
+            
+    except requests.exceptions.RequestException as e:
+        log_test("Cruceros Batch Creation", "FAIL", f"Request failed: {str(e)}")
+        return False, None
 
-def test_dashboard_contains_entries():
-    """Test 3: Verify entries appear in dashboard"""
-    print("\n🧪 TEST 3: Dashboard Contains Created Entries")
+def test_dashboard_cruceros_total():
+    """Test GET /api/dashboard to verify cruiseTotal > 0 after creating entry"""
+    print("🔄 Testing Dashboard Cruceros Total...")
     
-    today = datetime.now().strftime('%Y-%m-%d')
-    
-    response = test_api_endpoint('GET', f'/api/dashboard?date={today}')
-    
-    if response and isinstance(response, dict):
-        departures = response.get('departures', [])
-        stats = response.get('stats', {})
+    try:
+        response = requests.get(
+            f"{API_BASE}/dashboard?date=2026-02-16",
+            timeout=30
+        )
         
-        print(f"   📊 Dashboard shows {len(departures)} departures for {today}")
-        print(f"   💰 Total Gross: €{stats.get('totalGross', 0)}")
-        print(f"   🏍️ Quad Count: {stats.get('quadCount', 0)}")
-        print(f"   🚗 Buggy Count: {stats.get('buggyCount', 0)}")
-        
-        # Check for our test entries
-        test_entries = [d for d in departures if d.get('groupLabel', '').startswith('Test')]
-        print(f"   🧪 Found {len(test_entries)} test entries")
-        
-        if len(test_entries) >= 1:
-            print("   ✅ Dashboard contains created entries")
-            return True
+        if response.status_code == 200:
+            result = response.json()
+            stats = result.get("stats", {})
+            cruise_total = stats.get("cruiseTotal", 0)
+            gyg_total = stats.get("gygTotal", 0)
+            
+            if cruise_total > 0:
+                log_test(
+                    "Dashboard Cruceros Total", 
+                    "PASS", 
+                    f"cruiseTotal: {cruise_total}, gygTotal: {gyg_total}"
+                )
+                return True
+            else:
+                log_test(
+                    "Dashboard Cruceros Total", 
+                    "FAIL", 
+                    f"cruiseTotal is {cruise_total}, expected > 0. Full stats: {stats}"
+                )
+                return False
         else:
-            print("   ❌ Dashboard missing created entries")
+            log_test(
+                "Dashboard Cruceros Total", 
+                "FAIL", 
+                f"HTTP {response.status_code}: {response.text[:200]}"
+            )
             return False
-    else:
-        print("   ❌ Dashboard request failed")
+            
+    except requests.exceptions.RequestException as e:
+        log_test("Dashboard Cruceros Total", "FAIL", f"Request failed: {str(e)}")
         return False
 
-def test_departures_list():
-    """Test 4: Verify entries appear in departures list"""
-    print("\n🧪 TEST 4: Departures List Contains Created Entries")
+def test_departures_data_alignment():
+    """Test GET /api/departures to verify proper data alignment with new columns"""
+    print("🔄 Testing Departures Data Alignment...")
     
-    today = datetime.now().strftime('%Y-%m-%d')
-    
-    response = test_api_endpoint('GET', f'/api/departures?date={today}')
-    
-    if response and isinstance(response, list):
-        print(f"   📋 Departures list shows {len(response)} entries for {today}")
+    try:
+        response = requests.get(
+            f"{API_BASE}/departures?date=2026-02-16",
+            timeout=30
+        )
         
-        # Check for our test entries
-        test_entries = [d for d in response if d.get('groupLabel', '').startswith('Test')]
-        print(f"   🧪 Found {len(test_entries)} test entries")
-        
-        if len(test_entries) >= 1:
-            print("   ✅ Departures list contains created entries")
+        if response.status_code == 200:
+            result = response.json()
             
-            # Show sample entry details to verify correct data
-            sample = test_entries[0]
-            print(f"   📝 Sample entry:")
-            print(f"      - ID: {sample.get('id', 'N/A')}")
-            print(f"      - Date: {sample.get('date', 'N/A')}")
-            print(f"      - Time: {sample.get('timeSlot', 'N/A')}")
-            print(f"      - Product: {sample.get('productName', 'N/A')}")
-            print(f"      - Vehicles: {sample.get('vehiclesCount', 'N/A')}")
-            print(f"      - Total: €{sample.get('totalGross', 'N/A')}")
-            
-            return True
+            if isinstance(result, list) and len(result) > 0:
+                # Check if the entries have the expected fields
+                first_entry = result[0]
+                expected_fields = [
+                    'id', 'date', 'timeSlot', 'category', 'productId',
+                    'paymentSplitCruise', 'gygDiscount', 'isPendingCruise'
+                ]
+                
+                missing_fields = []
+                for field in expected_fields:
+                    if field not in first_entry:
+                        missing_fields.append(field)
+                
+                # Check specifically for Cruceros entry
+                cruceros_entry = None
+                for entry in result:
+                    if entry.get('groupLabel') == 'Test Crucero Backend':
+                        cruceros_entry = entry
+                        break
+                
+                if cruceros_entry:
+                    cruise_payment = float(cruceros_entry.get('paymentSplitCruise', 0))
+                    is_pending = cruceros_entry.get('isPendingCruise', 'false')
+                    
+                    if cruise_payment > 0 and is_pending == 'true':
+                        log_test(
+                            "Departures Data Alignment", 
+                            "PASS", 
+                            f"Found Cruceros entry with cruise payment: {cruise_payment}, pending: {is_pending}"
+                        )
+                        return True
+                    else:
+                        log_test(
+                            "Departures Data Alignment", 
+                            "FAIL", 
+                            f"Cruceros entry found but incorrect values: cruise={cruise_payment}, pending={is_pending}"
+                        )
+                        return False
+                else:
+                    log_test(
+                        "Departures Data Alignment", 
+                        "FAIL", 
+                        f"Cruceros test entry not found in departures list. Available entries: {len(result)}"
+                    )
+                    return False
+            else:
+                log_test(
+                    "Departures Data Alignment", 
+                    "FAIL", 
+                    f"Expected array with entries, got: {type(result)} with length: {len(result) if hasattr(result, '__len__') else 'N/A'}"
+                )
+                return False
         else:
-            print("   ❌ Departures list missing created entries")
+            log_test(
+                "Departures Data Alignment", 
+                "FAIL", 
+                f"HTTP {response.status_code}: {response.text[:200]}"
+            )
             return False
-    else:
-        print("   ❌ Departures list request failed")
+            
+    except requests.exceptions.RequestException as e:
+        log_test("Departures Data Alignment", "FAIL", f"Request failed: {str(e)}")
         return False
 
-def test_error_handling():
-    """Test 5: Error handling for invalid batch requests"""
-    print("\n🧪 TEST 5: Error Handling for Invalid Requests")
+def test_api_connectivity():
+    """Test basic API connectivity"""
+    print("🔄 Testing API Connectivity...")
     
-    # Test empty entries array
-    response = test_api_endpoint('POST', '/api/departures/batch', {"entries": []}, expected_status=400)
-    if response and "Invalid entries array" in str(response):
-        print("   ✅ Empty array properly rejected")
-    else:
-        print("   ❌ Empty array handling failed")
-    
-    # Test missing required fields
-    invalid_data = {
-        "entries": [{
-            "date": "2026-02-16",
-            "timeSlot": "12:00",
-            # Missing category, productId, vehiclesCount
-        }]
-    }
-    
-    response = test_api_endpoint('POST', '/api/departures/batch', invalid_data)
-    if response and response.get('errors', 0) > 0:
-        print("   ✅ Missing fields properly handled")
-    else:
-        print("   ❌ Missing fields handling failed")
+    try:
+        response = requests.get(f"{API_BASE}", timeout=10)
+        if response.status_code == 200:
+            log_test("API Connectivity", "PASS", "API is accessible")
+            return True
+        else:
+            log_test("API Connectivity", "FAIL", f"HTTP {response.status_code}")
+            return False
+    except requests.exceptions.RequestException as e:
+        log_test("API Connectivity", "FAIL", f"Connection failed: {str(e)}")
+        return False
 
-def run_all_tests():
-    """Run all backend tests"""
-    print("🚀 Starting Backend API Tests for Batch Departures")
+def main():
+    """Run all Cruceros payment feature tests"""
     print("=" * 60)
+    print("🚀 CRUCEROS PAYMENT FEATURE TESTING")
+    print(f"📍 Base URL: {BASE_URL}")
+    print(f"🔗 API URL: {API_BASE}")
+    print("=" * 60)
+    print()
     
-    # Test 1: Single entry
-    single_id = test_batch_departures_single_entry()
+    # Track test results
+    test_results = {}
     
-    # Test 2: Multiple entries  
-    multi_ids = test_batch_departures_multiple_entries()
+    # Test 1: API Connectivity
+    test_results["api_connectivity"] = test_api_connectivity()
     
-    # Wait a moment for data propagation
-    print("\n⏳ Waiting for data propagation...")
-    time.sleep(2)
-    
-    # Test 3: Dashboard verification
-    dashboard_ok = test_dashboard_contains_entries()
-    
-    # Test 4: Departures list verification
-    departures_ok = test_departures_list()
-    
-    # Test 5: Error handling
-    test_error_handling()
+    # Test 2: Create Cruceros batch entry
+    if test_results["api_connectivity"]:
+        success, entry_id = test_cruceros_batch_creation()
+        test_results["cruceros_batch_creation"] = success
+        
+        # Small delay to ensure data is persisted
+        if success:
+            print("⏳ Waiting 2 seconds for data persistence...")
+            time.sleep(2)
+            
+        # Test 3: Verify dashboard shows cruise total
+        test_results["dashboard_cruceros_total"] = test_dashboard_cruceros_total()
+        
+        # Test 4: Verify departures data alignment
+        test_results["departures_data_alignment"] = test_departures_data_alignment()
+    else:
+        test_results["cruceros_batch_creation"] = False
+        test_results["dashboard_cruceros_total"] = False
+        test_results["departures_data_alignment"] = False
     
     # Summary
-    print("\n" + "=" * 60)
-    print("📋 TEST SUMMARY")
+    print("=" * 60)
+    print("📊 TEST SUMMARY")
     print("=" * 60)
     
-    tests = [
-        ("Single Entry Creation", single_id is not None),
-        ("Multiple Entries Creation", len(multi_ids) == 3),
-        ("Dashboard Integration", dashboard_ok),
-        ("Departures List Integration", departures_ok)
-    ]
+    passed = sum(1 for result in test_results.values() if result)
+    total = len(test_results)
     
-    passed = sum(1 for _, result in tests if result)
-    total = len(tests)
-    
-    for test_name, result in tests:
+    for test_name, result in test_results.items():
         status = "✅ PASS" if result else "❌ FAIL"
-        print(f"   {status} {test_name}")
+        print(f"{status} {test_name.replace('_', ' ').title()}")
     
-    print(f"\n🎯 Results: {passed}/{total} tests passed")
+    print(f"\n📈 Overall: {passed}/{total} tests passed")
     
     if passed == total:
-        print("🎉 ALL TESTS PASSED - Batch departures endpoint is working correctly!")
+        print("🎉 ALL CRUCEROS PAYMENT TESTS PASSED!")
         return True
     else:
-        print("⚠️  SOME TESTS FAILED - Issues detected with batch departures endpoint")
+        print("⚠️  SOME TESTS FAILED - See details above")
         return False
 
 if __name__ == "__main__":
-    success = run_all_tests()
+    success = main()
     exit(0 if success else 1)
