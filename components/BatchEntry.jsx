@@ -238,6 +238,8 @@ export default function BatchEntry() {
     const baseTotal = parseFloat(product.basePrice) * parseInt(entry.vehiclesCount);
     const hasGyg = entry.paymentSplit.some(s => s.method === 'gyg');
     const finalTotal = hasGyg ? baseTotal * (1 - GYG_DISCOUNT) : baseTotal;
+    const commission = parseFloat(entry.commission) || 0;
+    const realTotal = finalTotal - commission;
     const method = entry.paymentSplit[0]?.method || 'cash';
 
     setEntries(entries.map(e => {
@@ -245,7 +247,7 @@ export default function BatchEntry() {
         return {
           ...e,
           productId,
-          paymentSplit: [{ method, amount: finalTotal }],
+          paymentSplit: [{ method, amount: realTotal }],
           gygDiscount: hasGyg ? GYG_DISCOUNT : 0,
         };
       }
@@ -266,6 +268,8 @@ export default function BatchEntry() {
     const baseTotal = parseFloat(product.basePrice) * parseInt(newCount || 0);
     const hasGyg = entry.paymentSplit.some(s => s.method === 'gyg');
     const finalTotal = hasGyg ? baseTotal * (1 - GYG_DISCOUNT) : baseTotal;
+    const commission = parseFloat(entry.commission) || 0;
+    const realTotal = finalTotal - commission;
     const method = entry.paymentSplit[0]?.method || 'cash';
 
     setEntries(entries.map(e => {
@@ -273,7 +277,29 @@ export default function BatchEntry() {
         return {
           ...e,
           vehiclesCount: newCount,
-          paymentSplit: [{ method, amount: finalTotal }],
+          paymentSplit: [{ method, amount: realTotal }],
+        };
+      }
+      return e;
+    }));
+  }
+
+  function handleCommissionChange(entryId, newCommission) {
+    const entry = entries.find(e => e.id === entryId);
+    if (!entry) return;
+
+    const commission = parseFloat(newCommission) || 0;
+    const preCommissionTotal = getPreCommissionTotal(entry);
+    const realTotal = preCommissionTotal - commission;
+    const method = entry.paymentSplit[0]?.method || 'cash';
+
+    // Update commission and recalculate payment split
+    setEntries(entries.map(e => {
+      if (e.id === entryId) {
+        return {
+          ...e,
+          commission: newCommission,
+          paymentSplit: [{ method, amount: Math.max(0, realTotal) }],
         };
       }
       return e;
