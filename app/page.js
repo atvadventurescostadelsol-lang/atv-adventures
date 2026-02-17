@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Plus, BarChart3, Settings, LogOut, Globe, User, Key, CreditCard, Receipt } from 'lucide-react';
+import { Calendar, Plus, BarChart3, Settings, LogOut, Globe, User, Key, CreditCard, Receipt, Wallet } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
 import Dashboard from '@/components/Dashboard';
@@ -15,6 +15,7 @@ import AdminPanel from '@/components/AdminPanel';
 import LoginForm from '@/components/LoginForm';
 import PendingPayments from '@/components/PendingPayments';
 import Expenses from '@/components/Expenses';
+import Incomes from '@/components/Incomes';
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import {
