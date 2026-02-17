@@ -30,6 +30,7 @@ export default function AdminPanel() {
   const [timeSlots, setTimeSlots] = useState([]);
   const [categories, setCategories] = useState(['quad', 'buggy']);
   const [expenseCategories, setExpenseCategories] = useState({ GE: [], 'E&S': [] });
+  const [incomeCategories, setIncomeCategories] = useState({ GE: [], 'E&S': [] });
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingSlot, setEditingSlot] = useState(null);
