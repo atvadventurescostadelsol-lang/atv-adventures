@@ -1178,6 +1178,21 @@ async function handleGet(request, path) {
     }
   }
 
+  // Fix TimeSlots headers
+  if (path === 'fix-timeslots') {
+    try {
+      const headers = ['id', 'time', 'quadCapacity', 'buggyCapacity', 'active'];
+      await updateSheetData(SPREADSHEET_ID, 'TimeSlots!A1:E1', [headers]);
+      
+      return NextResponse.json({ 
+        success: true, 
+        message: 'TimeSlots headers fixed'
+      });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   // Get all departures
   if (path === 'departures') {
     try {
