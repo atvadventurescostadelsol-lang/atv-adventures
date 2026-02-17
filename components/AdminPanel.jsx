@@ -462,6 +462,8 @@ export default function AdminPanel() {
                   handleDeleteCategory(deleteDialog.id);
                 } else if (deleteDialog.type === 'concepto de gasto' || deleteDialog.type === 'expense concept') {
                   handleDeleteExpenseCategory(deleteDialog.id);
+                } else if (deleteDialog.type === 'concepto de ingreso' || deleteDialog.type === 'income concept') {
+                  handleDeleteIncomeCategory(deleteDialog.id);
                 }
               }}
             >
