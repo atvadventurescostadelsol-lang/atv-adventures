@@ -16,7 +16,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const GYG_DISCOUNT = 0.25; // 25% discount for GYG
 
 export default function BatchEntry() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [timeSlot, setTimeSlot] = useState('');
   const [entries, setEntries] = useState([{
