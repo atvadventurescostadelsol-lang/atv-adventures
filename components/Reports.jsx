@@ -711,7 +711,7 @@ export default function Reports() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Summary Stats */}
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-5">
               <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
                 <CardContent className="pt-6">
                   <p className="text-orange-100">{t('totalGross')}</p>
@@ -736,11 +736,96 @@ export default function Reports() {
                   <p className="text-3xl font-bold">{formatCurrency(results.totals.vatAmount)}</p>
                 </CardContent>
               </Card>
+              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+                <CardContent className="pt-6">
+                  <p className="text-purple-100">IVA2 ({language === 'es' ? 'sin efectivo' : 'excl. cash'})</p>
+                  <p className="text-3xl font-bold">{formatCurrency(results.totals.vatAmount2)}</p>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Category Breakdown with Expenses */}
-            <div className="grid gap-4 md:grid-cols-2">
-              {/* Quads */}
+            {/* Category Breakdown with Expenses - Show based on filter */}
+            {results.categoryFilter === 'all' ? (
+              /* Show both categories when filter is 'all' */
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Quads */}
+                <Card className="border-l-4 border-l-blue-500">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Car className="h-5 w-5 text-blue-600" />
+                      {t('quads')} (GE)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>{t('vehicles')}:</span>
+                      <span className="font-bold">{results.totals.quadCount}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>{t('gross')}:</span>
+                      <span className="font-bold">{formatCurrency(results.totals.quadGross)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>💵 {t('cash')}:</span>
+                      <span className="font-medium">{formatCurrency(results.totals.quadCash)}</span>
+                    </div>
+                    {results.totals.geExpenseTotal > 0 && (
+                      <div className="flex justify-between text-red-600">
+                        <span>{language === 'es' ? 'Gastos GE' : 'GE Expenses'}:</span>
+                        <span className="font-medium">-{formatCurrency(results.totals.geExpenseTotal)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-2 border-t bg-blue-50 -mx-4 px-4 py-2 rounded-b-lg">
+                      <span className="font-semibold text-blue-800">
+                        💰 {language === 'es' ? 'Efectivo Neto' : 'Net Cash'}:
+                      </span>
+                      <span className={`font-bold text-lg ${results.totals.quadCashNet >= 0 ? 'text-blue-700' : 'text-red-600'}`}>
+                        {formatCurrency(results.totals.quadCashNet)}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Buggies */}
+                <Card className="border-l-4 border-l-green-500">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Truck className="h-5 w-5 text-green-600" />
+                      {t('buggies')} (E&S)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>{t('vehicles')}:</span>
+                      <span className="font-bold">{results.totals.buggyCount}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>{t('gross')}:</span>
+                      <span className="font-bold">{formatCurrency(results.totals.buggyGross)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>💵 {t('cash')}:</span>
+                      <span className="font-medium">{formatCurrency(results.totals.buggyCash)}</span>
+                    </div>
+                    {results.totals.esExpenseTotal > 0 && (
+                      <div className="flex justify-between text-red-600">
+                        <span>{language === 'es' ? 'Gastos E&S' : 'E&S Expenses'}:</span>
+                        <span className="font-medium">-{formatCurrency(results.totals.esExpenseTotal)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-2 border-t bg-green-50 -mx-4 px-4 py-2 rounded-b-lg">
+                      <span className="font-semibold text-green-800">
+                        💰 {language === 'es' ? 'Efectivo Neto' : 'Net Cash'}:
+                      </span>
+                      <span className={`font-bold text-lg ${results.totals.buggyCashNet >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                        {formatCurrency(results.totals.buggyCashNet)}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : results.categoryFilter === 'quad' ? (
+              /* Show only Quads when filter is 'quad' */
               <Card className="border-l-4 border-l-blue-500">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -777,8 +862,8 @@ export default function Reports() {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Buggies */}
+            ) : (
+              /* Show only Buggies when filter is 'buggy' */
               <Card className="border-l-4 border-l-green-500">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -815,10 +900,103 @@ export default function Reports() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            )}
 
-            {/* Expenses Detail */}
-            {results.expenses.length > 0 && (
+            {/* Expenses Detail - Show separated when filter is 'all' */}
+            {results.categoryFilter === 'all' && (results.totals.geExpenseTotal > 0 || results.totals.esExpenseTotal > 0) && (
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* GE Expenses */}
+                <Card className="border-l-4 border-l-blue-500">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2 text-red-600">
+                      <TrendingDown className="h-5 w-5" />
+                      {language === 'es' ? 'Gastos GE (Quads)' : 'GE Expenses (Quads)'}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {results.allExpenses?.filter(e => e.account === 'GE').length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>{language === 'es' ? 'Fecha' : 'Date'}</TableHead>
+                            <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
+                            <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {results.allExpenses?.filter(e => e.account === 'GE').map((exp, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell>{format(new Date(exp.date), 'dd/MM/yyyy')}</TableCell>
+                              <TableCell>{exp.concept}</TableCell>
+                              <TableCell className="text-right font-medium text-red-600">
+                                -{formatCurrency(exp.amount)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow className="bg-blue-50 font-bold">
+                            <TableCell colSpan={2}>{t('total')}</TableCell>
+                            <TableCell className="text-right text-red-600">
+                              -{formatCurrency(results.totals.geExpenseTotal)}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <p className="text-muted-foreground text-sm py-4">
+                        {language === 'es' ? 'Sin gastos GE en este período' : 'No GE expenses in this period'}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* E&S Expenses */}
+                <Card className="border-l-4 border-l-green-500">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2 text-red-600">
+                      <TrendingDown className="h-5 w-5" />
+                      {language === 'es' ? 'Gastos E&S (Buggies)' : 'E&S Expenses (Buggies)'}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {results.allExpenses?.filter(e => e.account === 'E&S').length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>{language === 'es' ? 'Fecha' : 'Date'}</TableHead>
+                            <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
+                            <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {results.allExpenses?.filter(e => e.account === 'E&S').map((exp, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell>{format(new Date(exp.date), 'dd/MM/yyyy')}</TableCell>
+                              <TableCell>{exp.concept}</TableCell>
+                              <TableCell className="text-right font-medium text-red-600">
+                                -{formatCurrency(exp.amount)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow className="bg-green-50 font-bold">
+                            <TableCell colSpan={2}>{t('total')}</TableCell>
+                            <TableCell className="text-right text-red-600">
+                              -{formatCurrency(results.totals.esExpenseTotal)}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <p className="text-muted-foreground text-sm py-4">
+                        {language === 'es' ? 'Sin gastos E&S en este período' : 'No E&S expenses in this period'}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Expenses Detail - Single list when filter is quad or buggy */}
+            {results.categoryFilter !== 'all' && results.expenses.length > 0 && (
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex items-center gap-2 text-red-600">
