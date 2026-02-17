@@ -296,9 +296,14 @@ metadata:
 
 test_plan:
   current_focus:
-    - "POST /api/departures/batch - Create batch departures"
-    - "GET /api/dashboard - Dashboard stats"  
-    - "GET /api/departures - List departures with Cruceros data"
+    - "POST /api/auth/login - User authentication"
+    - "POST /api/auth/change-password - Change own password"
+    - "GET /api/users - List all users (Admin only)"
+    - "POST /api/users - Create new user (Admin only)"
+    - "DELETE /api/users/:username - Delete user (Admin only)"
+    - "POST /api/users/reset-password - Admin reset user password"
+    - "GET /api/products - List products"
+    - "GET /api/dashboard - Dashboard stats"
   stuck_tasks:
     - "POST /api/departures/batch - Create batch departures"
     - "GET /api/dashboard - Dashboard stats"
