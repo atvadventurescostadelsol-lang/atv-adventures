@@ -554,6 +554,10 @@ export default function Reports() {
         let data = await depRes.json();
         let expensesData = expRes.ok ? await expRes.json() : [];
         
+        // FIRST: Apply user permission filters
+        data = filterDeparturesByPermissions(data);
+        expensesData = filterExpensesByPermissions(expensesData);
+        
         // Filter by date range
         data = data.filter(d => d.date >= startDate && d.date <= endDate);
         
