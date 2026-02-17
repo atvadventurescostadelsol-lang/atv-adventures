@@ -1013,9 +1013,12 @@ export default function Reports() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{language === 'es' ? 'Todas' : 'All'}</SelectItem>
-                    <SelectItem value="GE">GE (Quads)</SelectItem>
-                    <SelectItem value="E&S">E&S (Buggies)</SelectItem>
+                    {/* Only show "All" if user can see both accounts */}
+                    {canViewGE && canViewES && (
+                      <SelectItem value="all">{language === 'es' ? 'Todas' : 'All'}</SelectItem>
+                    )}
+                    {canViewGE && <SelectItem value="GE">GE (Quads)</SelectItem>}
+                    {canViewES && <SelectItem value="E&S">E&S (Buggies)</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
