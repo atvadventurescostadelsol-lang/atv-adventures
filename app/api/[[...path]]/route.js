@@ -411,6 +411,81 @@ async function handleResetPassword(body) {
   }
 }
 
+// Collect payment (mark GYG or Cruise payment as collected and move to bank)
+async function handleCollectPayment(body) {
+  try {
+    const { departureId, paymentType, collectionDate, amount } = body;
+    
+    if (!departureId || !paymentType || !collectionDate) {
+      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    }
+    
+    if (paymentType !== 'gyg' && paymentType !== 'cruise') {
+      return NextResponse.json({ success: false, error: 'Invalid payment type' }, { status: 400 });
+    }
+    
+    // Get current departure data
+    const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AO');
+    const departures = parseSheetToObjects(data);
+    const index = departures.findIndex(d => d.id === departureId);
+    
+    if (index === -1) {
+      return NextResponse.json({ success: false, error: 'Departure not found' }, { status: 404 });
+    }
+    
+    const departure = departures[index];
+    const headers = data[0];
+    
+    // Calculate new values
+    let updates = {};
+    const currentBank = parseNumber(departure.paymentSplitBank);
+    
+    if (paymentType === 'gyg') {
+      const gygAmount = parseNumber(departure.paymentSplitGyg);
+      updates = {
+        paymentSplitBank: (currentBank + gygAmount).toFixed(2),
+        paymentSplitGyg: '0.00',
+        gygCollected: 'true',
+        gygCollectedDate: collectionDate
+      };
+    } else {
+      const cruiseAmount = parseNumber(departure.paymentSplitCruise);
+      updates = {
+        paymentSplitBank: (currentBank + cruiseAmount).toFixed(2),
+        paymentSplitCruise: '0.00',
+        cruiseCollected: 'true',
+        cruiseCollectedDate: collectionDate,
+        isPendingCruise: 'false'
+      };
+    }
+    
+    // Apply updates
+    const updatedDeparture = { ...departure, ...updates, updatedAt: new Date().toISOString() };
+    
+    // Build row data
+    const rowData = headers.map(header => {
+      if (updatedDeparture[header] !== undefined) {
+        return updatedDeparture[header];
+      }
+      return departure[header] || '';
+    });
+    
+    await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AO${index + 2}`, [rowData]);
+    
+    await addAuditLog('COLLECT_PAYMENT', 'Departure', departureId, { 
+      paymentType, 
+      collectionDate, 
+      amount,
+      movedToBank: true 
+    }, 'system', 'System');
+    
+    return NextResponse.json({ success: true, updates });
+  } catch (error) {
+    console.error('Collect payment error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
 // ==================== EXISTING HANDLERS ====================
 
 // GET handlers
