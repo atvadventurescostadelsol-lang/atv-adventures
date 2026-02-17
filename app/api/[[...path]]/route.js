@@ -1103,6 +1103,9 @@ async function handlePost(request, path) {
 
           // Check if pending cruise
           const isPendingCruise = entryData.isPendingCruise || false;
+          
+          // Get commission method
+          const commissionMethod = entryData.commissionMethod || 'cash';
 
           // Create entry
           const id = uuidv4();
@@ -1145,7 +1148,8 @@ async function handlePost(request, path) {
             userId,
             now,
             userId,
-            commission.toFixed(2), // collaborator commission (stored for reference)
+            commission.toFixed(2), // collaborator commission
+            commissionMethod, // 'cash' or 'bank'
           ];
 
           console.log('Appending entry:', {
