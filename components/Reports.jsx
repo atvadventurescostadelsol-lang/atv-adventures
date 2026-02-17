@@ -46,6 +46,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(false);
   const [periodStats, setPeriodStats] = useState(null);
   const [expenses, setExpenses] = useState([]);
+  const [incomes, setIncomes] = useState([]);
   const reportRef = useRef(null);
   
   // Expense-only report state
