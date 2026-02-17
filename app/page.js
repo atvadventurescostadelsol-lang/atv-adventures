@@ -280,7 +280,7 @@ function AppContent() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-7' : 'grid-cols-6'} lg:w-auto lg:inline-grid`}>
+          <TabsList className={`grid w-full ${canAccessAdmin() ? 'grid-cols-7' : 'grid-cols-6'} lg:w-auto lg:inline-grid`}>
             <TabsTrigger value="dashboard" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">{t('dashboard')}</span>
@@ -305,7 +305,7 @@ function AppContent() {
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">{t('reports')}</span>
             </TabsTrigger>
-            {isAdmin() && (
+            {canAccessAdmin() && (
               <TabsTrigger value="admin" className="gap-2">
                 <Settings className="h-4 w-4" />
                 <span className="hidden sm:inline">{t('settings')}</span>
@@ -337,7 +337,7 @@ function AppContent() {
             <Reports />
           </TabsContent>
 
-          {isAdmin() && (
+          {canAccessAdmin() && (
             <TabsContent value="admin">
               <AdminPanel />
             </TabsContent>
