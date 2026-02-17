@@ -147,25 +147,50 @@ export default function BatchEntry() {
     return parseFloat(product.basePrice) * parseInt(entry.vehiclesCount);
   }
 
-  function getEntryTotal(entry) {
+  // Calculate calculated total (base - discounts)
+  function getCalculatedTotal(entry) {
     const baseTotal = getBaseTotal(entry);
-    // Apply GYG discount if applicable
     let total = baseTotal;
+    
+    // Apply GYG discount if applicable
     if (entry.gygDiscount > 0) {
       total = baseTotal * (1 - entry.gygDiscount);
     }
-    // Subtract commission from total (it's deducted from payment method)
-    const commission = parseFloat(entry.commission) || 0;
-    return total - commission;
+    
+    // Apply manual discount
+    const discount = parseFloat(entry.discount) || 0;
+    total = total - discount;
+    
+    return Math.max(0, total);
   }
 
-  // Get total before commission
-  function getPreCommissionTotal(entry) {
-    const baseTotal = getBaseTotal(entry);
-    if (entry.gygDiscount > 0) {
-      return baseTotal * (1 - entry.gygDiscount);
+  function getEntryTotal(entry) {
+    // If manual total is set, use it
+    if (entry.manualTotal !== '' && entry.manualTotal !== null && entry.manualTotal !== undefined) {
+      const manualTotal = parseFloat(entry.manualTotal);
+      if (!isNaN(manualTotal) && manualTotal >= 0) {
+        // Subtract commission from manual total
+        const commission = parseFloat(entry.commission) || 0;
+        return manualTotal - commission;
+      }
     }
-    return baseTotal;
+    
+    // Otherwise use calculated total
+    const calculatedTotal = getCalculatedTotal(entry);
+    const commission = parseFloat(entry.commission) || 0;
+    return calculatedTotal - commission;
+  }
+
+  // Get total before commission (for display and payment split calculations)
+  function getPreCommissionTotal(entry) {
+    // If manual total is set, use it
+    if (entry.manualTotal !== '' && entry.manualTotal !== null && entry.manualTotal !== undefined) {
+      const manualTotal = parseFloat(entry.manualTotal);
+      if (!isNaN(manualTotal) && manualTotal >= 0) {
+        return manualTotal;
+      }
+    }
+    return getCalculatedTotal(entry);
   }
 
   function addPaymentSplit(entryId) {
