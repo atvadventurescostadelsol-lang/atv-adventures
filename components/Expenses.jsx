@@ -9,9 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Receipt, Car, Truck } from 'lucide-react';
+import { Plus, Trash2, Receipt, Car, Truck, RefreshCw, Calendar, TrendingDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { es, enUS } from 'date-fns/locale';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +32,12 @@ export default function Expenses() {
   const [loading, setLoading] = useState(true);
   const [activeAccount, setActiveAccount] = useState('GE');
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
+  const [dateFilter, setDateFilter] = useState({
+    startDate: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
+    endDate: format(endOfMonth(new Date()), 'yyyy-MM-dd')
+  });
+  
+  const dateLocale = language === 'es' ? es : enUS;
   
   // Form state
   const [newExpense, setNewExpense] = useState({
@@ -41,13 +49,13 @@ export default function Expenses() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [dateFilter]);
 
   async function loadData() {
     setLoading(true);
     try {
       const [expensesRes, categoriesRes] = await Promise.all([
-        fetch('/api/expenses'),
+        fetch(`/api/expenses?startDate=${dateFilter.startDate}&endDate=${dateFilter.endDate}`),
         fetch('/api/expense-categories')
       ]);
 
@@ -132,6 +140,29 @@ export default function Expenses() {
     return `€${parseNumber(amount).toFixed(2)}`;
   }
 
+  function setQuickDateFilter(period) {
+    const today = new Date();
+    let start, end;
+    
+    switch(period) {
+      case 'month':
+        start = startOfMonth(today);
+        end = endOfMonth(today);
+        break;
+      case 'all':
+        start = new Date('2020-01-01');
+        end = new Date('2030-12-31');
+        break;
+      default:
+        return;
+    }
+    
+    setDateFilter({
+      startDate: format(start, 'yyyy-MM-dd'),
+      endDate: format(end, 'yyyy-MM-dd')
+    });
+  }
+
   // Filter expenses by account
   const accountExpenses = expenses.filter(e => e.account === activeAccount);
   const totalExpenses = accountExpenses.reduce((sum, e) => sum + parseNumber(e.amount), 0);
@@ -147,10 +178,16 @@ export default function Expenses() {
 
   const sortedDates = Object.keys(expensesByDate).sort((a, b) => b.localeCompare(a));
 
+  // Get totals for both accounts
+  const geExpenses = expenses.filter(e => e.account === 'GE');
+  const esExpenses = expenses.filter(e => e.account === 'E&S');
+  const geTotal = geExpenses.reduce((sum, e) => sum + parseNumber(e.amount), 0);
+  const esTotal = esExpenses.reduce((sum, e) => sum + parseNumber(e.amount), 0);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+        <RefreshCw className="h-8 w-8 animate-spin text-orange-600" />
       </div>
     );
   }
@@ -178,17 +215,88 @@ export default function Expenses() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Car className="h-5 w-5" />
+              <CardTitle className="text-lg">GE (Quads)</CardTitle>
+            </div>
+            <CardDescription className="text-blue-100">
+              {language === 'es' ? 'Se descuenta del efectivo de Quads' : 'Deducted from Quad cash'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">-{formatCurrency(geTotal)}</div>
+            <div className="text-sm text-blue-100 mt-1">
+              {geExpenses.length} {language === 'es' ? 'gastos registrados' : 'expenses recorded'}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Truck className="h-5 w-5" />
+              <CardTitle className="text-lg">E&S (Buggies)</CardTitle>
+            </div>
+            <CardDescription className="text-green-100">
+              {language === 'es' ? 'Se descuenta del efectivo de Buggies' : 'Deducted from Buggy cash'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">-{formatCurrency(esTotal)}</div>
+            <div className="text-sm text-green-100 mt-1">
+              {esExpenses.length} {language === 'es' ? 'gastos registrados' : 'expenses recorded'}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Receipt className="h-5 w-5" />
-            {language === 'es' ? 'Gastos' : 'Expenses'}
-          </CardTitle>
-          <CardDescription>
-            {language === 'es' 
-              ? 'Gestiona los gastos de cada cuenta. GE afecta a Quads, E&S afecta a Buggies.' 
-              : 'Manage expenses for each account. GE affects Quads, E&S affects Buggies.'}
-          </CardDescription>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Receipt className="h-5 w-5" />
+                {language === 'es' ? 'Gestión de Gastos' : 'Expense Management'}
+              </CardTitle>
+              <CardDescription>
+                {language === 'es' 
+                  ? 'Registra gastos para cada cuenta. GE → Quads, E&S → Buggies.' 
+                  : 'Record expenses for each account. GE → Quads, E&S → Buggies.'}
+              </CardDescription>
+            </div>
+            
+            {/* Date Filter */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={() => setQuickDateFilter('month')}>
+                {language === 'es' ? 'Este Mes' : 'This Month'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setQuickDateFilter('all')}>
+                {language === 'es' ? 'Todos' : 'All'}
+              </Button>
+              <div className="flex items-center gap-1">
+                <Input
+                  type="date"
+                  className="h-8 w-36"
+                  value={dateFilter.startDate}
+                  onChange={(e) => setDateFilter({ ...dateFilter, startDate: e.target.value })}
+                />
+                <span className="text-muted-foreground">-</span>
+                <Input
+                  type="date"
+                  className="h-8 w-36"
+                  value={dateFilter.endDate}
+                  onChange={(e) => setDateFilter({ ...dateFilter, endDate: e.target.value })}
+                />
+              </div>
+              <Button variant="ghost" size="icon" onClick={loadData}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs value={activeAccount} onValueChange={setActiveAccount} className="space-y-4">
@@ -196,19 +304,23 @@ export default function Expenses() {
               <TabsTrigger value="GE" className="gap-2">
                 <Car className="h-4 w-4" />
                 <span className="font-bold">GE</span>
-                <span className="text-xs text-muted-foreground">(Quads)</span>
+                <Badge variant="secondary" className="ml-1 text-xs">
+                  {formatCurrency(geTotal)}
+                </Badge>
               </TabsTrigger>
               <TabsTrigger value="E&S" className="gap-2">
                 <Truck className="h-4 w-4" />
                 <span className="font-bold">E&S</span>
-                <span className="text-xs text-muted-foreground">(Buggies)</span>
+                <Badge variant="secondary" className="ml-1 text-xs">
+                  {formatCurrency(esTotal)}
+                </Badge>
               </TabsTrigger>
             </TabsList>
 
             {['GE', 'E&S'].map(account => (
               <TabsContent key={account} value={account} className="space-y-4">
                 {/* Add Expense Form */}
-                <Card className="bg-muted/50">
+                <Card className={`${account === 'GE' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'}`}>
                   <CardContent className="p-4">
                     <div className="grid gap-4 md:grid-cols-5">
                       <div>
@@ -217,10 +329,11 @@ export default function Expenses() {
                           type="date"
                           value={newExpense.date}
                           onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
+                          className="mt-1"
                         />
                       </div>
                       <div>
-                        <Label>{language === 'es' ? 'Cantidad' : 'Amount'}</Label>
+                        <Label>{language === 'es' ? 'Cantidad (€)' : 'Amount (€)'}</Label>
                         <Input
                           type="number"
                           step="0.01"
@@ -228,6 +341,7 @@ export default function Expenses() {
                           placeholder="0.00"
                           value={newExpense.amount}
                           onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
+                          className="mt-1"
                         />
                       </div>
                       <div>
@@ -236,7 +350,7 @@ export default function Expenses() {
                           value={newExpense.concept}
                           onValueChange={(value) => setNewExpense({ ...newExpense, concept: value })}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="mt-1">
                             <SelectValue placeholder={language === 'es' ? 'Seleccionar...' : 'Select...'} />
                           </SelectTrigger>
                           <SelectContent>
@@ -254,12 +368,13 @@ export default function Expenses() {
                           placeholder={language === 'es' ? 'Opcional...' : 'Optional...'}
                           value={newExpense.notes}
                           onChange={(e) => setNewExpense({ ...newExpense, notes: e.target.value })}
+                          className="mt-1"
                         />
                       </div>
                       <div className="flex items-end">
                         <Button onClick={handleAddExpense} className="w-full">
                           <Plus className="h-4 w-4 mr-2" />
-                          {language === 'es' ? 'Añadir' : 'Add'}
+                          {language === 'es' ? 'Añadir Gasto' : 'Add Expense'}
                         </Button>
                       </div>
                     </div>
@@ -267,36 +382,45 @@ export default function Expenses() {
                 </Card>
 
                 {/* Summary */}
-                <div className={`p-4 rounded-lg ${account === 'GE' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'} border`}>
+                <div className={`p-4 rounded-lg ${account === 'GE' ? 'bg-blue-100 border-blue-300' : 'bg-green-100 border-green-300'} border`}>
                   <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className={`font-semibold ${account === 'GE' ? 'text-blue-800' : 'text-green-800'}`}>
-                        {language === 'es' ? 'Total Gastos' : 'Total Expenses'} {account}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        {accountExpenses.length} {language === 'es' ? 'registros' : 'records'}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <TrendingDown className={`h-6 w-6 ${account === 'GE' ? 'text-blue-600' : 'text-green-600'}`} />
+                      <div>
+                        <h4 className={`font-semibold ${account === 'GE' ? 'text-blue-800' : 'text-green-800'}`}>
+                          {language === 'es' ? 'Total Gastos' : 'Total Expenses'} {account}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          {accountExpenses.length} {language === 'es' ? 'registros en el período' : 'records in period'}
+                        </p>
+                      </div>
                     </div>
-                    <div className={`text-2xl font-bold ${account === 'GE' ? 'text-blue-700' : 'text-green-700'}`}>
-                      {formatCurrency(totalExpenses)}
+                    <div className={`text-3xl font-bold ${account === 'GE' ? 'text-blue-700' : 'text-green-700'}`}>
+                      -{formatCurrency(totalExpenses)}
                     </div>
                   </div>
                 </div>
 
                 {/* Expenses List by Date */}
                 {sortedDates.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    {language === 'es' ? 'No hay gastos registrados' : 'No expenses recorded'}
-                  </p>
+                  <div className="text-center py-12">
+                    <Receipt className="h-12 w-12 mx-auto text-muted-foreground opacity-50 mb-4" />
+                    <p className="text-muted-foreground">
+                      {language === 'es' ? 'No hay gastos registrados en este período' : 'No expenses recorded in this period'}
+                    </p>
+                  </div>
                 ) : (
                   <div className="space-y-4">
                     {sortedDates.map(date => (
                       <Card key={date}>
                         <CardHeader className="py-3">
                           <CardTitle className="text-sm flex items-center justify-between">
-                            <span>📅 {date}</span>
-                            <Badge variant="outline">
-                              {formatCurrency(expensesByDate[date].reduce((sum, e) => sum + parseNumber(e.amount), 0))}
+                            <span className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4" />
+                              {format(new Date(date), 'EEEE, d MMMM yyyy', { locale: dateLocale })}
+                            </span>
+                            <Badge variant="destructive">
+                              -{formatCurrency(expensesByDate[date].reduce((sum, e) => sum + parseNumber(e.amount), 0))}
                             </Badge>
                           </CardTitle>
                         </CardHeader>
@@ -326,7 +450,7 @@ export default function Expenses() {
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-6 w-6 text-red-600"
+                                      className="h-6 w-6 text-red-600 hover:text-red-700"
                                       onClick={() => setDeleteDialog({ open: true, id: exp.id })}
                                     >
                                       <Trash2 className="h-3 w-3" />
