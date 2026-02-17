@@ -772,6 +772,11 @@ export default function AdminPanel() {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Users Tab */}
+            <TabsContent value="users" className="space-y-4">
+              <UserManagement />
+            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
