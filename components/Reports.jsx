@@ -1285,9 +1285,12 @@ export default function Reports() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
-                    <SelectItem value="quad">Quads</SelectItem>
-                    <SelectItem value="buggy">Buggies</SelectItem>
+                    {/* Only show "All" if user can see both categories */}
+                    {canViewQuads && canViewBuggies && (
+                      <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
+                    )}
+                    {canViewQuads && <SelectItem value="quad">Quads</SelectItem>}
+                    {canViewBuggies && <SelectItem value="buggy">Buggies</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
