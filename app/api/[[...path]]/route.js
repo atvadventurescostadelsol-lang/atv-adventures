@@ -2130,6 +2130,18 @@ async function handleDelete(request, path) {
     return handleDeleteExpenseCategory(id);
   }
 
+  // Delete income
+  if (path.startsWith('incomes/')) {
+    const id = path.split('/')[1];
+    return deleteIncome(id);
+  }
+
+  // Delete income category
+  if (path.startsWith('income-categories/')) {
+    const id = path.split('/')[1];
+    return deleteIncomeCategory(id);
+  }
+
   // Delete departure
   if (path.startsWith('departures/')) {
     try {
