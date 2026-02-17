@@ -46,6 +46,9 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(propDate || new Date().toISOString().split('T')[0]);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, departureId: null, departureName: '' });
+  const [editDialog, setEditDialog] = useState({ open: false, departure: null });
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving] = useState(false);
   
   const dateLocale = language === 'es' ? es : enUS;
 
