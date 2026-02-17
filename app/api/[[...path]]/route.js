@@ -914,10 +914,17 @@ async function handleGetExpenses(searchParams) {
     await ensureExpensesSheet();
     
     const data = await getSheetData(SPREADSHEET_ID, 'Expenses!A:H');
+    console.log('Expenses raw data rows:', data.length, 'First row (headers):', data[0]);
+    if (data.length > 1) {
+      console.log('First data row:', data[1]);
+    }
+    
     let expenses = parseSheetToObjects(data);
+    console.log('Parsed expenses count:', expenses.length);
     
     // Filter out empty rows
     expenses = expenses.filter(e => e.id && e.id.trim() !== '');
+    console.log('After filtering empty:', expenses.length);
     
     // Filter by account if specified
     const account = searchParams.get('account');
@@ -929,7 +936,9 @@ async function handleGetExpenses(searchParams) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     if (startDate && endDate) {
+      console.log('Filtering by date range:', startDate, 'to', endDate);
       expenses = expenses.filter(e => e.date >= startDate && e.date <= endDate);
+      console.log('After date filter:', expenses.length);
     }
     
     return NextResponse.json(expenses);
