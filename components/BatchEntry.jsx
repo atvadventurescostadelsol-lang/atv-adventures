@@ -400,6 +400,7 @@ export default function BatchEntry() {
             gygDiscount: 0,
             isPendingCruise: false,
             commission: 0,
+            commissionMethod: 'cash',
           }]);
           loadCapacity();
         } else {
