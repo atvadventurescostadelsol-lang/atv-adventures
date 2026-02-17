@@ -4,12 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, TrendingUp, Car, DollarSign, Clock, Trash2, Edit2, X, Save } from 'lucide-react';
+import { RefreshCw, TrendingUp, TrendingDown, Car, DollarSign, Clock, Trash2, Edit2, X, Save, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -43,6 +43,7 @@ function parseNumber(value) {
 export default function Dashboard({ selectedDate: propDate, onDateChange }) {
   const { language, t } = useLanguage();
   const [data, setData] = useState(null);
+  const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(propDate || new Date().toISOString().split('T')[0]);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, departureId: null, departureName: '' });
@@ -66,10 +67,20 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
   async function loadDashboard() {
     setLoading(true);
     try {
-      const res = await fetch(`/api/dashboard?date=${selectedDate}`);
-      if (res.ok) {
-        const dashboardData = await res.json();
+      // Load departures and expenses for the selected date
+      const [dashboardRes, expensesRes] = await Promise.all([
+        fetch(`/api/dashboard?date=${selectedDate}`),
+        fetch(`/api/expenses?startDate=${selectedDate}&endDate=${selectedDate}`)
+      ]);
+      
+      if (dashboardRes.ok) {
+        const dashboardData = await dashboardRes.json();
         setData(dashboardData);
+      }
+      
+      if (expensesRes.ok) {
+        const expensesData = await expensesRes.json();
+        setExpenses(expensesData);
       }
     } catch (error) {
       console.error('Error loading dashboard:', error);
@@ -165,6 +176,40 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
 
   const { stats, departures } = data;
 
+  // Calculate stats separated by category
+  const quadDepartures = departures.filter(d => d.category === 'quad');
+  const buggyDepartures = departures.filter(d => d.category === 'buggy');
+
+  const quadStats = {
+    totalGross: quadDepartures.reduce((sum, d) => sum + parseNumber(d.totalGross), 0),
+    cashTotal: quadDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitCash), 0),
+    bankTotal: quadDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitBank), 0),
+    webTotal: quadDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitWeb), 0),
+    gygTotal: quadDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitGyg), 0),
+    cruiseTotal: quadDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitCruise), 0),
+    vehiclesCount: quadDepartures.reduce((sum, d) => sum + parseInt(d.vehiclesCount || 0), 0),
+  };
+
+  const buggyStats = {
+    totalGross: buggyDepartures.reduce((sum, d) => sum + parseNumber(d.totalGross), 0),
+    cashTotal: buggyDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitCash), 0),
+    bankTotal: buggyDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitBank), 0),
+    webTotal: buggyDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitWeb), 0),
+    gygTotal: buggyDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitGyg), 0),
+    cruiseTotal: buggyDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitCruise), 0),
+    vehiclesCount: buggyDepartures.reduce((sum, d) => sum + parseInt(d.vehiclesCount || 0), 0),
+  };
+
+  // Calculate expenses by account for today
+  const geExpenses = expenses.filter(e => e.account === 'GE');
+  const esExpenses = expenses.filter(e => e.account === 'E&S');
+  const geExpenseTotal = geExpenses.reduce((sum, e) => sum + parseNumber(e.amount), 0);
+  const esExpenseTotal = esExpenses.reduce((sum, e) => sum + parseNumber(e.amount), 0);
+
+  // Net cash after expenses
+  const quadCashNet = quadStats.cashTotal - geExpenseTotal;
+  const buggyCashNet = buggyStats.cashTotal - esExpenseTotal;
+
   return (
     <div className="space-y-6">
       {/* Date Selector */}
@@ -213,7 +258,7 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
         </CardHeader>
       </Card>
 
-      {/* Stats Grid */}
+      {/* General Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
           <CardHeader className="pb-2">
@@ -240,7 +285,7 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                 <span className="text-muted-foreground">{t('quads')}</span>
               </div>
               <div className="flex items-center gap-1">
-                <Car className="h-4 w-4 text-green-600" />
+                <Truck className="h-4 w-4 text-green-600" />
                 <span className="font-medium">{stats.buggyCount}</span>
                 <span className="text-muted-foreground">{t('buggies')}</span>
               </div>
@@ -285,6 +330,165 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
         </Card>
       </div>
 
+      {/* Breakdown by Category: Quads vs Buggies */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* QUADS (GE) */}
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Car className="h-5 w-5 text-blue-600" />
+                <CardTitle className="text-lg">{t('quads')} (GE)</CardTitle>
+              </div>
+              <Badge variant="secondary">{quadStats.vehiclesCount} veh.</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">{language === 'es' ? 'Ingresos Brutos' : 'Gross Income'}</span>
+              <span className="font-bold text-lg">€{quadStats.totalGross.toFixed(2)}</span>
+            </div>
+            
+            <div className="border-t pt-2">
+              <div className="text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span>💵 {t('cash')}</span>
+                  <span className="font-medium">€{quadStats.cashTotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>🏦 {t('bank')}</span>
+                  <span className="font-medium">€{quadStats.bankTotal.toFixed(2)}</span>
+                </div>
+                {quadStats.webTotal > 0 && (
+                  <div className="flex justify-between">
+                    <span>🌐 Web</span>
+                    <span className="font-medium">€{quadStats.webTotal.toFixed(2)}</span>
+                  </div>
+                )}
+                {quadStats.gygTotal > 0 && (
+                  <div className="flex justify-between text-yellow-600">
+                    <span>🎫 GYG (pendiente)</span>
+                    <span className="font-medium">€{quadStats.gygTotal.toFixed(2)}</span>
+                  </div>
+                )}
+                {quadStats.cruiseTotal > 0 && (
+                  <div className="flex justify-between text-yellow-600">
+                    <span>🚢 {t('cruises')} (pendiente)</span>
+                    <span className="font-medium">€{quadStats.cruiseTotal.toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* GE Expenses */}
+            {geExpenseTotal > 0 && (
+              <div className="border-t pt-2">
+                <div className="flex justify-between items-center text-red-600">
+                  <span className="flex items-center gap-1">
+                    <TrendingDown className="h-4 w-4" />
+                    {language === 'es' ? 'Gastos GE (del efectivo)' : 'GE Expenses (from cash)'}
+                  </span>
+                  <span className="font-medium">-€{geExpenseTotal.toFixed(2)}</span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {geExpenses.map(e => `${e.concept}: €${parseNumber(e.amount).toFixed(2)}`).join(', ')}
+                </div>
+              </div>
+            )}
+
+            {/* Net Cash */}
+            <div className="border-t pt-2 bg-blue-50 -mx-4 px-4 py-2 rounded-b-lg">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-blue-800">
+                  💰 {language === 'es' ? 'Efectivo Neto Quads' : 'Net Cash Quads'}
+                </span>
+                <span className={`font-bold text-xl ${quadCashNet >= 0 ? 'text-blue-700' : 'text-red-600'}`}>
+                  €{quadCashNet.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* BUGGIES (E&S) */}
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Truck className="h-5 w-5 text-green-600" />
+                <CardTitle className="text-lg">{t('buggies')} (E&S)</CardTitle>
+              </div>
+              <Badge variant="secondary">{buggyStats.vehiclesCount} veh.</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">{language === 'es' ? 'Ingresos Brutos' : 'Gross Income'}</span>
+              <span className="font-bold text-lg">€{buggyStats.totalGross.toFixed(2)}</span>
+            </div>
+            
+            <div className="border-t pt-2">
+              <div className="text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span>💵 {t('cash')}</span>
+                  <span className="font-medium">€{buggyStats.cashTotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>🏦 {t('bank')}</span>
+                  <span className="font-medium">€{buggyStats.bankTotal.toFixed(2)}</span>
+                </div>
+                {buggyStats.webTotal > 0 && (
+                  <div className="flex justify-between">
+                    <span>🌐 Web</span>
+                    <span className="font-medium">€{buggyStats.webTotal.toFixed(2)}</span>
+                  </div>
+                )}
+                {buggyStats.gygTotal > 0 && (
+                  <div className="flex justify-between text-yellow-600">
+                    <span>🎫 GYG (pendiente)</span>
+                    <span className="font-medium">€{buggyStats.gygTotal.toFixed(2)}</span>
+                  </div>
+                )}
+                {buggyStats.cruiseTotal > 0 && (
+                  <div className="flex justify-between text-yellow-600">
+                    <span>🚢 {t('cruises')} (pendiente)</span>
+                    <span className="font-medium">€{buggyStats.cruiseTotal.toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* E&S Expenses */}
+            {esExpenseTotal > 0 && (
+              <div className="border-t pt-2">
+                <div className="flex justify-between items-center text-red-600">
+                  <span className="flex items-center gap-1">
+                    <TrendingDown className="h-4 w-4" />
+                    {language === 'es' ? 'Gastos E&S (del efectivo)' : 'E&S Expenses (from cash)'}
+                  </span>
+                  <span className="font-medium">-€{esExpenseTotal.toFixed(2)}</span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {esExpenses.map(e => `${e.concept}: €${parseNumber(e.amount).toFixed(2)}`).join(', ')}
+                </div>
+              </div>
+            )}
+
+            {/* Net Cash */}
+            <div className="border-t pt-2 bg-green-50 -mx-4 px-4 py-2 rounded-b-lg">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-green-800">
+                  💰 {language === 'es' ? 'Efectivo Neto Buggies' : 'Net Cash Buggies'}
+                </span>
+                <span className={`font-bold text-xl ${buggyCashNet >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                  €{buggyCashNet.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Tours by Time Slot */}
       <Card>
         <CardHeader>
@@ -314,7 +518,7 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                       const isPendingCruise = dep.isPendingCruise === 'true' || dep.isPendingCruise === true;
                       
                       return (
-                        <Card key={idx} className="bg-muted/50 relative">
+                        <Card key={idx} className={`bg-muted/50 relative ${dep.category === 'quad' ? 'border-l-4 border-l-blue-400' : 'border-l-4 border-l-green-400'}`}>
                           <div className="absolute top-2 right-2 flex gap-1">
                             <Button
                               variant="ghost"
@@ -339,7 +543,7 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                           </div>
                           <CardContent className="p-3">
                             <div className="flex items-start justify-between mb-2">
-                              <Badge variant={dep.category === 'quad' ? 'default' : 'secondary'}>
+                              <Badge variant={dep.category === 'quad' ? 'default' : 'secondary'} className={dep.category === 'quad' ? 'bg-blue-600' : 'bg-green-600'}>
                                 {dep.category === 'quad' ? 'Quad' : 'Buggy'}
                               </Badge>
                               <span className="text-sm font-medium">{dep.vehiclesCount}x</span>
