@@ -580,11 +580,16 @@ export default function BatchEntry() {
                       </div>
 
                       <div>
-                        <Label>{t('groupLabel')}</Label>
+                        <Label className="flex items-center gap-1">
+                          💰 {language === 'es' ? 'Comisión Colaborador' : 'Collaborator Commission'}
+                        </Label>
                         <Input
-                          value={entry.groupLabel}
-                          onChange={(e) => updateEntry(entry.id, 'groupLabel', e.target.value)}
-                          placeholder={t('groupPlaceholder')}
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={entry.commission || ''}
+                          onChange={(e) => updateEntry(entry.id, 'commission', e.target.value)}
+                          placeholder="0.00"
                           className="mt-1"
                         />
                       </div>
