@@ -575,6 +575,7 @@ export default function BatchEntry() {
 
             {entries.map((entry, index) => {
               const baseTotal = getBaseTotal(entry);
+              const preCommissionTotal = getPreCommissionTotal(entry);
               const entryTotal = getEntryTotal(entry);
               const splitTotal = getPaymentSplitTotal(entry);
               const splitValid = Math.abs(splitTotal - entryTotal) < 0.01;
@@ -582,6 +583,11 @@ export default function BatchEntry() {
               const hasDiscount = entry.gygDiscount > 0;
               const hasCommission = parseFloat(entry.commission) > 0;
               const commissionAmount = parseFloat(entry.commission) || 0;
+              const commissionMethod = entry.commissionMethod || 'cash';
+              
+              // Check if commission method is different from main payment method
+              const mainPaymentMethod = entry.paymentSplit[0]?.method || 'cash';
+              const commissionFromDifferentSource = hasCommission && commissionMethod !== mainPaymentMethod;
               
               return (
                 <Card key={entry.id} className="bg-muted/50">
@@ -591,26 +597,40 @@ export default function BatchEntry() {
                         <Badge>{t('entry')} #{index + 1}</Badge>
                         {baseTotal > 0 && (
                           <>
-                            {hasDiscount ? (
-                              <>
-                                <Badge variant="outline" className="line-through text-muted-foreground">
-                                  €{baseTotal.toFixed(2)}
-                                </Badge>
-                                <Badge className="bg-green-600">
-                                  <Percent className="h-3 w-3 mr-1" />
-                                  €{entryTotal.toFixed(2)} (-25% GYG)
-                                </Badge>
-                              </>
-                            ) : (
+                            {hasDiscount && (
+                              <Badge variant="outline" className="line-through text-muted-foreground">
+                                €{baseTotal.toFixed(2)}
+                              </Badge>
+                            )}
+                            {hasDiscount && !hasCommission && (
+                              <Badge className="bg-green-600">
+                                <Percent className="h-3 w-3 mr-1" />
+                                €{preCommissionTotal.toFixed(2)} (-25% GYG)
+                              </Badge>
+                            )}
+                            {!hasDiscount && !hasCommission && (
                               <Badge variant="outline">
                                 {t('total')}: €{entryTotal.toFixed(2)}
                               </Badge>
                             )}
                             {hasCommission && (
-                              <Badge className="bg-purple-600">
-                                💰 {language === 'es' ? 'Com.' : 'Comm.'}: €{commissionAmount.toFixed(2)} 
-                                ({entry.commissionMethod === 'bank' ? '🏦' : '💵'})
-                              </Badge>
+                              <>
+                                <Badge variant="outline">
+                                  {language === 'es' ? 'Cobrado' : 'Charged'}: €{preCommissionTotal.toFixed(2)}
+                                </Badge>
+                                <Badge className="bg-purple-600">
+                                  💰 -{commissionAmount.toFixed(2)} ({commissionMethod === 'bank' ? '🏦' : '💵'})
+                                </Badge>
+                                <Badge variant="default" className="bg-orange-600">
+                                  {language === 'es' ? 'Neto' : 'Net'}: €{entryTotal.toFixed(2)}
+                                </Badge>
+                                {commissionFromDifferentSource && (
+                                  <Badge variant="destructive" className="text-xs">
+                                    ⚠️ {language === 'es' ? 'Com. sale de ' : 'Comm. from '}
+                                    {commissionMethod === 'bank' ? '🏦 Banco' : '💵 Efectivo'}
+                                  </Badge>
+                                )}
+                              </>
                             )}
                           </>
                         )}
