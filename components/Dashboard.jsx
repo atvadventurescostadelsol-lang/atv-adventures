@@ -43,6 +43,7 @@ function parseNumber(value) {
 
 export default function Dashboard({ selectedDate: propDate, onDateChange }) {
   const { language, t } = useLanguage();
+  const { canAccessCategory, canAccessExpenseAccount, getAllowedCategories } = useAuth();
   const [data, setData] = useState(null);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +54,12 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
   const [saving, setSaving] = useState(false);
   
   const dateLocale = language === 'es' ? es : enUS;
+  
+  // Check user restrictions
+  const canViewQuads = canAccessCategory('quad');
+  const canViewBuggies = canAccessCategory('buggy');
+  const canViewGE = canAccessExpenseAccount('GE');
+  const canViewES = canAccessExpenseAccount('E&S');
 
   // Sync with prop when it changes
   useEffect(() => {
