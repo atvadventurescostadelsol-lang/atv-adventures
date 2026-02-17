@@ -419,3 +419,87 @@ agent_communication:
       
       IMMEDIATE FIX REQUIRED: Update Google Sheet header row to include the 3 missing column headers:
       paymentSplitCruise, gygDiscount, isPendingCruise between paymentSplitGyg and createdAt columns.
+
+  - task: "GET /api/expense-categories - List expense categories"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: Expense categories endpoint working correctly. Default categories (Gasolina, Alimentación, Guía, Mantenimiento, Otros) properly initialized for both GE and E&S accounts. Returns 10 categories with correct structure including id, name, account, and createdAt fields."
+
+  - task: "POST /api/expense-categories - Create new expense category"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: Category creation endpoint working correctly. Successfully creates new categories with proper validation. Correctly validates account field (GE or E&S only). Properly prevents duplicate category names within same account. Returns proper error messages for invalid inputs."
+
+  - task: "DELETE /api/expense-categories/:id - Delete expense category"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: Category deletion endpoint working correctly. Successfully deletes categories by ID with soft delete implementation. Returns proper 404 for nonexistent categories."
+
+  - task: "GET /api/expenses - List all expenses with filtering"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: Expenses retrieval endpoint working correctly. Returns all expenses with proper structure (id, date, amount, concept, account, notes, createdAt). Account filtering works correctly (filtering by GE returns only GE expenses). Date range filtering working properly (startDate and endDate parameters). Empty results handled correctly."
+
+  - task: "POST /api/expenses - Create new expense"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: Expense creation endpoint working correctly. Successfully creates expenses with all required fields (date, amount, concept, account). Properly validates required fields and returns 400 for missing data. Validates account field (GE or E&S only). Amount properly formatted to 2 decimal places. UUID generation working correctly."
+
+  - task: "DELETE /api/expenses/:id - Delete expense"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: Expense deletion endpoint working correctly. Successfully deletes expenses by ID with soft delete implementation. Returns proper 404 for nonexistent expenses with appropriate error message."
+
+  - task: "GET /api/dashboard - Dashboard integration with expenses"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: Dashboard endpoint working correctly with date parameter support. Properly returns stats structure with all required fields (totalGross, quadCount, buggyCount, cashTotal, bankTotal, etc.). Date filtering working correctly - when date parameter provided, returns data for that specific date. Integration ready for expense data display."
