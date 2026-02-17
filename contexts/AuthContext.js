@@ -4,6 +4,16 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
+// User restrictions configuration
+// Charly can only access buggy category and E&S expenses
+const USER_RESTRICTIONS = {
+  'Charly': {
+    allowedCategories: ['buggy'], // Only buggy, not quad
+    allowedExpenseAccounts: ['E&S'], // Only E&S, not GE
+    canAccessAdmin: false,
+  }
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -32,10 +42,14 @@ export function AuthProvider({ children }) {
       const data = await res.json();
 
       if (res.ok && data.success) {
+        // Get user restrictions
+        const restrictions = USER_RESTRICTIONS[data.user.username] || null;
+        
         const userData = {
           id: data.user.id,
           username: data.user.username,
-          role: data.user.role
+          role: data.user.role,
+          restrictions: restrictions
         };
         setUser(userData);
         localStorage.setItem('atv-user', JSON.stringify(userData));
@@ -75,6 +89,33 @@ export function AuthProvider({ children }) {
   };
 
   const isAdmin = () => user?.role === 'admin';
+  
+  // Check if user has category restrictions
+  const hasRestrictions = () => !!user?.restrictions;
+  
+  // Get allowed categories for user (null means all)
+  const getAllowedCategories = () => user?.restrictions?.allowedCategories || null;
+  
+  // Get allowed expense accounts for user (null means all)
+  const getAllowedExpenseAccounts = () => user?.restrictions?.allowedExpenseAccounts || null;
+  
+  // Check if user can access a specific category
+  const canAccessCategory = (category) => {
+    if (!user?.restrictions?.allowedCategories) return true;
+    return user.restrictions.allowedCategories.includes(category);
+  };
+  
+  // Check if user can access a specific expense account
+  const canAccessExpenseAccount = (account) => {
+    if (!user?.restrictions?.allowedExpenseAccounts) return true;
+    return user.restrictions.allowedExpenseAccounts.includes(account);
+  };
+  
+  // Check if user can access admin panel
+  const canAccessAdmin = () => {
+    if (user?.restrictions?.canAccessAdmin === false) return false;
+    return user?.role === 'admin';
+  };
 
   return (
     <AuthContext.Provider value={{ 
@@ -84,6 +125,12 @@ export function AuthProvider({ children }) {
       logout, 
       changePassword,
       isAdmin,
+      canAccessAdmin,
+      hasRestrictions,
+      getAllowedCategories,
+      getAllowedExpenseAccounts,
+      canAccessCategory,
+      canAccessExpenseAccount,
       isAuthenticated: !!user 
     }}>
       {children}
