@@ -705,11 +705,6 @@ export default function Reports() {
                 <div className="text-2xl font-bold text-purple-700">
                   €{results.totals.commissionTotal.toFixed(2)}
                 </div>
-                <div className="text-sm text-purple-600 mt-1">
-                  {language === 'es' 
-                    ? `Neto real (Bruto - Comisiones): €${(results.totals.totalGross - results.totals.commissionTotal).toFixed(2)}`
-                    : `Real net (Gross - Commissions): €${(results.totals.totalGross - results.totals.commissionTotal).toFixed(2)}`}
-                </div>
               </div>
             )}
 
