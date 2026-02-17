@@ -564,9 +564,21 @@ export default function Reports() {
       });
     }
 
-    // Calculate net cash for each category
-    stats.quadCashNet = stats.quadCash - stats.geExpenseTotal;
-    stats.buggyCashNet = stats.buggyCash - stats.esExpenseTotal;
+    // Calculate incomes by account
+    if (incomesData && incomesData.length > 0) {
+      incomesData.forEach(i => {
+        const amount = parseNumber(i.amount);
+        if (i.account === 'GE') {
+          stats.geIncomeTotal += amount;
+        } else if (i.account === 'E&S') {
+          stats.esIncomeTotal += amount;
+        }
+      });
+    }
+
+    // Calculate net cash for each category (cash - expenses + incomes)
+    stats.quadCashNet = stats.quadCash - stats.geExpenseTotal + stats.geIncomeTotal;
+    stats.buggyCashNet = stats.buggyCash - stats.esExpenseTotal + stats.esIncomeTotal;
 
     return stats;
   }
