@@ -338,6 +338,10 @@ function AppContent() {
             <Expenses />
           </TabsContent>
 
+          <TabsContent value="incomes">
+            <Incomes />
+          </TabsContent>
+
           <TabsContent value="reports">
             <Reports />
           </TabsContent>
