@@ -112,10 +112,6 @@ export default function Reports() {
       console.error('Error loading income categories:', error);
     }
   }
-    } catch (error) {
-      console.error('Error loading expense categories:', error);
-    }
-  }
 
   // Get available concepts based on selected account (respecting permissions)
   function getAvailableConcepts() {
