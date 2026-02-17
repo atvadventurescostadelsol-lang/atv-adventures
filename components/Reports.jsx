@@ -29,6 +29,14 @@ export default function Reports() {
   const [expenses, setExpenses] = useState([]);
   const reportRef = useRef(null);
   
+  // Expense-only report state
+  const [expenseStartDate, setExpenseStartDate] = useState('');
+  const [expenseEndDate, setExpenseEndDate] = useState('');
+  const [expenseReportAccount, setExpenseReportAccount] = useState('all');
+  const [expenseReportConcept, setExpenseReportConcept] = useState('all');
+  const [expenseResults, setExpenseResults] = useState(null);
+  const [expenseLoading, setExpenseLoading] = useState(false);
+  
   const dateLocale = language === 'es' ? es : enUS;
 
   useEffect(() => {
