@@ -368,11 +368,21 @@ export default function Reports() {
     });
   }
 
+  function filterIncomesByPermissions(incomes) {
+    if (!incomes) return [];
+    return incomes.filter(i => {
+      if (i.account === 'GE' && !canViewGE) return false;
+      if (i.account === 'E&S' && !canViewES) return false;
+      return true;
+    });
+  }
+
   async function loadPeriodStats() {
     try {
-      const [depRes, expRes] = await Promise.all([
+      const [depRes, expRes, incRes] = await Promise.all([
         fetch('/api/departures'),
-        fetch('/api/expenses?startDate=2020-01-01&endDate=2030-12-31')
+        fetch('/api/expenses?startDate=2020-01-01&endDate=2030-12-31'),
+        fetch('/api/incomes?startDate=2020-01-01&endDate=2030-12-31')
       ]);
       
       if (!depRes.ok) return;
@@ -380,10 +390,13 @@ export default function Reports() {
       // Get raw data and filter by user permissions
       const rawDepartures = await depRes.json();
       const rawExpenses = expRes.ok ? await expRes.json() : [];
+      const rawIncomes = incRes.ok ? await incRes.json() : [];
       
       const allDepartures = filterDeparturesByPermissions(rawDepartures);
       const allExpenses = filterExpensesByPermissions(rawExpenses);
+      const allIncomes = filterIncomesByPermissions(rawIncomes);
       setExpenses(allExpenses);
+      setIncomes(allIncomes);
       
       const today = new Date();
       
