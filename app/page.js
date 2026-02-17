@@ -134,7 +134,7 @@ function AppContent() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const { language, changeLanguage, t } = useLanguage();
-  const { user, logout, isAdmin, isAuthenticated } = useAuth();
+  const { user, logout, isAdmin, canAccessAdmin, isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) {
