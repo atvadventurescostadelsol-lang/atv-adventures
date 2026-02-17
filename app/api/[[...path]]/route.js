@@ -1047,11 +1047,11 @@ async function handlePost(request, path) {
             effectivePrice = effectivePrice * (1 - gygDiscount);
           }
 
-          // Get commission first (commission is a separate expense, NOT subtracted from gross)
+          // Get commission first
           const commission = parseFloat(entryData.commission || 0);
           const commissionMethod = entryData.commissionMethod || 'cash';
 
-          // Calculate financials based on full price (commission doesn't reduce gross)
+          // Calculate financials based on full price first
           const financials = calculateFinancials(
             parseInt(vehiclesCount),
             effectivePrice,
@@ -1061,7 +1061,7 @@ async function handlePost(request, path) {
           // Calculate payout date
           const expectedPayoutDate = calculatePayoutDate(salesChannel || 'otros', date);
 
-          // Process payment splits - these should sum to totalGross (full amount)
+          // Process payment splits
           let paymentSplitWeb = 0;
           let paymentSplitCash = 0;
           let paymentSplitBank = 0;
@@ -1093,6 +1093,22 @@ async function handlePost(request, path) {
             // Default: all to cash
             paymentSplitCash = financials.totalGross;
           }
+
+          // IMPORTANT: Subtract commission from the corresponding payment method
+          // This reflects the REAL money that stays
+          if (commission > 0) {
+            if (commissionMethod === 'cash') {
+              paymentSplitCash = paymentSplitCash - commission;
+            } else if (commissionMethod === 'bank') {
+              paymentSplitBank = paymentSplitBank - commission;
+            }
+          }
+
+          // Recalculate totalGross as sum of all payments (after commission deduction)
+          const actualTotalGross = paymentSplitWeb + paymentSplitCash + paymentSplitBank + paymentSplitGyg + paymentSplitCruise;
+          financials.totalGross = parseFloat(actualTotalGross.toFixed(2));
+          financials.netBase = parseFloat((actualTotalGross / 1.21).toFixed(2));
+          financials.vatAmount = parseFloat((actualTotalGross - financials.netBase).toFixed(2));
 
           // Check if pending cruise
           const isPendingCruise = entryData.isPendingCruise || false;
