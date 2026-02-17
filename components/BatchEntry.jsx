@@ -768,6 +768,61 @@ export default function BatchEntry() {
                         </div>
                       </div>
 
+                      {/* Discount Field */}
+                      <div>
+                        <Label className="flex items-center gap-1">
+                          <Percent className="h-4 w-4" />
+                          {language === 'es' ? 'Descuento (€)' : 'Discount (€)'}
+                        </Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={entry.discount || ''}
+                          onChange={(e) => {
+                            updateEntry(entry.id, 'discount', e.target.value);
+                            // Clear manual total when discount changes
+                            if (entry.manualTotal !== '') {
+                              updateEntry(entry.id, 'manualTotal', '');
+                            }
+                          }}
+                          placeholder="0.00"
+                          className="mt-1"
+                        />
+                        {parseFloat(entry.discount) > 0 && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {language === 'es' ? 'Precio original' : 'Original price'}: €{getBaseTotal(entry).toFixed(2)}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Manual Total Override */}
+                      <div>
+                        <Label className="flex items-center gap-1">
+                          ✏️ {language === 'es' ? 'Total Manual (€)' : 'Manual Total (€)'}
+                        </Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={entry.manualTotal}
+                          onChange={(e) => {
+                            updateEntry(entry.id, 'manualTotal', e.target.value);
+                            // Clear discount when manual total is set
+                            if (e.target.value !== '' && parseFloat(entry.discount) > 0) {
+                              updateEntry(entry.id, 'discount', 0);
+                            }
+                          }}
+                          placeholder={language === 'es' ? 'Auto-calculado' : 'Auto-calculated'}
+                          className="mt-1"
+                        />
+                        {entry.manualTotal !== '' && entry.manualTotal !== null && (
+                          <p className="text-xs text-orange-600 mt-1">
+                            ⚠️ {language === 'es' ? 'Sobrescribe precio calculado' : 'Overrides calculated price'}
+                          </p>
+                        )}
+                      </div>
+
                       <div className="md:col-span-2">
                         <Label>{t('notes')}</Label>
                         <Textarea
