@@ -302,6 +302,10 @@ function AppContent() {
               <Receipt className="h-4 w-4" />
               <span className="hidden sm:inline">{language === 'es' ? 'Gastos' : 'Expenses'}</span>
             </TabsTrigger>
+            <TabsTrigger value="incomes" className="gap-2">
+              <Wallet className="h-4 w-4" />
+              <span className="hidden sm:inline">{language === 'es' ? 'Ingresos' : 'Incomes'}</span>
+            </TabsTrigger>
             <TabsTrigger value="reports" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">{t('reports')}</span>
