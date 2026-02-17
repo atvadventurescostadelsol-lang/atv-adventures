@@ -215,6 +215,308 @@ async function ensureExpenseCategoriesSheet() {
   }
 }
 
+// ==================== INCOMES HELPERS ====================
+
+// Ensure Incomes sheet exists
+async function ensureIncomesSheet() {
+  try {
+    let data;
+    try {
+      data = await getSheetData(SPREADSHEET_ID, 'Incomes!A:H');
+    } catch (e) {
+      console.log('Incomes sheet might not exist, will create it');
+      data = null;
+    }
+    
+    const needsInit = !data || data.length === 0 || (data.length === 1 && data[0][0] === 'id');
+    
+    if (needsInit) {
+      console.log('Initializing Incomes sheet...');
+      const headers = ['id', 'date', 'amount', 'concept', 'account', 'notes', 'createdAt', 'createdBy'];
+      
+      try {
+        const { getSheetsClient } = require('@/lib/google-sheets');
+        const sheets = await getSheetsClient();
+        
+        try {
+          await sheets.spreadsheets.batchUpdate({
+            spreadsheetId: SPREADSHEET_ID,
+            requestBody: {
+              requests: [{
+                addSheet: {
+                  properties: { title: 'Incomes' }
+                }
+              }]
+            }
+          });
+        } catch (sheetErr) {
+          console.log('Incomes sheet might already exist:', sheetErr.message);
+        }
+        
+        await updateSheetData(SPREADSHEET_ID, 'Incomes!A1:H1', [headers]);
+      } catch (e) {
+        console.error('Error initializing Incomes sheet:', e);
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error('Error ensuring Incomes sheet:', error);
+    return false;
+  }
+}
+
+// Ensure IncomeCategories sheet exists with default categories
+async function ensureIncomeCategoriesSheet() {
+  try {
+    let data;
+    try {
+      data = await getSheetData(SPREADSHEET_ID, 'IncomeCategories!A:D');
+    } catch (e) {
+      console.log('IncomeCategories sheet might not exist, will create it');
+      data = null;
+    }
+    
+    const needsInit = !data || data.length === 0 || (data.length === 1 && data[0][0] === 'id');
+    
+    if (needsInit) {
+      console.log('Initializing IncomeCategories sheet with defaults...');
+      const headers = ['id', 'name', 'account', 'createdAt'];
+      const now = new Date().toISOString();
+      
+      // Default categories for GE (Quads)
+      const defaultGE = [
+        [uuidv4(), 'Transferencia', 'GE', now],
+        [uuidv4(), 'Pago pendiente', 'GE', now],
+        [uuidv4(), 'Otros', 'GE', now],
+      ];
+      
+      // Default categories for E&S (Buggies)
+      const defaultES = [
+        [uuidv4(), 'Transferencia', 'E&S', now],
+        [uuidv4(), 'Pago pendiente', 'E&S', now],
+        [uuidv4(), 'Otros', 'E&S', now],
+      ];
+      
+      try {
+        const { getSheetsClient } = require('@/lib/google-sheets');
+        const sheets = await getSheetsClient();
+        
+        try {
+          await sheets.spreadsheets.batchUpdate({
+            spreadsheetId: SPREADSHEET_ID,
+            requestBody: {
+              requests: [{
+                addSheet: {
+                  properties: { title: 'IncomeCategories' }
+                }
+              }]
+            }
+          });
+        } catch (sheetErr) {
+          console.log('IncomeCategories sheet might already exist:', sheetErr.message);
+        }
+        
+        await updateSheetData(SPREADSHEET_ID, 'IncomeCategories!A1:D1', [headers]);
+        await appendSheetData(SPREADSHEET_ID, 'IncomeCategories!A:D', [...defaultGE, ...defaultES]);
+      } catch (e) {
+        console.error('Error initializing IncomeCategories sheet:', e);
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error('Error ensuring IncomeCategories sheet:', error);
+    return false;
+  }
+}
+
+// Get all incomes
+async function getIncomes(searchParams) {
+  await ensureIncomesSheet();
+  
+  try {
+    const data = await getSheetData(SPREADSHEET_ID, 'Incomes!A:H');
+    let incomes = parseSheetToObjects(data);
+    
+    // Filter out empty rows
+    incomes = incomes.filter(i => i.id && i.id.trim() !== '');
+    
+    // Filter by account if specified
+    const account = searchParams.get('account');
+    if (account) {
+      incomes = incomes.filter(i => i.account === account);
+    }
+    
+    // Filter by date range if specified
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    if (startDate && endDate) {
+      incomes = incomes.filter(i => i.date >= startDate && i.date <= endDate);
+    }
+    
+    return NextResponse.json(incomes);
+  } catch (error) {
+    console.error('Get incomes error:', error);
+    return NextResponse.json({ error: 'Failed to get incomes' }, { status: 500 });
+  }
+}
+
+// Create new income
+async function createIncome(body) {
+  await ensureIncomesSheet();
+  
+  try {
+    const { date, amount, concept, account, notes = '' } = body;
+    
+    if (!date || amount === undefined || !concept || !account) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+    
+    if (!['GE', 'E&S'].includes(account)) {
+      return NextResponse.json({ error: 'Invalid account. Must be GE or E&S' }, { status: 400 });
+    }
+    
+    const id = uuidv4();
+    const createdAt = new Date().toISOString();
+    
+    const incomeRow = [
+      id,
+      date,
+      parseFloat(amount).toFixed(2),
+      concept,
+      account,
+      notes,
+      createdAt,
+      'system'
+    ];
+    
+    await appendSheetData(SPREADSHEET_ID, 'Incomes!A:H', [incomeRow]);
+    
+    await addAuditLog('CREATE', 'income', id, { date, amount, concept, account });
+    
+    return NextResponse.json({
+      success: true,
+      income: {
+        id,
+        date,
+        amount: parseFloat(amount).toFixed(2),
+        concept,
+        account,
+        notes,
+        createdAt,
+        createdBy: 'system'
+      }
+    });
+  } catch (error) {
+    console.error('Create income error:', error);
+    return NextResponse.json({ error: 'Failed to create income' }, { status: 500 });
+  }
+}
+
+// Delete income (soft delete by clearing the row)
+async function deleteIncome(id) {
+  try {
+    const data = await getSheetData(SPREADSHEET_ID, 'Incomes!A:H');
+    const incomes = parseSheetToObjects(data);
+    const index = incomes.findIndex(i => i.id === id);
+    
+    if (index === -1) {
+      return NextResponse.json({ error: 'Income not found' }, { status: 404 });
+    }
+    
+    const income = incomes[index];
+    
+    // Clear the row (soft delete)
+    const rowIndex = index + 2; // +2 for header and 0-based index
+    await updateSheetData(SPREADSHEET_ID, `Incomes!A${rowIndex}:H${rowIndex}`, [['', '', '', '', '', '', '', '']]);
+    
+    await addAuditLog('DELETE', 'income', id, income);
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete income error:', error);
+    return NextResponse.json({ error: 'Failed to delete income' }, { status: 500 });
+  }
+}
+
+// Get income categories
+async function getIncomeCategories() {
+  await ensureIncomeCategoriesSheet();
+  
+  try {
+    const data = await getSheetData(SPREADSHEET_ID, 'IncomeCategories!A:D');
+    let categories = parseSheetToObjects(data);
+    
+    // Filter out empty rows
+    categories = categories.filter(c => c.id && c.id.trim() !== '');
+    
+    return NextResponse.json(categories);
+  } catch (error) {
+    console.error('Get income categories error:', error);
+    return NextResponse.json({ error: 'Failed to get income categories' }, { status: 500 });
+  }
+}
+
+// Create income category
+async function createIncomeCategory(body) {
+  await ensureIncomeCategoriesSheet();
+  
+  try {
+    const { name, account } = body;
+    
+    if (!name || !account) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+    
+    if (!['GE', 'E&S'].includes(account)) {
+      return NextResponse.json({ error: 'Invalid account. Must be GE or E&S' }, { status: 400 });
+    }
+    
+    // Check for duplicate name in same account
+    const data = await getSheetData(SPREADSHEET_ID, 'IncomeCategories!A:D');
+    const categories = parseSheetToObjects(data);
+    const exists = categories.some(c => c.name === name && c.account === account);
+    
+    if (exists) {
+      return NextResponse.json({ error: 'Category already exists for this account' }, { status: 400 });
+    }
+    
+    const id = uuidv4();
+    const createdAt = new Date().toISOString();
+    
+    await appendSheetData(SPREADSHEET_ID, 'IncomeCategories!A:D', [[id, name, account, createdAt]]);
+    
+    return NextResponse.json({
+      success: true,
+      category: { id, name, account, createdAt }
+    });
+  } catch (error) {
+    console.error('Create income category error:', error);
+    return NextResponse.json({ error: 'Failed to create income category' }, { status: 500 });
+  }
+}
+
+// Delete income category
+async function deleteIncomeCategory(id) {
+  try {
+    const data = await getSheetData(SPREADSHEET_ID, 'IncomeCategories!A:D');
+    const categories = parseSheetToObjects(data);
+    const index = categories.findIndex(c => c.id === id);
+    
+    if (index === -1) {
+      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+    }
+    
+    // Clear the row (soft delete)
+    const rowIndex = index + 2;
+    await updateSheetData(SPREADSHEET_ID, `IncomeCategories!A${rowIndex}:D${rowIndex}`, [['', '', '', '']]);
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete income category error:', error);
+    return NextResponse.json({ error: 'Failed to delete income category' }, { status: 500 });
+  }
+}
+
 // ==================== AUTH HANDLERS ====================
 
 // Initialize Users sheet if it doesn't exist or has no users
