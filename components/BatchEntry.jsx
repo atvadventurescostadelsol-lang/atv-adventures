@@ -40,6 +40,8 @@ export default function BatchEntry() {
     isPendingCruise: false,
     commission: 0,
     commissionMethod: 'cash', // 'cash' or 'bank'
+    discount: 0, // Manual discount amount in euros
+    manualTotal: '', // Manual total override (empty = auto-calculate)
   }]);
 
   const [products, setProducts] = useState([]);
