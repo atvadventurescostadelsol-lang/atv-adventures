@@ -390,9 +390,19 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                             {commission > 0 && (
                               <div className="mt-2 pt-2 border-t">
                                 <div className="flex justify-between text-xs text-purple-600">
-                                  <span>💰 {language === 'es' ? 'Comisión' : 'Commission'} ({dep.commissionMethod === 'bank' ? '🏦' : '💵'})</span>
-                                  <span className="font-medium">€{commission.toFixed(2)}</span>
+                                  <span>
+                                    💰 {language === 'es' ? 'Comisión' : 'Commission'} 
+                                    {dep.commissionMethod === 'bank' ? ' (🏦 sale banco)' : ' (💵 sale efectivo)'}
+                                  </span>
+                                  <span className="font-medium">-€{commission.toFixed(2)}</span>
                                 </div>
+                                {/* Warning if commission method differs from main payment */}
+                                {((cashAmt > 0 && dep.commissionMethod === 'bank') || 
+                                  (bankAmt > 0 && cashAmt === 0 && dep.commissionMethod === 'cash')) && (
+                                  <div className="text-xs text-amber-600 mt-1">
+                                    ⚠️ {language === 'es' ? 'Comisión de fuente diferente al cobro' : 'Commission from different source'}
+                                  </div>
+                                )}
                               </div>
                             )}
                             
