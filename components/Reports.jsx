@@ -20,6 +20,9 @@ export default function Reports() {
   const [endDate, setEndDate] = useState('');
   const [category, setCategory] = useState('all');
   const [channel, setChannel] = useState('all');
+  const [expenseAccount, setExpenseAccount] = useState('all'); // Filter: all, GE, E&S
+  const [expenseConcept, setExpenseConcept] = useState('all'); // Filter by concept
+  const [expenseCategories, setExpenseCategories] = useState({ GE: [], 'E&S': [] });
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [periodStats, setPeriodStats] = useState(null);
@@ -30,7 +33,45 @@ export default function Reports() {
 
   useEffect(() => {
     loadPeriodStats();
+    loadExpenseCategories();
   }, []);
+
+  // Load expense categories for filter dropdowns
+  async function loadExpenseCategories() {
+    try {
+      const res = await fetch('/api/expense-categories');
+      if (res.ok) {
+        const data = await res.json();
+        const grouped = { GE: [], 'E&S': [] };
+        data.forEach(cat => {
+          if (cat.account === 'GE') grouped.GE.push(cat);
+          else if (cat.account === 'E&S') grouped['E&S'].push(cat);
+        });
+        setExpenseCategories(grouped);
+      }
+    } catch (error) {
+      console.error('Error loading expense categories:', error);
+    }
+  }
+
+  // Get available concepts based on selected account
+  function getAvailableConcepts() {
+    if (expenseAccount === 'all') {
+      // Combine unique concepts from both accounts
+      const allConcepts = [...expenseCategories.GE, ...expenseCategories['E&S']];
+      const uniqueNames = [...new Set(allConcepts.map(c => c.name))];
+      return uniqueNames;
+    } else if (expenseAccount === 'GE') {
+      return expenseCategories.GE.map(c => c.name);
+    } else {
+      return expenseCategories['E&S'].map(c => c.name);
+    }
+  }
+
+  // Reset concept filter when account changes
+  useEffect(() => {
+    setExpenseConcept('all');
+  }, [expenseAccount]);
 
   // Helper to parse numbers that may use comma as decimal separator (Spanish format)
   function parseNumber(value) {
