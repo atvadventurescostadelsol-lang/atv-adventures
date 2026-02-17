@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Search, FileText, Calendar, TrendingUp, Car } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Download, Search, FileText, Calendar, TrendingUp, TrendingDown, Car, Truck, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
@@ -22,6 +23,7 @@ export default function Reports() {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [periodStats, setPeriodStats] = useState(null);
+  const [expenses, setExpenses] = useState([]);
   const reportRef = useRef(null);
   
   const dateLocale = language === 'es' ? es : enUS;
@@ -29,43 +31,6 @@ export default function Reports() {
   useEffect(() => {
     loadPeriodStats();
   }, []);
-
-  async function loadPeriodStats() {
-    try {
-      const res = await fetch('/api/departures');
-      if (!res.ok) return;
-      
-      const allDepartures = await res.json();
-      const today = new Date();
-      
-      // Weekly (Monday to Sunday)
-      const weekStart = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-      const weekEnd = format(endOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-      const weeklyData = allDepartures.filter(d => d.date >= weekStart && d.date <= weekEnd);
-      
-      // Monthly
-      const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
-      const monthEnd = format(endOfMonth(today), 'yyyy-MM-dd');
-      const monthlyData = allDepartures.filter(d => d.date >= monthStart && d.date <= monthEnd);
-      
-      // Yearly
-      const yearStart = format(startOfYear(today), 'yyyy-MM-dd');
-      const yearEnd = format(endOfYear(today), 'yyyy-MM-dd');
-      const yearlyData = allDepartures.filter(d => d.date >= yearStart && d.date <= yearEnd);
-      
-      const weekLabel = language === 'es' 
-        ? `Semana: ${format(startOfWeek(today, { weekStartsOn: 1 }), 'd MMM', { locale: es })} - ${format(endOfWeek(today, { weekStartsOn: 1 }), 'd MMM', { locale: es })}`
-        : `Week: ${format(startOfWeek(today, { weekStartsOn: 1 }), 'MMM d', { locale: enUS })} - ${format(endOfWeek(today, { weekStartsOn: 1 }), 'MMM d', { locale: enUS })}`;
-      
-      setPeriodStats({
-        weekly: calculateStats(weeklyData, weekLabel),
-        monthly: calculateStats(monthlyData, format(today, 'MMMM yyyy', { locale: dateLocale })),
-        yearly: calculateStats(yearlyData, format(today, 'yyyy'))
-      });
-    } catch (error) {
-      console.error('Error loading period stats:', error);
-    }
-  }
 
   // Helper to parse numbers that may use comma as decimal separator (Spanish format)
   function parseNumber(value) {
@@ -75,7 +40,58 @@ export default function Reports() {
     return isNaN(parsed) ? 0 : parsed;
   }
 
-  function calculateStats(data, label) {
+  function formatCurrency(amount) {
+    return `€${parseNumber(amount).toFixed(2)}`;
+  }
+
+  async function loadPeriodStats() {
+    try {
+      const [depRes, expRes] = await Promise.all([
+        fetch('/api/departures'),
+        fetch('/api/expenses?startDate=2020-01-01&endDate=2030-12-31')
+      ]);
+      
+      if (!depRes.ok) return;
+      
+      const allDepartures = await depRes.json();
+      const allExpenses = expRes.ok ? await expRes.json() : [];
+      setExpenses(allExpenses);
+      
+      const today = new Date();
+      
+      // Weekly (Monday to Sunday)
+      const weekStart = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+      const weekEnd = format(endOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+      const weeklyData = allDepartures.filter(d => d.date >= weekStart && d.date <= weekEnd);
+      const weeklyExpenses = allExpenses.filter(e => e.date >= weekStart && e.date <= weekEnd);
+      
+      // Monthly
+      const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
+      const monthEnd = format(endOfMonth(today), 'yyyy-MM-dd');
+      const monthlyData = allDepartures.filter(d => d.date >= monthStart && d.date <= monthEnd);
+      const monthlyExpenses = allExpenses.filter(e => e.date >= monthStart && e.date <= monthEnd);
+      
+      // Yearly
+      const yearStart = format(startOfYear(today), 'yyyy-MM-dd');
+      const yearEnd = format(endOfYear(today), 'yyyy-MM-dd');
+      const yearlyData = allDepartures.filter(d => d.date >= yearStart && d.date <= yearEnd);
+      const yearlyExpenses = allExpenses.filter(e => e.date >= yearStart && e.date <= yearEnd);
+      
+      const weekLabel = language === 'es' 
+        ? `Semana: ${format(startOfWeek(today, { weekStartsOn: 1 }), 'd MMM', { locale: es })} - ${format(endOfWeek(today, { weekStartsOn: 1 }), 'd MMM', { locale: es })}`
+        : `Week: ${format(startOfWeek(today, { weekStartsOn: 1 }), 'MMM d', { locale: enUS })} - ${format(endOfWeek(today, { weekStartsOn: 1 }), 'MMM d', { locale: enUS })}`;
+      
+      setPeriodStats({
+        weekly: calculateStats(weeklyData, weeklyExpenses, weekLabel),
+        monthly: calculateStats(monthlyData, monthlyExpenses, format(today, 'MMMM yyyy', { locale: dateLocale })),
+        yearly: calculateStats(yearlyData, yearlyExpenses, format(today, 'yyyy'))
+      });
+    } catch (error) {
+      console.error('Error loading period stats:', error);
+    }
+  }
+
+  function calculateStats(data, expensesData, label) {
     const stats = {
       label,
       count: data.length,
@@ -87,10 +103,20 @@ export default function Reports() {
       quadCount: 0,
       quadGross: 0,
       quadNet: 0,
+      quadCash: 0,
+      quadBank: 0,
+      quadWeb: 0,
+      quadGyg: 0,
+      quadCruise: 0,
       // Buggy stats
       buggyCount: 0,
       buggyGross: 0,
       buggyNet: 0,
+      buggyCash: 0,
+      buggyBank: 0,
+      buggyWeb: 0,
+      buggyGyg: 0,
+      buggyCruise: 0,
       // Payment channels
       webTotal: 0,
       cashTotal: 0,
@@ -104,6 +130,9 @@ export default function Reports() {
       commissionTotal: 0,
       commissionCash: 0,
       commissionBank: 0,
+      // Expenses
+      geExpenseTotal: 0,
+      esExpenseTotal: 0,
     };
 
     data.forEach(d => {
@@ -118,16 +147,6 @@ export default function Reports() {
       stats.totalGross += gross;
       stats.netBase += netBase;
       stats.vatAmount += vatAmount;
-      
-      if (d.category === 'quad') {
-        stats.quadCount += vehicles;
-        stats.quadGross += gross;
-        stats.quadNet += netBase;
-      } else {
-        stats.buggyCount += vehicles;
-        stats.buggyGross += gross;
-        stats.buggyNet += netBase;
-      }
 
       const cashAmount = parseNumber(d.paymentSplitCash);
       const webAmount = parseNumber(d.paymentSplitWeb);
@@ -136,6 +155,26 @@ export default function Reports() {
       const cruiseAmount = parseNumber(d.paymentSplitCruise);
       const commission = parseNumber(d.commission);
       const commissionMethod = d.commissionMethod || 'cash';
+      
+      if (d.category === 'quad') {
+        stats.quadCount += vehicles;
+        stats.quadGross += gross;
+        stats.quadNet += netBase;
+        stats.quadCash += cashAmount;
+        stats.quadBank += bankAmount;
+        stats.quadWeb += webAmount;
+        stats.quadGyg += gygAmount;
+        stats.quadCruise += cruiseAmount;
+      } else {
+        stats.buggyCount += vehicles;
+        stats.buggyGross += gross;
+        stats.buggyNet += netBase;
+        stats.buggyCash += cashAmount;
+        stats.buggyBank += bankAmount;
+        stats.buggyWeb += webAmount;
+        stats.buggyGyg += gygAmount;
+        stats.buggyCruise += cruiseAmount;
+      }
       
       stats.webTotal += webAmount;
       stats.cashTotal += cashAmount;
@@ -169,20 +208,41 @@ export default function Reports() {
       }
     });
 
+    // Calculate expenses by account
+    if (expensesData && expensesData.length > 0) {
+      expensesData.forEach(e => {
+        const amount = parseNumber(e.amount);
+        if (e.account === 'GE') {
+          stats.geExpenseTotal += amount;
+        } else if (e.account === 'E&S') {
+          stats.esExpenseTotal += amount;
+        }
+      });
+    }
+
+    // Calculate net cash for each category
+    stats.quadCashNet = stats.quadCash - stats.geExpenseTotal;
+    stats.buggyCashNet = stats.buggyCash - stats.esExpenseTotal;
+
     return stats;
   }
 
   async function runReport() {
     if (!startDate || !endDate) {
-      toast.error('Por favor selecciona las fechas');
+      toast.error(language === 'es' ? 'Por favor selecciona las fechas' : 'Please select dates');
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch('/api/departures');
-      if (res.ok) {
-        let data = await res.json();
+      const [depRes, expRes] = await Promise.all([
+        fetch('/api/departures'),
+        fetch(`/api/expenses?startDate=${startDate}&endDate=${endDate}`)
+      ]);
+      
+      if (depRes.ok) {
+        let data = await depRes.json();
+        const expensesData = expRes.ok ? await expRes.json() : [];
         
         // Filter by date range
         data = data.filter(d => d.date >= startDate && d.date <= endDate);
@@ -197,22 +257,30 @@ export default function Reports() {
           data = data.filter(d => d.salesChannel === channel);
         }
         
-        const totals = calculateStats(data, `${startDate} - ${endDate}`);
-        setResults({ data, totals });
+        const totals = calculateStats(data, expensesData, `${startDate} - ${endDate}`);
+        
+        setResults({
+          data,
+          expenses: expensesData,
+          totals,
+        });
       }
     } catch (error) {
-      toast.error(t('reportError'));
+      toast.error('Error al generar el informe');
       console.error(error);
     } finally {
       setLoading(false);
     }
   }
 
-  function setQuickDate(period) {
+  function setQuickDateRange(period) {
     const today = new Date();
     let start, end;
-    
-    switch(period) {
+
+    switch (period) {
+      case 'today':
+        start = end = today;
+        break;
       case 'week':
         start = startOfWeek(today, { weekStartsOn: 1 });
         end = endOfWeek(today, { weekStartsOn: 1 });
@@ -228,580 +296,605 @@ export default function Reports() {
       default:
         return;
     }
-    
+
     setStartDate(format(start, 'yyyy-MM-dd'));
     setEndDate(format(end, 'yyyy-MM-dd'));
   }
 
-  function exportToCSV() {
+  async function exportPDF() {
     if (!results) return;
+    
+    try {
+      const jsPDF = (await import('jspdf')).default;
+      await import('jspdf-autotable');
 
-    const headers = language === 'es' 
-      ? ['Fecha', 'Hora', 'Categoría', 'Producto', 'Vehículos', 'Precio Unit.', 'Total Bruto', 'Base Neta', 'IVA', 'Canal', 'Web', 'Efectivo', 'Banco', 'GYG']
-      : ['Date', 'Time', 'Category', 'Product', 'Vehicles', 'Unit Price', 'Total Gross', 'Net Base', 'VAT', 'Channel', 'Web', 'Cash', 'Bank', 'GYG'];
+      const doc = new jsPDF();
+      
+      // Title
+      doc.setFontSize(18);
+      doc.text('ATV Operations Report', 14, 20);
+      doc.setFontSize(12);
+      doc.text(`${results.totals.label}`, 14, 30);
+      
+      // Summary stats
+      doc.setFontSize(14);
+      doc.text('Summary', 14, 45);
+      
+      const summaryData = [
+        ['Total Gross', formatCurrency(results.totals.totalGross)],
+        ['Net Base', formatCurrency(results.totals.netBase)],
+        ['VAT', formatCurrency(results.totals.vatAmount)],
+        ['Tours', `${results.totals.count}`],
+        ['Quads', `${results.totals.quadCount} (${formatCurrency(results.totals.quadGross)})`],
+        ['Buggies', `${results.totals.buggyCount} (${formatCurrency(results.totals.buggyGross)})`],
+      ];
 
-    const rows = results.data.map(d => [
-      d.date,
-      d.timeSlot,
-      d.category,
-      d.productName,
-      d.vehiclesCount,
-      d.pricePerVehicleGross,
-      d.totalGross,
-      d.netBase,
-      d.vatAmount,
-      d.salesChannel,
-      d.paymentSplitWeb || 0,
-      d.paymentSplitCash || 0,
-      d.paymentSplitBank || 0,
-      d.paymentSplitGyg || 0,
-    ]);
+      doc.autoTable({
+        startY: 50,
+        head: [['Metric', 'Value']],
+        body: summaryData,
+        theme: 'striped',
+        headStyles: { fillColor: [234, 88, 12] },
+      });
 
-    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `report-${category}-${startDate}-${endDate}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+      // Payments breakdown
+      doc.text('Payments Breakdown', 14, doc.lastAutoTable.finalY + 15);
+      
+      const paymentsData = [
+        ['Cash', formatCurrency(results.totals.cashTotal)],
+        ['Bank', formatCurrency(results.totals.bankTotal)],
+        ['Web', formatCurrency(results.totals.webTotal)],
+        ['GYG', formatCurrency(results.totals.gygTotal)],
+        ['Cruises', formatCurrency(results.totals.cruiseTotal)],
+      ];
 
-    toast.success('Reporte CSV exportado');
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [['Method', 'Amount']],
+        body: paymentsData,
+        theme: 'striped',
+        headStyles: { fillColor: [234, 88, 12] },
+      });
+
+      // Expenses
+      if (results.totals.geExpenseTotal > 0 || results.totals.esExpenseTotal > 0) {
+        doc.text('Expenses', 14, doc.lastAutoTable.finalY + 15);
+        
+        const expensesData = [
+          ['GE (Quads)', formatCurrency(results.totals.geExpenseTotal)],
+          ['E&S (Buggies)', formatCurrency(results.totals.esExpenseTotal)],
+          ['Total Expenses', formatCurrency(results.totals.geExpenseTotal + results.totals.esExpenseTotal)],
+        ];
+
+        doc.autoTable({
+          startY: doc.lastAutoTable.finalY + 20,
+          head: [['Account', 'Amount']],
+          body: expensesData,
+          theme: 'striped',
+          headStyles: { fillColor: [239, 68, 68] },
+        });
+      }
+
+      // Net Cash Summary
+      doc.text('Net Cash After Expenses', 14, doc.lastAutoTable.finalY + 15);
+      
+      const netCashData = [
+        ['Quad Cash Net (Cash - GE Expenses)', formatCurrency(results.totals.quadCashNet)],
+        ['Buggy Cash Net (Cash - E&S Expenses)', formatCurrency(results.totals.buggyCashNet)],
+        ['Total Net Cash', formatCurrency(results.totals.quadCashNet + results.totals.buggyCashNet)],
+      ];
+
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [['Category', 'Amount']],
+        body: netCashData,
+        theme: 'striped',
+        headStyles: { fillColor: [34, 197, 94] },
+      });
+
+      doc.save(`report_${startDate}_${endDate}.pdf`);
+      toast.success(language === 'es' ? 'PDF generado' : 'PDF generated');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Error al exportar PDF');
+    }
   }
 
-  function exportToPDF() {
-    if (!results) return;
-
-    const categoryLabel = category === 'all' ? 'Todos' : category === 'quad' ? 'Solo Quads' : 'Solo Buggies';
-
-    // Create printable HTML
-    const printContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Reporte ATV Operations</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
-          h1 { color: #ea580c; border-bottom: 2px solid #ea580c; padding-bottom: 10px; }
-          h2 { color: #374151; margin-top: 30px; }
-          .summary { display: flex; flex-wrap: wrap; gap: 15px; margin: 20px 0; }
-          .stat-card { background: #f3f4f6; padding: 15px; border-radius: 8px; min-width: 150px; }
-          .stat-card .label { font-size: 12px; color: #6b7280; }
-          .stat-card .value { font-size: 24px; font-weight: bold; color: #111827; }
-          .stat-card.primary { background: linear-gradient(135deg, #ea580c, #f97316); color: white; }
-          .stat-card.primary .label, .stat-card.primary .value { color: white; }
-          .stat-card.quad { background: linear-gradient(135deg, #3b82f6, #60a5fa); color: white; }
-          .stat-card.quad .label, .stat-card.quad .value { color: white; }
-          .stat-card.buggy { background: linear-gradient(135deg, #22c55e, #4ade80); color: white; }
-          .stat-card.buggy .label, .stat-card.buggy .value { color: white; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-          th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
-          th { background: #f9fafb; font-weight: 600; }
-          tr:nth-child(even) { background: #f9fafb; }
-          .text-right { text-align: right; }
-          .footer { margin-top: 30px; text-align: center; color: #9ca3af; font-size: 11px; }
-          .filter-info { background: #fef3c7; padding: 10px; border-radius: 8px; margin-bottom: 20px; }
-          @media print { body { padding: 0; } }
-        </style>
-      </head>
-      <body>
-        <h1>Reporte de Operaciones ATV</h1>
-        <p><strong>Período:</strong> ${startDate} al ${endDate}</p>
-        <p><strong>Filtro:</strong> ${categoryLabel}</p>
-        <p><strong>Generado:</strong> ${new Date().toLocaleString('es-ES')}</p>
-        
-        <h2>Resumen General</h2>
-        <div class="summary">
-          <div class="stat-card primary">
-            <div class="label">Total Bruto</div>
-            <div class="value">€${results.totals.totalGross.toFixed(2)}</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">Base Neta</div>
-            <div class="value">€${results.totals.netBase.toFixed(2)}</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">IVA (21%)</div>
-            <div class="value">€${results.totals.vatAmount.toFixed(2)}</div>
-          </div>
-          <div class="stat-card" style="background: #dbeafe;">
-            <div class="label">IVA2 (sin efectivo)</div>
-            <div class="value">€${results.totals.vatAmount2.toFixed(2)}</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">Total Vehículos</div>
-            <div class="value">${results.totals.quadCount + results.totals.buggyCount}</div>
-          </div>
-        </div>
-        
-        <h2>Desglose por Tipo de Vehículo</h2>
-        <div class="summary">
-          <div class="stat-card quad">
-            <div class="label">Quads - Ingresos</div>
-            <div class="value">€${results.totals.quadGross.toFixed(2)}</div>
-            <div class="label" style="margin-top: 5px;">${results.totals.quadCount} vehículos</div>
-          </div>
-          <div class="stat-card buggy">
-            <div class="label">Buggies - Ingresos</div>
-            <div class="value">€${results.totals.buggyGross.toFixed(2)}</div>
-            <div class="label" style="margin-top: 5px;">${results.totals.buggyCount} vehículos</div>
-          </div>
-        </div>
-
-        <h2>Desglose por Canal de Pago</h2>
-        <div class="summary">
-          <div class="stat-card">
-            <div class="label">💵 Efectivo</div>
-            <div class="value">€${results.totals.cashTotal.toFixed(2)}</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">🏦 Banco</div>
-            <div class="value">€${results.totals.bankTotal.toFixed(2)}</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">🌐 Web</div>
-            <div class="value">€${results.totals.webTotal.toFixed(2)}</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">🎫 GYG</div>
-            <div class="value">€${results.totals.gygTotal.toFixed(2)}</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">🚢 Cruceros</div>
-            <div class="value">€${results.totals.cruiseTotal.toFixed(2)}</div>
-          </div>
-        </div>
-        ${(results.totals.pendingGYG > 0 || results.totals.pendingCruise > 0) ? `
-        <div style="background: #fef3c7; padding: 10px; border-radius: 8px; margin: 15px 0;">
-          ${results.totals.pendingGYG > 0 ? `<div><strong>⏳ Pendiente GYG:</strong> €${results.totals.pendingGYG.toFixed(2)}</div>` : ''}
-          ${results.totals.pendingCruise > 0 ? `<div><strong>⏳ Pendiente Cruceros:</strong> €${results.totals.pendingCruise.toFixed(2)}</div>` : ''}
-        </div>
-        ` : ''}
-        
-        <h2>Detalle de Entradas (${results.data.length})</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Hora</th>
-              <th>Categoría</th>
-              <th>Producto</th>
-              <th class="text-right">Veh.</th>
-              <th class="text-right">Total</th>
-              <th>Canal</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${results.data.map(d => `
-              <tr>
-                <td>${d.date}</td>
-                <td>${d.timeSlot}</td>
-                <td>${d.category === 'quad' ? 'Quad' : 'Buggy'}</td>
-                <td>${d.productName}</td>
-                <td class="text-right">${d.vehiclesCount}</td>
-                <td class="text-right">€${parseFloat(d.totalGross || 0).toFixed(2)}</td>
-                <td>${d.salesChannel}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        
-        <div class="footer">
-          <p>ATV Operations - Sistema de Gestión</p>
-        </div>
-      </body>
-      </html>
-    `;
-
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.onload = function() {
-      printWindow.print();
-    };
-
-    toast.success('Preparando PDF para impresión');
-  }
-
-  function StatCard({ label, value, subValue, primary, className }) {
+  function StatCard({ title, stats, icon: Icon, colorClass = 'bg-orange-500' }) {
     return (
-      <Card className={primary ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white' : className || ''}>
-        <CardContent className="p-4">
-          <div className={`text-sm ${primary ? 'opacity-90' : 'text-muted-foreground'}`}>{label}</div>
-          <div className="text-2xl font-bold">{value}</div>
-          {subValue && <div className={`text-xs mt-1 ${primary ? 'opacity-80' : 'text-muted-foreground'}`}>{subValue}</div>}
+      <Card>
+        <CardHeader className={`${colorClass} text-white rounded-t-lg`}>
+          <div className="flex items-center gap-2">
+            <Icon className="h-5 w-5" />
+            <CardTitle className="text-lg">{title}</CardTitle>
+          </div>
+          <CardDescription className="text-white/80">{stats.label}</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-4">
+          {/* Summary */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">{t('totalGross')}</p>
+              <p className="text-2xl font-bold">{formatCurrency(stats.totalGross)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{t('tours')}</p>
+              <p className="text-2xl font-bold">{stats.count}</p>
+            </div>
+          </div>
+          
+          {/* Category Breakdown */}
+          <div className="border-t pt-4">
+            <h4 className="font-semibold mb-2 flex items-center gap-1">
+              {language === 'es' ? 'Por Categoría' : 'By Category'}
+            </h4>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Quads */}
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="flex items-center gap-1 mb-2">
+                  <Car className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium text-blue-800">Quads</span>
+                </div>
+                <p className="text-sm">{t('vehicles')}: <span className="font-bold">{stats.quadCount}</span></p>
+                <p className="text-sm">{t('gross')}: <span className="font-bold">{formatCurrency(stats.quadGross)}</span></p>
+                <p className="text-sm">💵: <span className="font-medium">{formatCurrency(stats.quadCash)}</span></p>
+                {stats.geExpenseTotal > 0 && (
+                  <p className="text-sm text-red-600">
+                    -{formatCurrency(stats.geExpenseTotal)} ({language === 'es' ? 'gastos GE' : 'GE expenses'})
+                  </p>
+                )}
+                <p className="text-sm font-bold text-blue-700 mt-1">
+                  {language === 'es' ? 'Efectivo Neto' : 'Net Cash'}: {formatCurrency(stats.quadCashNet || (stats.quadCash - (stats.geExpenseTotal || 0)))}
+                </p>
+              </div>
+              
+              {/* Buggies */}
+              <div className="bg-green-50 p-3 rounded-lg">
+                <div className="flex items-center gap-1 mb-2">
+                  <Truck className="h-4 w-4 text-green-600" />
+                  <span className="font-medium text-green-800">Buggies</span>
+                </div>
+                <p className="text-sm">{t('vehicles')}: <span className="font-bold">{stats.buggyCount}</span></p>
+                <p className="text-sm">{t('gross')}: <span className="font-bold">{formatCurrency(stats.buggyGross)}</span></p>
+                <p className="text-sm">💵: <span className="font-medium">{formatCurrency(stats.buggyCash)}</span></p>
+                {stats.esExpenseTotal > 0 && (
+                  <p className="text-sm text-red-600">
+                    -{formatCurrency(stats.esExpenseTotal)} ({language === 'es' ? 'gastos E&S' : 'E&S expenses'})
+                  </p>
+                )}
+                <p className="text-sm font-bold text-green-700 mt-1">
+                  {language === 'es' ? 'Efectivo Neto' : 'Net Cash'}: {formatCurrency(stats.buggyCashNet || (stats.buggyCash - (stats.esExpenseTotal || 0)))}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Expenses Summary */}
+          {(stats.geExpenseTotal > 0 || stats.esExpenseTotal > 0) && (
+            <div className="border-t pt-4">
+              <h4 className="font-semibold mb-2 flex items-center gap-1 text-red-600">
+                <TrendingDown className="h-4 w-4" />
+                {language === 'es' ? 'Gastos Totales' : 'Total Expenses'}
+              </h4>
+              <div className="bg-red-50 p-3 rounded-lg">
+                <div className="flex justify-between text-sm">
+                  <span>GE (Quads):</span>
+                  <span className="font-medium">-{formatCurrency(stats.geExpenseTotal)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>E&S (Buggies):</span>
+                  <span className="font-medium">-{formatCurrency(stats.esExpenseTotal)}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold border-t mt-2 pt-2">
+                  <span>{t('total')}:</span>
+                  <span className="text-red-600">-{formatCurrency(stats.geExpenseTotal + stats.esExpenseTotal)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Payments */}
+          <div className="border-t pt-4">
+            <h4 className="font-semibold mb-2">{t('payments')}</h4>
+            <div className="grid grid-cols-3 gap-2 text-sm">
+              <div className="bg-muted p-2 rounded">
+                <span className="text-muted-foreground">💵 {t('cash')}</span>
+                <p className="font-bold">{formatCurrency(stats.cashTotal)}</p>
+              </div>
+              <div className="bg-muted p-2 rounded">
+                <span className="text-muted-foreground">🏦 {t('bank')}</span>
+                <p className="font-bold">{formatCurrency(stats.bankTotal)}</p>
+              </div>
+              <div className="bg-muted p-2 rounded">
+                <span className="text-muted-foreground">🌐 Web</span>
+                <p className="font-bold">{formatCurrency(stats.webTotal)}</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Pending */}
+          {(stats.pendingGYG > 0 || stats.pendingCruise > 0) && (
+            <div className="border-t pt-4">
+              <h4 className="font-semibold mb-2">{t('pendingPayments')}</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                {stats.pendingGYG > 0 && (
+                  <div className="bg-yellow-50 p-2 rounded">
+                    <span className="text-yellow-700">🎫 GYG</span>
+                    <p className="font-bold text-yellow-800">{formatCurrency(stats.gygTotal)}</p>
+                  </div>
+                )}
+                {stats.pendingCruise > 0 && (
+                  <div className="bg-blue-50 p-2 rounded">
+                    <span className="text-blue-700">🚢 {t('cruises')}</span>
+                    <p className="font-bold text-blue-800">{formatCurrency(stats.cruiseTotal)}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Commissions */}
+          {stats.commissionTotal > 0 && (
+            <div className="border-t pt-4">
+              <h4 className="font-semibold mb-2">{language === 'es' ? 'Comisiones' : 'Commissions'}</h4>
+              <div className="bg-purple-50 p-2 rounded text-sm">
+                <div className="flex justify-between">
+                  <span className="text-purple-700">{t('total')}:</span>
+                  <span className="font-bold text-purple-800">{formatCurrency(stats.commissionTotal)}</span>
+                </div>
+                {stats.commissionCash > 0 && (
+                  <div className="flex justify-between text-xs mt-1">
+                    <span>💵 {language === 'es' ? 'De efectivo' : 'From cash'}:</span>
+                    <span>{formatCurrency(stats.commissionCash)}</span>
+                  </div>
+                )}
+                {stats.commissionBank > 0 && (
+                  <div className="flex justify-between text-xs">
+                    <span>🏦 {language === 'es' ? 'De banco' : 'From bank'}:</span>
+                    <span>{formatCurrency(stats.commissionBank)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-6" ref={reportRef}>
+    <div className="space-y-6">
       {/* Period Stats Cards */}
       {periodStats && (
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="border-l-4 border-l-blue-500">
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-blue-500" />
-                <CardTitle className="text-sm font-medium">{t('thisWeek')}</CardTitle>
-              </div>
-              <CardDescription className="text-xs">{periodStats.weekly.label}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">€{periodStats.weekly.totalGross.toFixed(2)}</div>
-              <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
-                <div className="bg-blue-50 p-2 rounded">
-                  <span className="text-blue-700 font-medium">{t('quads')}:</span> €{periodStats.weekly.quadGross.toFixed(2)} ({periodStats.weekly.quadCount})
-                </div>
-                <div className="bg-green-50 p-2 rounded">
-                  <span className="text-green-700 font-medium">{t('buggies')}:</span> €{periodStats.weekly.buggyGross.toFixed(2)} ({periodStats.weekly.buggyCount})
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-green-500">
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-green-500" />
-                <CardTitle className="text-sm font-medium">{t('thisMonth')}</CardTitle>
-              </div>
-              <CardDescription className="text-xs">{periodStats.monthly.label}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">€{periodStats.monthly.totalGross.toFixed(2)}</div>
-              <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
-                <div className="bg-blue-50 p-2 rounded">
-                  <span className="text-blue-700 font-medium">{t('quads')}:</span> €{periodStats.monthly.quadGross.toFixed(2)} ({periodStats.monthly.quadCount})
-                </div>
-                <div className="bg-green-50 p-2 rounded">
-                  <span className="text-green-700 font-medium">{t('buggies')}:</span> €{periodStats.monthly.buggyGross.toFixed(2)} ({periodStats.monthly.buggyCount})
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-purple-500">
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-purple-500" />
-                <CardTitle className="text-sm font-medium">{t('thisYear')}</CardTitle>
-              </div>
-              <CardDescription className="text-xs">{periodStats.yearly.label}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">€{periodStats.yearly.totalGross.toFixed(2)}</div>
-              <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
-                <div className="bg-blue-50 p-2 rounded">
-                  <span className="text-blue-700 font-medium">{t('quads')}:</span> €{periodStats.yearly.quadGross.toFixed(2)} ({periodStats.yearly.quadCount})
-                </div>
-                <div className="bg-green-50 p-2 rounded">
-                  <span className="text-green-700 font-medium">{t('buggies')}:</span> €{periodStats.yearly.buggyGross.toFixed(2)} ({periodStats.yearly.buggyCount})
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard 
+            title={language === 'es' ? 'Esta Semana' : 'This Week'} 
+            stats={periodStats.weekly} 
+            icon={Calendar}
+            colorClass="bg-blue-500"
+          />
+          <StatCard 
+            title={language === 'es' ? 'Este Mes' : 'This Month'} 
+            stats={periodStats.monthly} 
+            icon={Calendar}
+            colorClass="bg-green-500"
+          />
+          <StatCard 
+            title={language === 'es' ? 'Este Año' : 'This Year'} 
+            stats={periodStats.yearly} 
+            icon={TrendingUp}
+            colorClass="bg-orange-500"
+          />
         </div>
       )}
 
+      {/* Custom Report */}
       <Card>
         <CardHeader>
-          <CardTitle>{t('reportGenerator')}</CardTitle>
-          <CardDescription>{t('generateCustomReports')}</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            {language === 'es' ? 'Generar Informe Personalizado' : 'Generate Custom Report'}
+          </CardTitle>
+          <CardDescription>
+            {language === 'es' 
+              ? 'Selecciona un rango de fechas para generar un informe detallado'
+              : 'Select a date range to generate a detailed report'}
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Quick Date Buttons */}
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => setQuickDate('week')}>
-              {t('thisWeek')}
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setQuickDate('month')}>
-              {t('thisMonth')}
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setQuickDate('year')}>
-              {t('thisYear')}
-            </Button>
-          </div>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Quick date buttons */}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => setQuickDateRange('today')}>
+                {t('today')}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setQuickDateRange('week')}>
+                {language === 'es' ? 'Esta Semana' : 'This Week'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setQuickDateRange('month')}>
+                {language === 'es' ? 'Este Mes' : 'This Month'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setQuickDateRange('year')}>
+                {language === 'es' ? 'Este Año' : 'This Year'}
+              </Button>
+            </div>
 
-          {/* Filters */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <Label htmlFor="startDate">{t('startDate')}</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="endDate">{t('endDate')}</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="category">{t('vehicleType')}</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">🚗 {t('allVehicles')}</SelectItem>
-                  <SelectItem value="quad">🏍️ {t('onlyQuads')}</SelectItem>
-                  <SelectItem value="buggy">🚙 {t('onlyBuggies')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="channel">{t('channel')}</Label>
-              <Select value={channel} onValueChange={setChannel}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('all')}</SelectItem>
-                  <SelectItem value="web">{t('web')}</SelectItem>
-                  <SelectItem value="gyg">GetYourGuide</SelectItem>
-                  <SelectItem value="cruceros">{t('cruises')}</SelectItem>
-                  <SelectItem value="colaborador">{t('collaborator')}</SelectItem>
-                  <SelectItem value="otros">{t('others')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={runReport} disabled={loading}>
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  {t('generating')}
-                </>
-              ) : (
-                <>
-                  <Search className="h-4 w-4 mr-2" />
-                  {t('generateReport')}
-                </>
-              )}
-            </Button>
-            {results && (
-              <>
-                <Button onClick={exportToCSV} variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  {t('exportCSV')}
+            {/* Filters */}
+            <div className="grid gap-4 md:grid-cols-5">
+              <div>
+                <Label>{language === 'es' ? 'Desde' : 'From'}</Label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>{language === 'es' ? 'Hasta' : 'To'}</Label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>{t('category')}</Label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
+                    <SelectItem value="quad">Quads</SelectItem>
+                    <SelectItem value="buggy">Buggies</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>{language === 'es' ? 'Canal' : 'Channel'}</Label>
+                <Select value={channel} onValueChange={setChannel}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
+                    <SelectItem value="otros">{language === 'es' ? 'Directo' : 'Direct'}</SelectItem>
+                    <SelectItem value="gyg">GYG</SelectItem>
+                    <SelectItem value="cruceros">{t('cruises')}</SelectItem>
+                    <SelectItem value="web">Web</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button onClick={runReport} className="w-full" disabled={loading}>
+                  {loading ? (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4 mr-2" />
+                  )}
+                  {language === 'es' ? 'Generar' : 'Generate'}
                 </Button>
-                <Button onClick={exportToPDF} variant="outline">
-                  <FileText className="h-4 w-4 mr-2" />
-                  {t('exportPDF')}
-                </Button>
-              </>
-            )}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Results */}
       {results && (
-        <Card>
+        <Card ref={reportRef}>
           <CardHeader>
-            <CardTitle>{t('results')}</CardTitle>
-            <CardDescription>
-              {results.totals.count} {t('entriesFound')} 
-              {category !== 'all' && ` - ${t('filter')}: ${category === 'quad' ? t('onlyQuads') : t('onlyBuggies')}`}
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>{language === 'es' ? 'Resultados del Informe' : 'Report Results'}</CardTitle>
+                <CardDescription>{results.totals.label}</CardDescription>
+              </div>
+              <Button onClick={exportPDF} variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                PDF
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* General Summary */}
-            <div className="grid gap-4 md:grid-cols-5">
-              <StatCard label={t('totalGross')} value={`€${results.totals.totalGross.toFixed(2)}`} primary />
-              <StatCard label={t('netBase')} value={`€${results.totals.netBase.toFixed(2)}`} />
-              <StatCard label={`${t('vat')} (21%)`} value={`€${results.totals.vatAmount.toFixed(2)}`} />
-              <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="p-4">
-                  <div className="text-sm text-blue-600">{t('iva2')}</div>
-                  <div className="text-2xl font-bold text-blue-700">€{results.totals.vatAmount2.toFixed(2)}</div>
+            {/* Summary Stats */}
+            <div className="grid gap-4 md:grid-cols-4">
+              <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+                <CardContent className="pt-6">
+                  <p className="text-orange-100">{t('totalGross')}</p>
+                  <p className="text-3xl font-bold">{formatCurrency(results.totals.totalGross)}</p>
                 </CardContent>
               </Card>
-              <StatCard 
-                label={t('vehicles')} 
-                value={results.totals.quadCount + results.totals.buggyCount}
-              />
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-muted-foreground">{t('tours')}</p>
+                  <p className="text-3xl font-bold">{results.totals.count}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-muted-foreground">{t('netBase')}</p>
+                  <p className="text-3xl font-bold">{formatCurrency(results.totals.netBase)}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-muted-foreground">{t('vat')}</p>
+                  <p className="text-3xl font-bold">{formatCurrency(results.totals.vatAmount)}</p>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Vehicle Type Breakdown */}
-            <div>
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <Car className="h-5 w-5" />
-                {t('vehicleTypeBreakdown')}
-              </h3>
-              <div className="grid gap-4 md:grid-cols-2">
-                <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="text-sm opacity-90">{t('quads')} - {t('income')}</div>
-                        <div className="text-3xl font-bold">€{results.totals.quadGross.toFixed(2)}</div>
-                        <div className="text-sm opacity-80 mt-1">
-                          {results.totals.quadCount} {t('vehicles').toLowerCase()} | {t('net')}: €{results.totals.quadNet.toFixed(2)}
-                        </div>
-                      </div>
-                      <div className="text-4xl opacity-30">🏍️</div>
+            {/* Category Breakdown with Expenses */}
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Quads */}
+              <Card className="border-l-4 border-l-blue-500">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Car className="h-5 w-5 text-blue-600" />
+                    {t('quads')} (GE)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>{t('vehicles')}:</span>
+                    <span className="font-bold">{results.totals.quadCount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>{t('gross')}:</span>
+                    <span className="font-bold">{formatCurrency(results.totals.quadGross)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>💵 {t('cash')}:</span>
+                    <span className="font-medium">{formatCurrency(results.totals.quadCash)}</span>
+                  </div>
+                  {results.totals.geExpenseTotal > 0 && (
+                    <div className="flex justify-between text-red-600">
+                      <span>{language === 'es' ? 'Gastos GE' : 'GE Expenses'}:</span>
+                      <span className="font-medium">-{formatCurrency(results.totals.geExpenseTotal)}</span>
                     </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="text-sm opacity-90">{t('buggies')} - {t('income')}</div>
-                        <div className="text-3xl font-bold">€{results.totals.buggyGross.toFixed(2)}</div>
-                        <div className="text-sm opacity-80 mt-1">
-                          {results.totals.buggyCount} {t('vehicles').toLowerCase()} | {t('net')}: €{results.totals.buggyNet.toFixed(2)}
-                        </div>
-                      </div>
-                      <div className="text-4xl opacity-30">🚙</div>
+                  )}
+                  <div className="flex justify-between pt-2 border-t bg-blue-50 -mx-4 px-4 py-2 rounded-b-lg">
+                    <span className="font-semibold text-blue-800">
+                      💰 {language === 'es' ? 'Efectivo Neto' : 'Net Cash'}:
+                    </span>
+                    <span className={`font-bold text-lg ${results.totals.quadCashNet >= 0 ? 'text-blue-700' : 'text-red-600'}`}>
+                      {formatCurrency(results.totals.quadCashNet)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Buggies */}
+              <Card className="border-l-4 border-l-green-500">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Truck className="h-5 w-5 text-green-600" />
+                    {t('buggies')} (E&S)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>{t('vehicles')}:</span>
+                    <span className="font-bold">{results.totals.buggyCount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>{t('gross')}:</span>
+                    <span className="font-bold">{formatCurrency(results.totals.buggyGross)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>💵 {t('cash')}:</span>
+                    <span className="font-medium">{formatCurrency(results.totals.buggyCash)}</span>
+                  </div>
+                  {results.totals.esExpenseTotal > 0 && (
+                    <div className="flex justify-between text-red-600">
+                      <span>{language === 'es' ? 'Gastos E&S' : 'E&S Expenses'}:</span>
+                      <span className="font-medium">-{formatCurrency(results.totals.esExpenseTotal)}</span>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
+                  )}
+                  <div className="flex justify-between pt-2 border-t bg-green-50 -mx-4 px-4 py-2 rounded-b-lg">
+                    <span className="font-semibold text-green-800">
+                      💰 {language === 'es' ? 'Efectivo Neto' : 'Net Cash'}:
+                    </span>
+                    <span className={`font-bold text-lg ${results.totals.buggyCashNet >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                      {formatCurrency(results.totals.buggyCashNet)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Payment Breakdown */}
-            <div>
-              <h3 className="font-semibold mb-3">{t('paymentChannelBreakdown')}</h3>
-              <div className="grid gap-4 md:grid-cols-5">
-                <StatCard label={`💵 ${t('cash')}`} value={`€${results.totals.cashTotal.toFixed(2)}`} />
-                <StatCard label={`🏦 ${t('bank')}`} value={`€${results.totals.bankTotal.toFixed(2)}`} />
-                <StatCard label={`🌐 ${t('web')}`} value={`€${results.totals.webTotal.toFixed(2)}`} />
-                <StatCard label="🎫 GYG" value={`€${results.totals.gygTotal.toFixed(2)}`} />
-                <StatCard label={`🚢 ${t('cruises')}`} value={`€${results.totals.cruiseTotal.toFixed(2)}`} />
-              </div>
-              {results.totals.pendingCruise > 0 && (
-                <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <span className="text-amber-800 font-medium">
-                    ⏳ {t('pendingCollection')} ({t('cruises')}): €{results.totals.pendingCruise.toFixed(2)}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Pending Payments */}
-            {(results.totals.pendingGYG > 0 || results.totals.pendingCruise > 0) && (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <h4 className="font-semibold text-amber-800 mb-2">⏳ {t('pendingPayments')}</h4>
-                <div className="grid gap-2 md:grid-cols-2">
-                  {results.totals.pendingGYG > 0 && (
-                    <div className="text-amber-700">🎫 GYG: €{results.totals.pendingGYG.toFixed(2)}</div>
-                  )}
-                  {results.totals.pendingCruise > 0 && (
-                    <div className="text-amber-700">🚢 {t('cruises')}: €{results.totals.pendingCruise.toFixed(2)}</div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Commissions Section */}
-            {results.totals.commissionTotal > 0 && (
-              <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                <h4 className="font-semibold text-purple-800 mb-2">
-                  💰 {language === 'es' ? 'Comisiones Pagadas a Colaboradores' : 'Commissions Paid to Collaborators'}
-                </h4>
-                <div className="text-2xl font-bold text-purple-700 mb-2">
-                  €{results.totals.commissionTotal.toFixed(2)}
-                </div>
-                <div className="flex gap-4 text-sm">
-                  {results.totals.commissionCash > 0 && (
-                    <span className="text-purple-600">
-                      💵 {language === 'es' ? 'Efectivo' : 'Cash'}: €{results.totals.commissionCash.toFixed(2)}
-                    </span>
-                  )}
-                  {results.totals.commissionBank > 0 && (
-                    <span className="text-purple-600">
-                      🏦 {language === 'es' ? 'Banco' : 'Bank'}: €{results.totals.commissionBank.toFixed(2)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Table */}
-            <div className="rounded-md border overflow-hidden">
-              <div className="max-h-[500px] overflow-y-auto">
-                <Table>
-                  <TableHeader className="sticky top-0 bg-background">
-                    <TableRow>
-                      <TableHead>{t('date')}</TableHead>
-                      <TableHead>{t('time')}</TableHead>
-                      <TableHead>{t('type')}</TableHead>
-                      <TableHead>{t('product')}</TableHead>
-                      <TableHead className="text-right">{t('veh')}</TableHead>
-                      <TableHead className="text-right">{t('total')}</TableHead>
-                      <TableHead className="text-right">💰 {language === 'es' ? 'Com.' : 'Comm.'}</TableHead>
-                      <TableHead>{t('paymentBreakdown')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {results.data.map((d, idx) => {
-                      // Build payment breakdown with decimals using parseNumber
-                      const payments = [];
-                      if (parseNumber(d.paymentSplitCash) > 0) payments.push(`💵€${parseNumber(d.paymentSplitCash).toFixed(2)}`);
-                      if (parseNumber(d.paymentSplitBank) > 0) payments.push(`🏦€${parseNumber(d.paymentSplitBank).toFixed(2)}`);
-                      if (parseNumber(d.paymentSplitWeb) > 0) payments.push(`🌐€${parseNumber(d.paymentSplitWeb).toFixed(2)}`);
-                      if (parseNumber(d.paymentSplitGyg) > 0) payments.push(`🎫€${parseNumber(d.paymentSplitGyg).toFixed(2)}`);
-                      if (parseNumber(d.paymentSplitCruise) > 0) payments.push(`🚢€${parseNumber(d.paymentSplitCruise).toFixed(2)}`);
-                      
-                      const commission = parseNumber(d.commission);
-                      
-                      return (
+            {/* Expenses Detail */}
+            {results.expenses.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2 text-red-600">
+                    <TrendingDown className="h-5 w-5" />
+                    {language === 'es' ? 'Detalle de Gastos' : 'Expense Detail'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{language === 'es' ? 'Fecha' : 'Date'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Cuenta' : 'Account'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Notas' : 'Notes'}</TableHead>
+                        <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {results.expenses.map((exp, idx) => (
                         <TableRow key={idx}>
-                          <TableCell className="text-sm">{d.date}</TableCell>
-                          <TableCell className="text-sm">{d.timeSlot}</TableCell>
+                          <TableCell>{format(new Date(exp.date), 'dd/MM/yyyy')}</TableCell>
                           <TableCell>
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              d.category === 'quad' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                            }`}>
-                              {d.category === 'quad' ? 'Q' : 'B'}
-                            </span>
+                            <Badge variant={exp.account === 'GE' ? 'default' : 'secondary'} 
+                                   className={exp.account === 'GE' ? 'bg-blue-600' : 'bg-green-600'}>
+                              {exp.account}
+                            </Badge>
                           </TableCell>
-                          <TableCell className="text-sm">{d.productName}</TableCell>
-                          <TableCell className="text-right text-sm">{d.vehiclesCount}</TableCell>
-                          <TableCell className="text-right font-medium">€{parseNumber(d.totalGross).toFixed(2)}</TableCell>
-                          <TableCell className="text-right">
-                            {commission > 0 ? (
-                              <span className="text-purple-600 font-medium">€{commission.toFixed(2)}</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1 text-xs">
-                              {payments.length > 0 ? payments.map((p, i) => (
-                                <span key={i} className="bg-gray-100 px-1 py-0.5 rounded">{p}</span>
-                              )) : (
-                                <span className="text-muted-foreground">-</span>
-                              )}
-                            </div>
+                          <TableCell>{exp.concept}</TableCell>
+                          <TableCell className="text-muted-foreground">{exp.notes || '-'}</TableCell>
+                          <TableCell className="text-right font-medium text-red-600">
+                            -{formatCurrency(exp.amount)}
                           </TableCell>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Detail section title */}
-            <div className="mt-4">
-              <h3 className="font-semibold mb-3">{t('detailEntries')}</h3>
-            </div>
+            {/* Detailed data table */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">{language === 'es' ? 'Detalle de Tours' : 'Tour Detail'}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{language === 'es' ? 'Fecha' : 'Date'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Hora' : 'Time'}</TableHead>
+                        <TableHead>{t('category')}</TableHead>
+                        <TableHead>{t('product')}</TableHead>
+                        <TableHead className="text-right">{t('vehicles')}</TableHead>
+                        <TableHead className="text-right">{t('gross')}</TableHead>
+                        <TableHead className="text-right">💵</TableHead>
+                        <TableHead className="text-right">🏦</TableHead>
+                        <TableHead className="text-right">🎫</TableHead>
+                        <TableHead className="text-right">🚢</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {results.data.map((dep, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>{format(new Date(dep.date), 'dd/MM/yyyy')}</TableCell>
+                          <TableCell>{dep.timeSlot}</TableCell>
+                          <TableCell>
+                            <Badge variant={dep.category === 'quad' ? 'default' : 'secondary'}
+                                   className={dep.category === 'quad' ? 'bg-blue-600' : 'bg-green-600'}>
+                              {dep.category}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{dep.productName}</TableCell>
+                          <TableCell className="text-right">{dep.vehiclesCount}</TableCell>
+                          <TableCell className="text-right font-medium">{formatCurrency(dep.totalGross)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(dep.paymentSplitCash)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(dep.paymentSplitBank)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(dep.paymentSplitGyg)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(dep.paymentSplitCruise)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
           </CardContent>
         </Card>
       )}
