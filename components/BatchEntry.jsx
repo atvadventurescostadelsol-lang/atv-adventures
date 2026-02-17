@@ -699,7 +699,7 @@ export default function BatchEntry() {
                           {parseFloat(entry.commission) > 0 && (
                             <Select
                               value={entry.commissionMethod || 'cash'}
-                              onValueChange={(value) => updateEntry(entry.id, 'commissionMethod', value)}
+                              onValueChange={(value) => handleCommissionMethodChange(entry.id, value)}
                             >
                               <SelectTrigger className="w-28">
                                 <SelectValue />
