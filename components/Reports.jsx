@@ -432,7 +432,7 @@ export default function Reports() {
     }
   }
 
-  function calculateStats(data, expensesData, label) {
+  function calculateStats(data, expensesData, label, incomesData = []) {
     const stats = {
       label,
       count: data.length,
@@ -474,6 +474,9 @@ export default function Reports() {
       // Expenses
       geExpenseTotal: 0,
       esExpenseTotal: 0,
+      // Incomes
+      geIncomeTotal: 0,
+      esIncomeTotal: 0,
     };
 
     data.forEach(d => {
