@@ -898,6 +898,278 @@ export default function Reports() {
         </div>
       )}
 
+      {/* Expense-Only Report */}
+      <Card className="border-2 border-red-200">
+        <CardHeader className="bg-red-50">
+          <CardTitle className="flex items-center gap-2 text-red-700">
+            <TrendingDown className="h-5 w-5" />
+            {language === 'es' ? 'Informe de Gastos' : 'Expense Report'}
+          </CardTitle>
+          <CardDescription>
+            {language === 'es' 
+              ? 'Genera un informe exclusivo de gastos, filtrando por cuenta y concepto'
+              : 'Generate an expense-only report, filtering by account and concept'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="space-y-4">
+            {/* Quick date buttons */}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => setExpenseQuickDateRange('today')}>
+                {t('today')}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setExpenseQuickDateRange('week')}>
+                {language === 'es' ? 'Esta Semana' : 'This Week'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setExpenseQuickDateRange('month')}>
+                {language === 'es' ? 'Este Mes' : 'This Month'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setExpenseQuickDateRange('year')}>
+                {language === 'es' ? 'Este Año' : 'This Year'}
+              </Button>
+            </div>
+
+            {/* Filters */}
+            <div className="grid gap-4 md:grid-cols-5">
+              <div>
+                <Label>{language === 'es' ? 'Desde' : 'From'}</Label>
+                <Input
+                  type="date"
+                  value={expenseStartDate}
+                  onChange={(e) => setExpenseStartDate(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>{language === 'es' ? 'Hasta' : 'To'}</Label>
+                <Input
+                  type="date"
+                  value={expenseEndDate}
+                  onChange={(e) => setExpenseEndDate(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>{language === 'es' ? 'Cuenta' : 'Account'}</Label>
+                <Select value={expenseReportAccount} onValueChange={setExpenseReportAccount}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{language === 'es' ? 'Todas' : 'All'}</SelectItem>
+                    <SelectItem value="GE">GE (Quads)</SelectItem>
+                    <SelectItem value="E&S">E&S (Buggies)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>{language === 'es' ? 'Concepto' : 'Concept'}</Label>
+                <Select value={expenseReportConcept} onValueChange={setExpenseReportConcept}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
+                    {getExpenseReportConcepts().map(concept => (
+                      <SelectItem key={concept} value={concept}>{concept}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button onClick={runExpenseReport} className="w-full bg-red-600 hover:bg-red-700" disabled={expenseLoading}>
+                  {expenseLoading ? (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4 mr-2" />
+                  )}
+                  {language === 'es' ? 'Generar' : 'Generate'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Expense Report Results */}
+      {expenseResults && (
+        <Card className="border-2 border-red-200">
+          <CardHeader className="bg-red-50">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-red-700">
+                  {language === 'es' ? 'Informe de Gastos' : 'Expense Report'}
+                </CardTitle>
+                <CardDescription>
+                  {expenseResults.filters.startDate} - {expenseResults.filters.endDate}
+                  {expenseResults.filters.account !== 'all' && (
+                    <Badge variant="secondary" className="ml-2">{expenseResults.filters.account}</Badge>
+                  )}
+                  {expenseResults.filters.concept !== 'all' && (
+                    <Badge variant="outline" className="ml-2">{expenseResults.filters.concept}</Badge>
+                  )}
+                </CardDescription>
+              </div>
+              <Button onClick={exportExpensePDF} variant="outline" className="border-red-300 text-red-700 hover:bg-red-50">
+                <Download className="h-4 w-4 mr-2" />
+                PDF
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-4">
+            {/* Total */}
+            <Card className="bg-red-100 border-red-300">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <p className="text-red-700 text-sm">{language === 'es' ? 'TOTAL GASTOS' : 'TOTAL EXPENSES'}</p>
+                  <p className="text-4xl font-bold text-red-700">-{formatCurrency(expenseResults.totalExpenses)}</p>
+                  <p className="text-sm text-red-600 mt-1">
+                    {expenseResults.expenses.length} {language === 'es' ? 'registros' : 'records'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Summary by Account */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="border-l-4 border-l-blue-500">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Car className="h-4 w-4 text-blue-600" />
+                    GE (Quads)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold text-red-600">-{formatCurrency(expenseResults.byAccount.GE)}</p>
+                  {Object.keys(expenseResults.byAccountAndConcept.GE).length > 0 && (
+                    <div className="mt-3 space-y-1">
+                      {Object.entries(expenseResults.byAccountAndConcept.GE)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([concept, amount]) => (
+                          <div key={concept} className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">{concept}</span>
+                            <span className="font-medium">-{formatCurrency(amount)}</span>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-green-500">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-green-600" />
+                    E&S (Buggies)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold text-red-600">-{formatCurrency(expenseResults.byAccount['E&S'])}</p>
+                  {Object.keys(expenseResults.byAccountAndConcept['E&S']).length > 0 && (
+                    <div className="mt-3 space-y-1">
+                      {Object.entries(expenseResults.byAccountAndConcept['E&S'])
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([concept, amount]) => (
+                          <div key={concept} className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">{concept}</span>
+                            <span className="font-medium">-{formatCurrency(amount)}</span>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Summary by Concept */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">
+                  📊 {language === 'es' ? 'Resumen por Concepto' : 'Summary by Concept'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                  {Object.entries(expenseResults.byConcept)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([concept, amount]) => (
+                      <div key={concept} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="font-medium">{concept}</span>
+                        <span className="text-red-600 font-bold">-{formatCurrency(amount)}</span>
+                      </div>
+                    ))
+                  }
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Detail by Date */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">
+                  📋 {language === 'es' ? 'Detalle por Fecha' : 'Detail by Date'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {Object.keys(expenseResults.byDate).length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4">
+                    {language === 'es' ? 'No hay gastos en este período' : 'No expenses in this period'}
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {Object.entries(expenseResults.byDate)
+                      .sort((a, b) => b[0].localeCompare(a[0]))
+                      .map(([date, dateExpenses]) => {
+                        const dayTotal = dateExpenses.reduce((sum, e) => sum + parseNumber(e.amount), 0);
+                        return (
+                          <div key={date} className="border rounded-lg p-3">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="font-medium">
+                                {format(new Date(date), 'EEEE, d MMMM yyyy', { locale: dateLocale })}
+                              </span>
+                              <Badge variant="destructive">-{formatCurrency(dayTotal)}</Badge>
+                            </div>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>{language === 'es' ? 'Cuenta' : 'Account'}</TableHead>
+                                  <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
+                                  <TableHead>{language === 'es' ? 'Notas' : 'Notes'}</TableHead>
+                                  <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {dateExpenses.map((exp, idx) => (
+                                  <TableRow key={idx}>
+                                    <TableCell>
+                                      <Badge variant={exp.account === 'GE' ? 'default' : 'secondary'}
+                                             className={exp.account === 'GE' ? 'bg-blue-600' : 'bg-green-600'}>
+                                        {exp.account}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell>{exp.concept}</TableCell>
+                                    <TableCell className="text-muted-foreground text-sm">{exp.notes || '-'}</TableCell>
+                                    <TableCell className="text-right font-medium text-red-600">
+                                      -{formatCurrency(exp.amount)}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        );
+                      })
+                    }
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Custom Report */}
       <Card>
         <CardHeader>
