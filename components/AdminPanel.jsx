@@ -371,6 +371,10 @@ export default function AdminPanel() {
               <TabsTrigger value="timeslots">{t('timeSlots')}</TabsTrigger>
               <TabsTrigger value="capacity">{t('capacities')}</TabsTrigger>
               <TabsTrigger value="categories">{t('categories')}</TabsTrigger>
+              <TabsTrigger value="users" className="gap-2">
+                <Users className="h-4 w-4" />
+                {t('users')}
+              </TabsTrigger>
             </TabsList>
 
             {/* Products Tab */}
