@@ -525,11 +525,12 @@ async function handleGet(request, path) {
         'salesChannel', 'expectedPayoutDate', 
         'paymentSplitWeb', 'paymentSplitCash', 'paymentSplitBank', 'paymentSplitGyg',
         'paymentSplitCruise', 'gygDiscount', 'isPendingCruise',
-        'createdAt', 'createdBy', 'updatedAt', 'updatedBy', 'commission',
+        'createdAt', 'createdBy', 'updatedAt', 'updatedBy', 
+        'commission', 'commissionMethod',
         'gygCollected', 'gygCollectedDate', 'cruiseCollected', 'cruiseCollectedDate'
       ];
       
-      await updateSheetData(SPREADSHEET_ID, 'Departures!A1:AS1', [newHeaders]);
+      await updateSheetData(SPREADSHEET_ID, 'Departures!A1:AT1', [newHeaders]);
       
       return NextResponse.json({ 
         success: true, 
