@@ -242,16 +242,8 @@ export default function Reports() {
     if (!expenseResults) return;
     
     try {
-      const jsPDFModule = await import('jspdf');
-      const jsPDF = jsPDFModule.default;
-      const autoTableModule = await import('jspdf-autotable');
-      
+      // Create jsPDF instance - autoTable plugin is already registered at module level
       const doc = new jsPDF();
-      
-      // Register autoTable plugin
-      if (autoTableModule.default) {
-        autoTableModule.default(doc);
-      }
       
       // Title
       doc.setFontSize(18);
