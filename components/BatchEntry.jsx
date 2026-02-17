@@ -30,6 +30,7 @@ export default function BatchEntry() {
     gygDiscount: 0,
     isPendingCruise: false,
     commission: 0,
+    commissionMethod: 'cash', // 'cash' or 'bank'
   }]);
 
   const [products, setProducts] = useState([]);
