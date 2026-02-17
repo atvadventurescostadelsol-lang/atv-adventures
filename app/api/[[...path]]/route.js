@@ -97,9 +97,280 @@ function calculatePayoutDate(salesChannel, date) {
   }
 }
 
+// ==================== AUTH HANDLERS ====================
+
+// Initialize Users sheet if it doesn't exist
+async function ensureUsersSheet() {
+  try {
+    const data = await getSheetData(SPREADSHEET_ID, 'Users!A:E');
+    if (!data || data.length === 0) {
+      // Create headers and initial users
+      const headers = ['username', 'password', 'role', 'createdAt', 'lastLogin'];
+      const initialUsers = [
+        ['Zorrouad', '25592776', 'admin', new Date().toISOString(), ''],
+        ['Jesus', 'GECA2023', 'user', new Date().toISOString(), ''],
+        ['Charly', 'Sajer', 'user', new Date().toISOString(), ''],
+        ['Laurence', 'Penacchio', 'user', new Date().toISOString(), '']
+      ];
+      
+      await updateSheetData(SPREADSHEET_ID, 'Users!A1:E1', [headers]);
+      await appendSheetData(SPREADSHEET_ID, 'Users!A:E', initialUsers);
+      console.log('Users sheet initialized with default users');
+    }
+    return true;
+  } catch (error) {
+    console.error('Error ensuring Users sheet:', error);
+    // Try to create the sheet
+    try {
+      const { getSheetsClient } = require('@/lib/google-sheets');
+      const sheets = await getSheetsClient();
+      
+      // Add the Users sheet
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        requestBody: {
+          requests: [{
+            addSheet: {
+              properties: { title: 'Users' }
+            }
+          }]
+        }
+      });
+      
+      // Add headers and initial users
+      const headers = ['username', 'password', 'role', 'createdAt', 'lastLogin'];
+      const initialUsers = [
+        ['Zorrouad', '25592776', 'admin', new Date().toISOString(), ''],
+        ['Jesus', 'GECA2023', 'user', new Date().toISOString(), ''],
+        ['Charly', 'Sajer', 'user', new Date().toISOString(), ''],
+        ['Laurence', 'Penacchio', 'user', new Date().toISOString(), '']
+      ];
+      
+      await updateSheetData(SPREADSHEET_ID, 'Users!A1:E1', [headers]);
+      await appendSheetData(SPREADSHEET_ID, 'Users!A:E', initialUsers);
+      console.log('Users sheet created and initialized');
+      return true;
+    } catch (createError) {
+      console.error('Error creating Users sheet:', createError);
+      return false;
+    }
+  }
+}
+
+// Auth: Login
+async function handleLogin(body) {
+  try {
+    const { username, password } = body;
+    
+    if (!username || !password) {
+      return NextResponse.json({ success: false, error: 'Username and password required' }, { status: 400 });
+    }
+    
+    await ensureUsersSheet();
+    
+    const data = await getSheetData(SPREADSHEET_ID, 'Users!A:E');
+    const users = parseSheetToObjects(data);
+    
+    const user = users.find(u => u.username === username && u.password === password);
+    
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
+    }
+    
+    // Update last login
+    const userIndex = users.findIndex(u => u.username === username);
+    if (userIndex !== -1) {
+      const now = new Date().toISOString();
+      await updateSheetData(SPREADSHEET_ID, `Users!E${userIndex + 2}`, [[now]]);
+    }
+    
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: username,
+        username: user.username,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// Auth: Change own password
+async function handleChangePassword(body) {
+  try {
+    const { userId, currentPassword, newPassword } = body;
+    
+    if (!userId || !currentPassword || !newPassword) {
+      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    }
+    
+    const data = await getSheetData(SPREADSHEET_ID, 'Users!A:E');
+    const users = parseSheetToObjects(data);
+    
+    const userIndex = users.findIndex(u => u.username === userId);
+    
+    if (userIndex === -1) {
+      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
+    }
+    
+    const user = users[userIndex];
+    
+    if (user.password !== currentPassword) {
+      return NextResponse.json({ success: false, error: 'Current password is incorrect' }, { status: 401 });
+    }
+    
+    // Update password
+    await updateSheetData(SPREADSHEET_ID, `Users!B${userIndex + 2}`, [[newPassword]]);
+    
+    await addAuditLog('PASSWORD_CHANGE', 'User', userId, { action: 'self_password_change' }, userId, userId);
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Change password error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// ==================== USER MANAGEMENT HANDLERS (Admin only) ====================
+
+// Get all users
+async function handleGetUsers() {
+  try {
+    await ensureUsersSheet();
+    
+    const data = await getSheetData(SPREADSHEET_ID, 'Users!A:E');
+    const users = parseSheetToObjects(data);
+    
+    // Return users without passwords
+    const safeUsers = users.map(u => ({
+      username: u.username,
+      role: u.role,
+      createdAt: u.createdAt,
+      lastLogin: u.lastLogin || null
+    }));
+    
+    return NextResponse.json(safeUsers);
+  } catch (error) {
+    console.error('Get users error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// Create new user (Admin)
+async function handleCreateUser(body) {
+  try {
+    const { username, password, role, adminUser } = body;
+    
+    if (!username || !password || !role) {
+      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    }
+    
+    if (role !== 'admin' && role !== 'user') {
+      return NextResponse.json({ success: false, error: 'Invalid role' }, { status: 400 });
+    }
+    
+    const data = await getSheetData(SPREADSHEET_ID, 'Users!A:E');
+    const users = parseSheetToObjects(data);
+    
+    // Check if username already exists
+    if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+      return NextResponse.json({ success: false, error: 'Username already exists' }, { status: 400 });
+    }
+    
+    const now = new Date().toISOString();
+    const newUser = [username, password, role, now, ''];
+    
+    await appendSheetData(SPREADSHEET_ID, 'Users!A:E', [newUser]);
+    
+    await addAuditLog('CREATE_USER', 'User', username, { role }, adminUser || 'admin', 'Admin');
+    
+    return NextResponse.json({
+      success: true,
+      user: {
+        username,
+        role,
+        createdAt: now
+      }
+    });
+  } catch (error) {
+    console.error('Create user error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// Delete user (Admin)
+async function handleDeleteUser(username, adminUser) {
+  try {
+    if (!username) {
+      return NextResponse.json({ success: false, error: 'Username required' }, { status: 400 });
+    }
+    
+    const data = await getSheetData(SPREADSHEET_ID, 'Users!A:E');
+    const users = parseSheetToObjects(data);
+    
+    const userIndex = users.findIndex(u => u.username === username);
+    
+    if (userIndex === -1) {
+      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
+    }
+    
+    // Clear the row (soft delete)
+    const headers = data[0];
+    const emptyRow = headers.map(() => '');
+    await updateSheetData(SPREADSHEET_ID, `Users!A${userIndex + 2}:E${userIndex + 2}`, [emptyRow]);
+    
+    await addAuditLog('DELETE_USER', 'User', username, { deleted: true }, adminUser || 'admin', 'Admin');
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// Reset user password (Admin)
+async function handleResetPassword(body) {
+  try {
+    const { username, newPassword, adminUser } = body;
+    
+    if (!username || !newPassword) {
+      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    }
+    
+    const data = await getSheetData(SPREADSHEET_ID, 'Users!A:E');
+    const users = parseSheetToObjects(data);
+    
+    const userIndex = users.findIndex(u => u.username === username);
+    
+    if (userIndex === -1) {
+      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
+    }
+    
+    // Update password
+    await updateSheetData(SPREADSHEET_ID, `Users!B${userIndex + 2}`, [[newPassword]]);
+    
+    await addAuditLog('RESET_PASSWORD', 'User', username, { action: 'admin_password_reset' }, adminUser || 'admin', 'Admin');
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// ==================== EXISTING HANDLERS ====================
+
 // GET handlers
 async function handleGet(request, path) {
   const { searchParams } = new URL(request.url);
+
+  // Get all users (Admin)
+  if (path === 'users') {
+    return handleGetUsers();
+  }
 
   // Initialize sheet
   if (path === 'init') {
@@ -396,6 +667,26 @@ async function handleGet(request, path) {
 // POST handlers
 async function handlePost(request, path) {
   const body = await request.json();
+
+  // Auth: Login
+  if (path === 'auth/login') {
+    return handleLogin(body);
+  }
+
+  // Auth: Change own password
+  if (path === 'auth/change-password') {
+    return handleChangePassword(body);
+  }
+
+  // Admin: Create user
+  if (path === 'users') {
+    return handleCreateUser(body);
+  }
+
+  // Admin: Reset user password
+  if (path === 'users/reset-password') {
+    return handleResetPassword(body);
+  }
 
   // Create single departure
   if (path === 'departures') {
@@ -1007,11 +1298,19 @@ async function handlePut(request, path) {
 
 // DELETE handlers
 async function handleDelete(request, path) {
+  const { searchParams } = new URL(request.url);
+
+  // Delete user (Admin)
+  if (path.startsWith('users/')) {
+    const username = path.split('/')[1];
+    const adminUser = searchParams.get('adminUser') || 'admin';
+    return handleDeleteUser(username, adminUser);
+  }
+
   // Delete departure
   if (path.startsWith('departures/')) {
     try {
       const id = path.split('/')[1];
-      const { searchParams } = new URL(request.url);
       const userId = searchParams.get('userId') || 'system';
       const userName = searchParams.get('userName') || 'System';
 
