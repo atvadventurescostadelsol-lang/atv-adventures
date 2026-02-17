@@ -803,6 +803,25 @@ export default function Reports() {
         });
       }
 
+      // Incomes
+      if (results.totals.geIncomeTotal > 0 || results.totals.esIncomeTotal > 0) {
+        doc.text(language === 'es' ? 'Ingresos' : 'Incomes', 14, doc.lastAutoTable.finalY + 15);
+        
+        const incomesData = [
+          ['GE (Quads)', '+' + formatCurrency(results.totals.geIncomeTotal)],
+          ['E&S (Buggies)', '+' + formatCurrency(results.totals.esIncomeTotal)],
+          [language === 'es' ? 'Total Ingresos' : 'Total Incomes', '+' + formatCurrency(results.totals.geIncomeTotal + results.totals.esIncomeTotal)],
+        ];
+
+        doc.autoTable({
+          startY: doc.lastAutoTable.finalY + 20,
+          head: [[language === 'es' ? 'Cuenta' : 'Account', language === 'es' ? 'Cantidad' : 'Amount']],
+          body: incomesData,
+          theme: 'striped',
+          headStyles: { fillColor: [34, 197, 94] },
+        });
+      }
+
       // Net Cash Summary
       doc.text(language === 'es' ? 'Efectivo Neto' : 'Net Cash After Expenses', 14, doc.lastAutoTable.finalY + 15);
       
