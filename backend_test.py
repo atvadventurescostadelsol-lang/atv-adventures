@@ -7,7 +7,7 @@ import time
 from typing import Dict, Any
 
 # Configuration
-BASE_URL = "https://tour-expense-split.preview.emergentagent.com/api"
+BASE_URL = "https://gastos-permissions.preview.emergentagent.com/api"
 ADMIN_USER = "Zorrouad"
 ADMIN_PASS = "25592776"
 TEST_USER = "Jesus"

@@ -102,8 +102,8 @@ El sistema utiliza un Google Sheet con 7 pestañas:
 
 ## 🚀 URLs
 
-- **Aplicación**: https://tour-expense-split.preview.emergentagent.com
-- **API Base**: https://tour-expense-split.preview.emergentagent.com/api
+- **Aplicación**: https://gastos-permissions.preview.emergentagent.com
+- **API Base**: https://gastos-permissions.preview.emergentagent.com/api
 - **Google Sheet**: https://docs.google.com/spreadsheets/d/1WeP9I6Phj28xsIqVHefg599u5tZerGj88P0dx4Pn9tA/edit
 
 ## 📡 Endpoints API
@@ -159,7 +159,7 @@ MONGO_URL=mongodb://localhost:27017
 DB_NAME=atv_ops_control
 
 # App URL
-NEXT_PUBLIC_BASE_URL=https://tour-expense-split.preview.emergentagent.com
+NEXT_PUBLIC_BASE_URL=https://gastos-permissions.preview.emergentagent.com
 
 # Google OAuth
 GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com

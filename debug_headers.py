@@ -6,7 +6,7 @@ Test to create a single-column debugging API call to check sheet headers
 import requests
 import json
 
-BASE_URL = "https://tour-expense-split.preview.emergentagent.com"
+BASE_URL = "https://gastos-permissions.preview.emergentagent.com"
 API_BASE = f"{BASE_URL}/api"
 
 # Test direct sheet data access
