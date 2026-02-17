@@ -744,6 +744,11 @@ async function handlePost(request, path) {
     return handleResetPassword(body);
   }
 
+  // Collect payment (mark GYG or Cruise payment as collected)
+  if (path === 'collect-payment') {
+    return handleCollectPayment(body);
+  }
+
   // Create single departure
   if (path === 'departures') {
     try {
