@@ -6,7 +6,7 @@ Debug script to check the raw sheet data structure
 import requests
 import json
 
-BASE_URL = "https://departure-income-hub.preview.emergentagent.com"
+BASE_URL = "https://atv-auth-preview.preview.emergentagent.com"
 API_BASE = f"{BASE_URL}/api"
 
 def check_raw_departures():

@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://departure-income-hub.preview.emergentagent.com"
+BASE_URL = "https://atv-auth-preview.preview.emergentagent.com"
 API_BASE = f"{BASE_URL}/api"
 
 def log_test(test_name, status, details=""):
