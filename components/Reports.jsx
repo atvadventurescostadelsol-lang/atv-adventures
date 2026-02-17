@@ -166,6 +166,13 @@ export default function Reports() {
       if (res.ok) {
         let data = await res.json();
         
+        // Filter by user permissions first
+        data = data.filter(e => {
+          if (e.account === 'GE' && !canViewGE) return false;
+          if (e.account === 'E&S' && !canViewES) return false;
+          return true;
+        });
+        
         // Filter by account
         if (expenseReportAccount !== 'all') {
           data = data.filter(e => e.account === expenseReportAccount);
