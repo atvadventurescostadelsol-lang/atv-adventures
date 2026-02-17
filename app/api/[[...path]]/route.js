@@ -890,7 +890,7 @@ async function handleCollectPayment(body) {
       return departure[header] || '';
     });
     
-    await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AV${index + 2}`, [rowData]);
+    await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AX${index + 2}`, [rowData]);
     
     await addAuditLog('COLLECT_PAYMENT', 'Departure', departureId, { 
       paymentType, 
@@ -2020,7 +2020,7 @@ async function handlePut(request, path) {
       // Update in sheet - extended to AV
       const headers = data[0];
       const rowData = headers.map(header => updated[header] !== undefined ? updated[header] : '');
-      await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AV${index + 2}`, [rowData]);
+      await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AX${index + 2}`, [rowData]);
 
       await addAuditLog('UPDATE', 'Departure', id, { before: current, after: updated }, userId, userName);
 
@@ -2185,7 +2185,7 @@ async function handleDelete(request, path) {
       const headers = data[0];
       const emptyRow = headers.map(() => '');
       
-      await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AV${index + 2}`, [emptyRow]);
+      await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AX${index + 2}`, [emptyRow]);
 
       await addAuditLog('DELETE', 'Departure', id, { deleted: departure }, userId, userName);
 
