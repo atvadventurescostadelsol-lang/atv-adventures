@@ -714,6 +714,7 @@ async function handleGet(request, path) {
         cruiseTotal: 0,
         depositsCollected: 0,
         remainingExpected: 0,
+        commissionTotal: 0,
         departuresBySlot: {},
       };
 
@@ -740,6 +741,9 @@ async function handleGet(request, path) {
         stats.bankTotal += parseNumber(d.paymentSplitBank);
         stats.gygTotal += parseNumber(d.paymentSplitGyg);
         stats.cruiseTotal += parseNumber(d.paymentSplitCruise);
+        
+        // Accumulate commissions
+        stats.commissionTotal += parseNumber(d.commission);
 
         // Group by time slot
         if (!stats.departuresBySlot[d.timeSlot]) {
