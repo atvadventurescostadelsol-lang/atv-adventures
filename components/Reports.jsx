@@ -773,6 +773,52 @@ export default function Reports() {
                 </Button>
               </div>
             </div>
+
+            {/* Expense Filters */}
+            <div className="border-t pt-4 mt-4">
+              <Label className="text-sm font-semibold mb-2 block">
+                🧾 {language === 'es' ? 'Filtros de Gastos' : 'Expense Filters'}
+              </Label>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <Label className="text-xs">{language === 'es' ? 'Cuenta de Gastos' : 'Expense Account'}</Label>
+                  <Select value={expenseAccount} onValueChange={setExpenseAccount}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{language === 'es' ? 'Todas las cuentas' : 'All accounts'}</SelectItem>
+                      <SelectItem value="GE">GE (Quads)</SelectItem>
+                      <SelectItem value="E&S">E&S (Buggies)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">{language === 'es' ? 'Concepto de Gasto' : 'Expense Concept'}</Label>
+                  <Select value={expenseConcept} onValueChange={setExpenseConcept}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{language === 'es' ? 'Todos los conceptos' : 'All concepts'}</SelectItem>
+                      {getAvailableConcepts().map(concept => (
+                        <SelectItem key={concept} value={concept}>{concept}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => { setExpenseAccount('all'); setExpenseConcept('all'); }}
+                    className="w-full"
+                  >
+                    {language === 'es' ? 'Limpiar filtros gastos' : 'Clear expense filters'}
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -784,7 +830,19 @@ export default function Reports() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>{language === 'es' ? 'Resultados del Informe' : 'Report Results'}</CardTitle>
-                <CardDescription>{results.totals.label}</CardDescription>
+                <CardDescription>
+                  {results.totals.label}
+                  {results.expenseAccountFilter !== 'all' && (
+                    <Badge variant="secondary" className="ml-2">
+                      {language === 'es' ? 'Gastos' : 'Expenses'}: {results.expenseAccountFilter}
+                    </Badge>
+                  )}
+                  {results.expenseConceptFilter !== 'all' && (
+                    <Badge variant="outline" className="ml-2">
+                      {results.expenseConceptFilter}
+                    </Badge>
+                  )}
+                </CardDescription>
               </div>
               <Button onClick={exportPDF} variant="outline">
                 <Download className="h-4 w-4 mr-2" />
