@@ -291,20 +291,21 @@ export default function BatchEntry() {
     const commission = parseFloat(newCommission) || 0;
     const preCommissionTotal = getPreCommissionTotal(entry);
     const commissionMethod = entry.commissionMethod || 'cash';
+    const mainPaymentMethod = entry.paymentSplit[0]?.method || 'cash';
     
-    // Find if we have payment in the commission method
-    const currentPaymentInMethod = entry.paymentSplit.find(s => s.method === commissionMethod);
+    let newPaymentSplit;
     
-    // Calculate the new payment split
-    // The commission is deducted from the commission method
-    let newPaymentSplit = entry.paymentSplit.map(s => {
-      if (s.method === commissionMethod) {
-        // Deduct commission from this method
-        const baseAmount = preCommissionTotal; // If single method
-        return { ...s, amount: Math.max(0, baseAmount - commission) };
-      }
-      return s;
-    });
+    if (commissionMethod === mainPaymentMethod) {
+      // Commission comes from same source - just reduce that amount
+      newPaymentSplit = [{ method: mainPaymentMethod, amount: preCommissionTotal - commission }];
+    } else {
+      // Commission comes from different source
+      // Main payment stays full, commission method goes negative
+      newPaymentSplit = [
+        { method: mainPaymentMethod, amount: preCommissionTotal },
+        { method: commissionMethod, amount: -commission }
+      ];
+    }
 
     setEntries(entries.map(e => {
       if (e.id === entryId) {
@@ -323,30 +324,26 @@ export default function BatchEntry() {
     if (!entry) return;
 
     const commission = parseFloat(entry.commission) || 0;
+    if (commission === 0) {
+      updateEntry(entryId, 'commissionMethod', newMethod);
+      return;
+    }
+    
     const preCommissionTotal = getPreCommissionTotal(entry);
-    const oldMethod = entry.commissionMethod || 'cash';
+    const mainPaymentMethod = entry.paymentSplit[0]?.method || 'cash';
     
-    // When method changes, we need to:
-    // 1. Restore the old method's amount
-    // 2. Deduct from the new method
+    let newPaymentSplit;
     
-    let newPaymentSplit = entry.paymentSplit.map(s => {
-      if (s.method === oldMethod) {
-        // Restore: add commission back
-        return { ...s, amount: s.amount + commission };
-      }
-      if (s.method === newMethod) {
-        // Deduct from new method
-        return { ...s, amount: Math.max(0, s.amount - commission) };
-      }
-      return s;
-    });
-
-    // If the new method doesn't exist in payment split, we need to show it as negative
-    const hasNewMethod = entry.paymentSplit.some(s => s.method === newMethod);
-    if (!hasNewMethod && commission > 0) {
-      // Add the new method with negative (or show as expense)
-      newPaymentSplit.push({ method: newMethod, amount: -commission });
+    if (newMethod === mainPaymentMethod) {
+      // Commission now comes from same source - just reduce that amount
+      newPaymentSplit = [{ method: mainPaymentMethod, amount: preCommissionTotal - commission }];
+    } else {
+      // Commission comes from different source
+      // Main payment stays full, commission method goes negative
+      newPaymentSplit = [
+        { method: mainPaymentMethod, amount: preCommissionTotal },
+        { method: newMethod, amount: -commission }
+      ];
     }
 
     setEntries(entries.map(e => {
