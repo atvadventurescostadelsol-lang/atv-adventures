@@ -27,6 +27,8 @@ export default function PendingPayments() {
   const { t, language } = useLanguage();
   const [gygPending, setGygPending] = useState([]);
   const [cruisePending, setCruisePending] = useState([]);
+  const [gygCollected, setGygCollected] = useState([]);
+  const [cruiseCollected, setCruiseCollected] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedGyg, setSelectedGyg] = useState([]);
   const [selectedCruise, setSelectedCruise] = useState([]);
@@ -34,6 +36,7 @@ export default function PendingPayments() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmType, setConfirmType] = useState(''); // 'gyg' or 'cruise'
   const [processing, setProcessing] = useState(false);
+  const [activeTab, setActiveTab] = useState('pending');
   
   // Date range filter
   const [dateFilterStart, setDateFilterStart] = useState('');
