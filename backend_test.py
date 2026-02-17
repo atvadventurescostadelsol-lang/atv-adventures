@@ -1,282 +1,407 @@
 #!/usr/bin/env python3
-"""
-Backend API Testing Script for Cruceros Payment Feature
-Tests the specific functionality requested for Cruceros payment method.
-"""
 
 import requests
 import json
+import sys
 import time
-from datetime import datetime
+from typing import Dict, Any
 
 # Configuration
-BASE_URL = "https://atv-auth-preview.preview.emergentagent.com"
-API_BASE = f"{BASE_URL}/api"
+BASE_URL = "https://atv-auth-preview.preview.emergentagent.com/api"
+ADMIN_USER = "Zorrouad"
+ADMIN_PASS = "25592776"
+TEST_USER = "Jesus"
+TEST_USER_PASS = "GECA2023"
 
-def log_test(test_name, status, details=""):
-    """Log test results with timestamp"""
-    timestamp = datetime.now().strftime("%H:%M:%S")
-    status_icon = "✅" if status == "PASS" else "❌" if status == "FAIL" else "⚠️"
-    print(f"[{timestamp}] {status_icon} {test_name}: {status}")
-    if details:
-        print(f"    Details: {details}")
-    print()
+class AuthTester:
+    def __init__(self):
+        self.session = requests.Session()
+        self.results = {
+            "passed": [],
+            "failed": [],
+            "total_tests": 0
+        }
 
-def test_cruceros_batch_creation():
-    """Test POST /api/departures/batch with Cruceros payment method"""
-    print("🔄 Testing Cruceros Batch Creation...")
-    
-    test_data = {
-        "entries": [
-            {
-                "date": "2026-02-16",
-                "timeSlot": "10:00",
-                "category": "quad",
-                "productId": "1",
-                "vehiclesCount": 1,
-                "groupLabel": "Test Crucero Backend",
-                "paymentSplit": [
-                    {
-                        "method": "cruceros",
-                        "amount": 85
-                    }
-                ],
-                "isPendingCruise": True,
-                "salesChannel": "cruceros"
-            }
-        ],
-        "userId": "test_user",
-        "userName": "Test User"
-    }
-    
-    try:
-        response = requests.post(
-            f"{API_BASE}/departures/batch",
-            json=test_data,
-            headers={"Content-Type": "application/json"},
-            timeout=30
-        )
-        
-        if response.status_code == 200:
-            result = response.json()
-            if result.get("success") and result.get("created") == 1:
-                entry_id = result["results"][0]["id"] if result.get("results") else None
-                log_test(
-                    "Cruceros Batch Creation", 
-                    "PASS", 
-                    f"Entry created successfully with ID: {entry_id}"
-                )
-                return True, entry_id
-            else:
-                log_test(
-                    "Cruceros Batch Creation", 
-                    "FAIL", 
-                    f"Unexpected response structure: {result}"
-                )
-                return False, None
+    def log_result(self, test_name: str, success: bool, message: str = "", details: Dict = None):
+        """Log test result"""
+        self.results["total_tests"] += 1
+        if success:
+            self.results["passed"].append(test_name)
+            print(f"✅ {test_name}: {message}")
         else:
-            log_test(
-                "Cruceros Batch Creation", 
-                "FAIL", 
-                f"HTTP {response.status_code}: {response.text[:200]}"
-            )
-            return False, None
-            
-    except requests.exceptions.RequestException as e:
-        log_test("Cruceros Batch Creation", "FAIL", f"Request failed: {str(e)}")
-        return False, None
-
-def test_dashboard_cruceros_total():
-    """Test GET /api/dashboard to verify cruiseTotal > 0 after creating entry"""
-    print("🔄 Testing Dashboard Cruceros Total...")
-    
-    try:
-        response = requests.get(
-            f"{API_BASE}/dashboard?date=2026-02-16",
-            timeout=30
-        )
+            self.results["failed"].append(test_name)
+            print(f"❌ {test_name}: {message}")
         
-        if response.status_code == 200:
-            result = response.json()
-            stats = result.get("stats", {})
-            cruise_total = stats.get("cruiseTotal", 0)
-            gyg_total = stats.get("gygTotal", 0)
+        if details:
+            print(f"   Details: {json.dumps(details, indent=2)}")
+        print()
+
+    def make_request(self, method: str, endpoint: str, data: Dict = None, params: Dict = None) -> Dict:
+        """Make HTTP request and return response"""
+        url = f"{BASE_URL}/{endpoint}"
+        try:
+            if method.upper() == "GET":
+                response = self.session.get(url, params=params, timeout=30)
+            elif method.upper() == "POST":
+                response = self.session.post(url, json=data, timeout=30)
+            elif method.upper() == "DELETE":
+                response = self.session.delete(url, params=params, timeout=30)
+            else:
+                raise ValueError(f"Unsupported method: {method}")
             
-            if cruise_total > 0:
-                log_test(
-                    "Dashboard Cruceros Total", 
-                    "PASS", 
-                    f"cruiseTotal: {cruise_total}, gygTotal: {gyg_total}"
-                )
+            try:
+                return {
+                    "status_code": response.status_code,
+                    "data": response.json(),
+                    "success": True
+                }
+            except json.JSONDecodeError:
+                return {
+                    "status_code": response.status_code,
+                    "data": {"text": response.text},
+                    "success": True
+                }
+        except requests.exceptions.RequestException as e:
+            return {
+                "status_code": 0,
+                "data": {"error": str(e)},
+                "success": False
+            }
+
+    def test_admin_login(self):
+        """Test admin login with correct credentials"""
+        print("🔐 Testing Admin Login...")
+        
+        response = self.make_request("POST", "auth/login", {
+            "username": ADMIN_USER,
+            "password": ADMIN_PASS
+        })
+        
+        if not response["success"]:
+            self.log_result("Admin Login", False, f"Request failed: {response['data']['error']}")
+            return False
+            
+        if response["status_code"] == 200:
+            data = response["data"]
+            if data.get("success") and data.get("user", {}).get("role") == "admin":
+                self.log_result("Admin Login", True, f"Successfully logged in as {ADMIN_USER} with admin role")
                 return True
             else:
-                log_test(
-                    "Dashboard Cruceros Total", 
-                    "FAIL", 
-                    f"cruiseTotal is {cruise_total}, expected > 0. Full stats: {stats}"
-                )
+                self.log_result("Admin Login", False, f"Login response invalid", data)
                 return False
         else:
-            log_test(
-                "Dashboard Cruceros Total", 
-                "FAIL", 
-                f"HTTP {response.status_code}: {response.text[:200]}"
-            )
+            self.log_result("Admin Login", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return False
+
+    def test_user_login(self):
+        """Test user login with correct credentials"""
+        print("🔐 Testing User Login...")
+        
+        response = self.make_request("POST", "auth/login", {
+            "username": TEST_USER,
+            "password": TEST_USER_PASS
+        })
+        
+        if not response["success"]:
+            self.log_result("User Login", False, f"Request failed: {response['data']['error']}")
             return False
             
-    except requests.exceptions.RequestException as e:
-        log_test("Dashboard Cruceros Total", "FAIL", f"Request failed: {str(e)}")
-        return False
+        if response["status_code"] == 200:
+            data = response["data"]
+            if data.get("success") and data.get("user", {}).get("role") == "user":
+                self.log_result("User Login", True, f"Successfully logged in as {TEST_USER} with user role")
+                return True
+            else:
+                self.log_result("User Login", False, f"Login response invalid", data)
+                return False
+        else:
+            self.log_result("User Login", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return False
 
-def test_departures_data_alignment():
-    """Test GET /api/departures to verify proper data alignment with new columns"""
-    print("🔄 Testing Departures Data Alignment...")
-    
-    try:
-        response = requests.get(
-            f"{API_BASE}/departures?date=2026-02-16",
-            timeout=30
-        )
+    def test_invalid_login(self):
+        """Test login with invalid credentials"""
+        print("🔐 Testing Invalid Login...")
         
-        if response.status_code == 200:
-            result = response.json()
+        response = self.make_request("POST", "auth/login", {
+            "username": "invalid_user",
+            "password": "wrong_password"
+        })
+        
+        if not response["success"]:
+            self.log_result("Invalid Login Rejection", False, f"Request failed: {response['data']['error']}")
+            return False
             
-            if isinstance(result, list) and len(result) > 0:
-                # Check if the entries have the expected fields
-                first_entry = result[0]
-                expected_fields = [
-                    'id', 'date', 'timeSlot', 'category', 'productId',
-                    'paymentSplitCruise', 'gygDiscount', 'isPendingCruise'
-                ]
+        if response["status_code"] == 401:
+            data = response["data"]
+            if not data.get("success", True):
+                self.log_result("Invalid Login Rejection", True, "Correctly rejected invalid credentials with 401")
+                return True
+            else:
+                self.log_result("Invalid Login Rejection", False, "Should have rejected invalid credentials", data)
+                return False
+        else:
+            self.log_result("Invalid Login Rejection", False, f"Expected 401, got {response['status_code']}", response["data"])
+            return False
+
+    def test_change_password_success(self):
+        """Test successful password change"""
+        print("🔑 Testing Password Change (Success)...")
+        
+        # Change password
+        response = self.make_request("POST", "auth/change-password", {
+            "userId": TEST_USER,
+            "currentPassword": TEST_USER_PASS,
+            "newPassword": "TEST123"
+        })
+        
+        if not response["success"]:
+            self.log_result("Password Change Success", False, f"Request failed: {response['data']['error']}")
+            return False
+        
+        if response["status_code"] == 200:
+            data = response["data"]
+            if data.get("success"):
+                # Verify new password works
+                login_response = self.make_request("POST", "auth/login", {
+                    "username": TEST_USER,
+                    "password": "TEST123"
+                })
                 
-                missing_fields = []
-                for field in expected_fields:
-                    if field not in first_entry:
-                        missing_fields.append(field)
-                
-                # Check specifically for Cruceros entry
-                cruceros_entry = None
-                for entry in result:
-                    if entry.get('groupLabel') == 'Test Crucero Backend':
-                        cruceros_entry = entry
-                        break
-                
-                if cruceros_entry:
-                    cruise_payment = float(cruceros_entry.get('paymentSplitCruise', 0))
-                    is_pending = cruceros_entry.get('isPendingCruise', 'false')
-                    
-                    if cruise_payment > 0 and is_pending == 'true':
-                        log_test(
-                            "Departures Data Alignment", 
-                            "PASS", 
-                            f"Found Cruceros entry with cruise payment: {cruise_payment}, pending: {is_pending}"
-                        )
-                        return True
-                    else:
-                        log_test(
-                            "Departures Data Alignment", 
-                            "FAIL", 
-                            f"Cruceros entry found but incorrect values: cruise={cruise_payment}, pending={is_pending}"
-                        )
-                        return False
+                if login_response["status_code"] == 200 and login_response["data"].get("success"):
+                    self.log_result("Password Change Success", True, f"Password changed successfully for {TEST_USER}")
+                    return True
                 else:
-                    log_test(
-                        "Departures Data Alignment", 
-                        "FAIL", 
-                        f"Cruceros test entry not found in departures list. Available entries: {len(result)}"
-                    )
+                    self.log_result("Password Change Success", False, "Password change succeeded but new password doesn't work")
                     return False
             else:
-                log_test(
-                    "Departures Data Alignment", 
-                    "FAIL", 
-                    f"Expected array with entries, got: {type(result)} with length: {len(result) if hasattr(result, '__len__') else 'N/A'}"
-                )
+                self.log_result("Password Change Success", False, "Password change failed", data)
                 return False
         else:
-            log_test(
-                "Departures Data Alignment", 
-                "FAIL", 
-                f"HTTP {response.status_code}: {response.text[:200]}"
-            )
+            self.log_result("Password Change Success", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return False
+
+    def test_change_password_wrong_current(self):
+        """Test password change with wrong current password"""
+        print("🔑 Testing Password Change (Wrong Current Password)...")
+        
+        response = self.make_request("POST", "auth/change-password", {
+            "userId": TEST_USER,
+            "currentPassword": "wrong_password",
+            "newPassword": "NEW123"
+        })
+        
+        if not response["success"]:
+            self.log_result("Password Change Wrong Current", False, f"Request failed: {response['data']['error']}")
             return False
             
-    except requests.exceptions.RequestException as e:
-        log_test("Departures Data Alignment", "FAIL", f"Request failed: {str(e)}")
-        return False
-
-def test_api_connectivity():
-    """Test basic API connectivity"""
-    print("🔄 Testing API Connectivity...")
-    
-    try:
-        response = requests.get(f"{API_BASE}", timeout=10)
-        if response.status_code == 200:
-            log_test("API Connectivity", "PASS", "API is accessible")
-            return True
+        if response["status_code"] == 401:
+            data = response["data"]
+            if not data.get("success", True):
+                self.log_result("Password Change Wrong Current", True, "Correctly rejected wrong current password with 401")
+                return True
+            else:
+                self.log_result("Password Change Wrong Current", False, "Should have rejected wrong current password", data)
+                return False
         else:
-            log_test("API Connectivity", "FAIL", f"HTTP {response.status_code}")
+            self.log_result("Password Change Wrong Current", False, f"Expected 401, got {response['status_code']}", response["data"])
             return False
-    except requests.exceptions.RequestException as e:
-        log_test("API Connectivity", "FAIL", f"Connection failed: {str(e)}")
-        return False
 
-def main():
-    """Run all Cruceros payment feature tests"""
-    print("=" * 60)
-    print("🚀 CRUCEROS PAYMENT FEATURE TESTING")
-    print(f"📍 Base URL: {BASE_URL}")
-    print(f"🔗 API URL: {API_BASE}")
-    print("=" * 60)
-    print()
-    
-    # Track test results
-    test_results = {}
-    
-    # Test 1: API Connectivity
-    test_results["api_connectivity"] = test_api_connectivity()
-    
-    # Test 2: Create Cruceros batch entry
-    if test_results["api_connectivity"]:
-        success, entry_id = test_cruceros_batch_creation()
-        test_results["cruceros_batch_creation"] = success
+    def test_get_users_list(self):
+        """Test getting users list"""
+        print("👥 Testing Get Users List...")
         
-        # Small delay to ensure data is persisted
-        if success:
-            print("⏳ Waiting 2 seconds for data persistence...")
-            time.sleep(2)
+        response = self.make_request("GET", "users")
+        
+        if not response["success"]:
+            self.log_result("Get Users List", False, f"Request failed: {response['data']['error']}")
+            return False
             
-        # Test 3: Verify dashboard shows cruise total
-        test_results["dashboard_cruceros_total"] = test_dashboard_cruceros_total()
+        if response["status_code"] == 200:
+            data = response["data"]
+            if isinstance(data, list) and len(data) > 0:
+                # Check that passwords are not included
+                has_password = any("password" in user for user in data if isinstance(user, dict))
+                if not has_password:
+                    required_fields = ["username", "role", "createdAt"]
+                    first_user = data[0]
+                    has_required = all(field in first_user for field in required_fields)
+                    if has_required:
+                        self.log_result("Get Users List", True, f"Retrieved {len(data)} users without passwords")
+                        return True
+                    else:
+                        self.log_result("Get Users List", False, "Users missing required fields", first_user)
+                        return False
+                else:
+                    self.log_result("Get Users List", False, "Users list contains password field (security issue)")
+                    return False
+            else:
+                self.log_result("Get Users List", False, "Empty or invalid users list", data)
+                return False
+        else:
+            self.log_result("Get Users List", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return False
+
+    def test_create_new_user(self):
+        """Test creating a new user"""
+        print("👤 Testing Create New User...")
         
-        # Test 4: Verify departures data alignment
-        test_results["departures_data_alignment"] = test_departures_data_alignment()
-    else:
-        test_results["cruceros_batch_creation"] = False
-        test_results["dashboard_cruceros_total"] = False
-        test_results["departures_data_alignment"] = False
-    
-    # Summary
-    print("=" * 60)
-    print("📊 TEST SUMMARY")
-    print("=" * 60)
-    
-    passed = sum(1 for result in test_results.values() if result)
-    total = len(test_results)
-    
-    for test_name, result in test_results.items():
-        status = "✅ PASS" if result else "❌ FAIL"
-        print(f"{status} {test_name.replace('_', ' ').title()}")
-    
-    print(f"\n📈 Overall: {passed}/{total} tests passed")
-    
-    if passed == total:
-        print("🎉 ALL CRUCEROS PAYMENT TESTS PASSED!")
-        return True
-    else:
-        print("⚠️  SOME TESTS FAILED - See details above")
-        return False
+        response = self.make_request("POST", "users", {
+            "username": "TestUser",
+            "password": "test123",
+            "role": "user",
+            "adminUser": ADMIN_USER
+        })
+        
+        if not response["success"]:
+            self.log_result("Create New User", False, f"Request failed: {response['data']['error']}")
+            return False
+            
+        if response["status_code"] == 200:
+            data = response["data"]
+            if data.get("success") and data.get("user", {}).get("username") == "TestUser":
+                self.log_result("Create New User", True, f"Successfully created user TestUser")
+                return True
+            else:
+                self.log_result("Create New User", False, "User creation failed or invalid response", data)
+                return False
+        else:
+            self.log_result("Create New User", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return False
+
+    def test_delete_user(self):
+        """Test deleting a user"""
+        print("🗑️ Testing Delete User...")
+        
+        response = self.make_request("DELETE", "users/TestUser", params={
+            "adminUser": ADMIN_USER
+        })
+        
+        if not response["success"]:
+            self.log_result("Delete User", False, f"Request failed: {response['data']['error']}")
+            return False
+            
+        if response["status_code"] == 200:
+            data = response["data"]
+            if data.get("success"):
+                self.log_result("Delete User", True, "Successfully deleted TestUser")
+                return True
+            else:
+                self.log_result("Delete User", False, "User deletion failed", data)
+                return False
+        else:
+            self.log_result("Delete User", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return False
+
+    def test_admin_reset_password(self):
+        """Test admin resetting user password"""
+        print("🔧 Testing Admin Reset Password...")
+        
+        # Reset password back to original
+        response = self.make_request("POST", "users/reset-password", {
+            "username": TEST_USER,
+            "newPassword": TEST_USER_PASS,
+            "adminUser": ADMIN_USER
+        })
+        
+        if not response["success"]:
+            self.log_result("Admin Reset Password", False, f"Request failed: {response['data']['error']}")
+            return False
+        
+        if response["status_code"] == 200:
+            data = response["data"]
+            if data.get("success"):
+                # Verify reset password works
+                login_response = self.make_request("POST", "auth/login", {
+                    "username": TEST_USER,
+                    "password": TEST_USER_PASS
+                })
+                
+                if login_response["status_code"] == 200 and login_response["data"].get("success"):
+                    self.log_result("Admin Reset Password", True, f"Admin successfully reset {TEST_USER} password")
+                    return True
+                else:
+                    self.log_result("Admin Reset Password", False, "Password reset succeeded but new password doesn't work")
+                    return False
+            else:
+                self.log_result("Admin Reset Password", False, "Password reset failed", data)
+                return False
+        else:
+            self.log_result("Admin Reset Password", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return False
+
+    def test_existing_endpoints(self):
+        """Test that existing endpoints still work"""
+        print("🔄 Testing Existing Endpoints...")
+        
+        # Test products endpoint
+        response = self.make_request("GET", "products")
+        if response["success"] and response["status_code"] == 200:
+            self.log_result("GET /api/products", True, "Products endpoint working correctly")
+        else:
+            self.log_result("GET /api/products", False, f"Status: {response['status_code']}", response.get("data"))
+        
+        # Test dashboard endpoint
+        response = self.make_request("GET", "dashboard")
+        if response["success"] and response["status_code"] == 200:
+            data = response["data"]
+            if "stats" in data and "departures" in data:
+                self.log_result("GET /api/dashboard", True, "Dashboard endpoint working correctly")
+            else:
+                self.log_result("GET /api/dashboard", False, "Dashboard missing expected fields", data)
+        else:
+            self.log_result("GET /api/dashboard", False, f"Status: {response['status_code']}", response.get("data"))
+
+    def run_all_tests(self):
+        """Run all authentication tests"""
+        print("🚀 Starting Authentication System Tests")
+        print("=" * 60)
+        
+        # Initialize users sheet if needed
+        init_response = self.make_request("GET", "init-users")
+        if init_response["success"]:
+            print(f"📊 Users sheet initialization: {init_response['data'].get('message', 'Done')}")
+        
+        print()
+        
+        # Run authentication tests
+        self.test_admin_login()
+        self.test_user_login()
+        self.test_invalid_login()
+        
+        # Run password management tests
+        self.test_change_password_success()
+        self.test_change_password_wrong_current()
+        self.test_admin_reset_password()
+        
+        # Run user management tests  
+        self.test_get_users_list()
+        self.test_create_new_user()
+        self.test_delete_user()
+        
+        # Test existing functionality still works
+        self.test_existing_endpoints()
+        
+        # Summary
+        print("=" * 60)
+        print("🏁 TEST SUMMARY")
+        print("=" * 60)
+        
+        passed = len(self.results["passed"])
+        failed = len(self.results["failed"])
+        total = self.results["total_tests"]
+        
+        print(f"✅ Passed: {passed}/{total}")
+        print(f"❌ Failed: {failed}/{total}")
+        print(f"📊 Success Rate: {(passed/total)*100:.1f}%")
+        
+        if failed > 0:
+            print("\n❌ Failed Tests:")
+            for test in self.results["failed"]:
+                print(f"   - {test}")
+        
+        return failed == 0
 
 if __name__ == "__main__":
-    success = main()
-    exit(0 if success else 1)
+    tester = AuthTester()
+    success = tester.run_all_tests()
+    sys.exit(0 if success else 1)
