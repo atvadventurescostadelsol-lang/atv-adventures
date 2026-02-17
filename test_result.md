@@ -304,6 +304,13 @@ test_plan:
     - "POST /api/users/reset-password - Admin reset user password"
     - "GET /api/products - List products"
     - "GET /api/dashboard - Dashboard stats"
+    - "GET /api/expense-categories - List expense categories"
+    - "POST /api/expense-categories - Create new expense category"
+    - "DELETE /api/expense-categories/:id - Delete expense category"
+    - "GET /api/expenses - List all expenses with filtering"
+    - "POST /api/expenses - Create new expense"
+    - "DELETE /api/expenses/:id - Delete expense"
+    - "GET /api/dashboard - Dashboard integration with expenses"
   stuck_tasks:
     - "POST /api/departures/batch - Create batch departures"
     - "GET /api/dashboard - Dashboard stats"
