@@ -161,6 +161,47 @@ export default function AdminPanel() {
     }
   }
 
+  async function handleAddIncomeCategory() {
+    if (!newIncomeCategory.name.trim()) {
+      toast.error(language === 'es' ? 'Ingresa un nombre para el concepto' : 'Enter a concept name');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/income-categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newIncomeCategory)
+      });
+
+      if (res.ok) {
+        toast.success(language === 'es' ? 'Concepto de ingreso añadido' : 'Income concept added');
+        setNewIncomeCategory({ name: '', account: 'GE' });
+        loadData();
+      } else {
+        const error = await res.json();
+        toast.error(error.error || 'Error');
+      }
+    } catch (error) {
+      toast.error('Error');
+      console.error(error);
+    }
+  }
+
+  async function handleDeleteIncomeCategory(id) {
+    try {
+      const res = await fetch(`/api/income-categories/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast.success(language === 'es' ? 'Concepto eliminado' : 'Concept deleted');
+        loadData();
+      }
+    } catch (error) {
+      toast.error('Error');
+    } finally {
+      setDeleteDialog({ open: false, type: '', id: '', name: '' });
+    }
+  }
+
   function handleAddCategory() {
     if (!newCategory.trim()) {
       toast.error('Ingresa un nombre para la categoría');
