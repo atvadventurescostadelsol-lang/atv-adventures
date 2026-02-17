@@ -99,12 +99,22 @@ function calculatePayoutDate(salesChannel, date) {
 
 // ==================== AUTH HANDLERS ====================
 
-// Initialize Users sheet if it doesn't exist
+// Initialize Users sheet if it doesn't exist or has no users
 async function ensureUsersSheet() {
   try {
-    const data = await getSheetData(SPREADSHEET_ID, 'Users!A:E');
-    if (!data || data.length === 0) {
-      // Create headers and initial users
+    let data;
+    try {
+      data = await getSheetData(SPREADSHEET_ID, 'Users!A:E');
+    } catch (e) {
+      console.log('Users sheet might not exist, will create it');
+      data = null;
+    }
+    
+    // Check if we need to initialize - sheet doesn't exist or has only header or is empty
+    const needsInit = !data || data.length === 0 || (data.length === 1 && data[0][0] === 'username');
+    
+    if (needsInit) {
+      console.log('Initializing Users sheet with default users...');
       const headers = ['username', 'password', 'role', 'createdAt', 'lastLogin'];
       const initialUsers = [
         ['Zorrouad', '25592776', 'admin', new Date().toISOString(), ''],
@@ -113,19 +123,57 @@ async function ensureUsersSheet() {
         ['Laurence', 'Penacchio', 'user', new Date().toISOString(), '']
       ];
       
-      await updateSheetData(SPREADSHEET_ID, 'Users!A1:E1', [headers]);
-      await appendSheetData(SPREADSHEET_ID, 'Users!A:E', initialUsers);
+      // If sheet exists but is empty, just add data
+      if (data && data.length > 0) {
+        // Sheet has headers, just add users
+        await appendSheetData(SPREADSHEET_ID, 'Users!A:E', initialUsers);
+      } else {
+        // Need to create or fully initialize
+        try {
+          await updateSheetData(SPREADSHEET_ID, 'Users!A1:E1', [headers]);
+          await appendSheetData(SPREADSHEET_ID, 'Users!A:E', initialUsers);
+        } catch (e) {
+          // Sheet might not exist, try to create it
+          const { getSheetsClient } = require('@/lib/google-sheets');
+          const sheets = await getSheetsClient();
+          
+          try {
+            await sheets.spreadsheets.batchUpdate({
+              spreadsheetId: SPREADSHEET_ID,
+              requestBody: {
+                requests: [{
+                  addSheet: {
+                    properties: { title: 'Users' }
+                  }
+                }]
+              }
+            });
+          } catch (sheetErr) {
+            // Sheet might already exist
+            console.log('Sheet creation error (might already exist):', sheetErr.message);
+          }
+          
+          await updateSheetData(SPREADSHEET_ID, 'Users!A1:E1', [headers]);
+          await appendSheetData(SPREADSHEET_ID, 'Users!A:E', initialUsers);
+        }
+      }
       console.log('Users sheet initialized with default users');
     }
     return true;
   } catch (error) {
     console.error('Error ensuring Users sheet:', error);
-    // Try to create the sheet
+    return false;
+  }
+}
+
+// Force initialize users (for setup endpoint)
+async function forceInitUsers() {
+  try {
+    const { getSheetsClient } = require('@/lib/google-sheets');
+    const sheets = await getSheetsClient();
+    
+    // Try to create the sheet first
     try {
-      const { getSheetsClient } = require('@/lib/google-sheets');
-      const sheets = await getSheetsClient();
-      
-      // Add the Users sheet
       await sheets.spreadsheets.batchUpdate({
         spreadsheetId: SPREADSHEET_ID,
         requestBody: {
@@ -136,24 +184,26 @@ async function ensureUsersSheet() {
           }]
         }
       });
-      
-      // Add headers and initial users
-      const headers = ['username', 'password', 'role', 'createdAt', 'lastLogin'];
-      const initialUsers = [
-        ['Zorrouad', '25592776', 'admin', new Date().toISOString(), ''],
-        ['Jesus', 'GECA2023', 'user', new Date().toISOString(), ''],
-        ['Charly', 'Sajer', 'user', new Date().toISOString(), ''],
-        ['Laurence', 'Penacchio', 'user', new Date().toISOString(), '']
-      ];
-      
-      await updateSheetData(SPREADSHEET_ID, 'Users!A1:E1', [headers]);
-      await appendSheetData(SPREADSHEET_ID, 'Users!A:E', initialUsers);
-      console.log('Users sheet created and initialized');
-      return true;
-    } catch (createError) {
-      console.error('Error creating Users sheet:', createError);
-      return false;
+      console.log('Users sheet created');
+    } catch (e) {
+      console.log('Users sheet already exists or error:', e.message);
     }
+    
+    const headers = ['username', 'password', 'role', 'createdAt', 'lastLogin'];
+    const initialUsers = [
+      ['Zorrouad', '25592776', 'admin', new Date().toISOString(), ''],
+      ['Jesus', 'GECA2023', 'user', new Date().toISOString(), ''],
+      ['Charly', 'Sajer', 'user', new Date().toISOString(), ''],
+      ['Laurence', 'Penacchio', 'user', new Date().toISOString(), '']
+    ];
+    
+    await updateSheetData(SPREADSHEET_ID, 'Users!A1:E1', [headers]);
+    await appendSheetData(SPREADSHEET_ID, 'Users!A:E', initialUsers);
+    
+    return { success: true, message: 'Users initialized', users: 4 };
+  } catch (error) {
+    console.error('Force init users error:', error);
+    return { success: false, error: error.message };
   }
 }
 
