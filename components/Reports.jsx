@@ -696,6 +696,23 @@ export default function Reports() {
               </div>
             )}
 
+            {/* Commissions Section */}
+            {results.totals.commissionTotal > 0 && (
+              <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <h4 className="font-semibold text-purple-800 mb-2">
+                  💰 {language === 'es' ? 'Comisiones Pagadas a Colaboradores' : 'Commissions Paid to Collaborators'}
+                </h4>
+                <div className="text-2xl font-bold text-purple-700">
+                  €{results.totals.commissionTotal.toFixed(2)}
+                </div>
+                <div className="text-sm text-purple-600 mt-1">
+                  {language === 'es' 
+                    ? `Neto real (Bruto - Comisiones): €${(results.totals.totalGross - results.totals.commissionTotal).toFixed(2)}`
+                    : `Real net (Gross - Commissions): €${(results.totals.totalGross - results.totals.commissionTotal).toFixed(2)}`}
+                </div>
+              </div>
+            )}
+
             {/* Table */}
             <div className="rounded-md border overflow-hidden">
               <div className="max-h-[500px] overflow-y-auto">
