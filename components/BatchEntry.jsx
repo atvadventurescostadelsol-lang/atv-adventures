@@ -518,11 +518,13 @@ export default function BatchEntry() {
 
             {entries.map((entry, index) => {
               const baseTotal = getBaseTotal(entry);
-              const entryTotal = getEntryTotal(entry);
+              const preCommissionTotal = getPreCommissionTotal(entry);
+              const entryTotal = getEntryTotal(entry); // This is after commission
               const splitTotal = getPaymentSplitTotal(entry);
               const splitValid = Math.abs(splitTotal - entryTotal) < 0.01;
               const splitDiff = entryTotal - splitTotal;
               const hasDiscount = entry.gygDiscount > 0;
+              const hasCommission = parseFloat(entry.commission) > 0;
               
               return (
                 <Card key={entry.id} className="bg-muted/50">
@@ -532,17 +534,35 @@ export default function BatchEntry() {
                         <Badge>{t('entry')} #{index + 1}</Badge>
                         {baseTotal > 0 && (
                           <>
-                            {hasDiscount ? (
+                            {hasDiscount && (
+                              <Badge variant="outline" className="line-through text-muted-foreground">
+                                €{baseTotal.toFixed(2)}
+                              </Badge>
+                            )}
+                            {hasDiscount && !hasCommission && (
+                              <Badge className="bg-green-600">
+                                <Percent className="h-3 w-3 mr-1" />
+                                €{entryTotal.toFixed(2)} (-25% GYG)
+                              </Badge>
+                            )}
+                            {hasCommission && (
                               <>
-                                <Badge variant="outline" className="line-through text-muted-foreground">
-                                  €{baseTotal.toFixed(2)}
-                                </Badge>
-                                <Badge className="bg-green-600">
-                                  <Percent className="h-3 w-3 mr-1" />
-                                  €{entryTotal.toFixed(2)} (-25% GYG)
+                                {!hasDiscount && (
+                                  <Badge variant="outline" className="line-through text-muted-foreground">
+                                    €{baseTotal.toFixed(2)}
+                                  </Badge>
+                                )}
+                                {hasDiscount && (
+                                  <Badge variant="outline" className="text-green-600">
+                                    €{preCommissionTotal.toFixed(2)} (-25%)
+                                  </Badge>
+                                )}
+                                <Badge className="bg-purple-600">
+                                  💰 €{entryTotal.toFixed(2)} (com: -{parseFloat(entry.commission).toFixed(2)})
                                 </Badge>
                               </>
-                            ) : (
+                            )}
+                            {!hasDiscount && !hasCommission && (
                               <Badge variant="outline">
                                 {t('total')}: €{entryTotal.toFixed(2)}
                               </Badge>
