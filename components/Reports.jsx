@@ -242,7 +242,7 @@ export default function Reports() {
       
       if (depRes.ok) {
         let data = await depRes.json();
-        const expensesData = expRes.ok ? await expRes.json() : [];
+        let expensesData = expRes.ok ? await expRes.json() : [];
         
         // Filter by date range
         data = data.filter(d => d.date >= startDate && d.date <= endDate);
@@ -257,12 +257,24 @@ export default function Reports() {
           data = data.filter(d => d.salesChannel === channel);
         }
         
-        const totals = calculateStats(data, expensesData, `${startDate} - ${endDate}`);
+        // Filter expenses based on selected category
+        // quad -> only GE expenses, buggy -> only E&S expenses, all -> all expenses
+        let filteredExpenses = expensesData;
+        if (category === 'quad') {
+          filteredExpenses = expensesData.filter(e => e.account === 'GE');
+        } else if (category === 'buggy') {
+          filteredExpenses = expensesData.filter(e => e.account === 'E&S');
+        }
+        // When 'all', keep all expenses (they will be displayed separately)
+        
+        const totals = calculateStats(data, filteredExpenses, `${startDate} - ${endDate}`);
         
         setResults({
           data,
-          expenses: expensesData,
+          expenses: filteredExpenses,
+          allExpenses: expensesData, // Keep all for separate display when category='all'
           totals,
+          categoryFilter: category, // Store the filter for display logic
         });
       }
     } catch (error) {
