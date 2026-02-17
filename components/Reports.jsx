@@ -288,6 +288,84 @@ export default function Reports() {
     }
   }
 
+  // Run income-only report
+  async function runIncomeReport() {
+    if (!incomeStartDate || !incomeEndDate) {
+      toast.error(language === 'es' ? 'Por favor selecciona las fechas' : 'Please select dates');
+      return;
+    }
+
+    setIncomeLoading(true);
+    try {
+      const res = await fetch(`/api/incomes?startDate=${incomeStartDate}&endDate=${incomeEndDate}`);
+      
+      if (res.ok) {
+        let data = await res.json();
+        
+        // Filter by user permissions first
+        data = data.filter(i => {
+          if (i.account === 'GE' && !canViewGE) return false;
+          if (i.account === 'E&S' && !canViewES) return false;
+          return true;
+        });
+        
+        // Filter by account
+        if (incomeReportAccount !== 'all') {
+          data = data.filter(i => i.account === incomeReportAccount);
+        }
+        
+        // Filter by concept
+        if (incomeReportConcept !== 'all') {
+          data = data.filter(i => i.concept === incomeReportConcept);
+        }
+        
+        // Calculate totals by account and concept
+        const byAccount = { GE: 0, 'E&S': 0 };
+        const byConcept = {};
+        const byAccountAndConcept = { GE: {}, 'E&S': {} };
+        const byDate = {};
+        
+        data.forEach(i => {
+          const amount = parseNumber(i.amount);
+          byAccount[i.account] += amount;
+          
+          if (!byConcept[i.concept]) byConcept[i.concept] = 0;
+          byConcept[i.concept] += amount;
+          
+          if (!byAccountAndConcept[i.account][i.concept]) {
+            byAccountAndConcept[i.account][i.concept] = 0;
+          }
+          byAccountAndConcept[i.account][i.concept] += amount;
+          
+          if (!byDate[i.date]) byDate[i.date] = [];
+          byDate[i.date].push(i);
+        });
+        
+        const totalIncomes = byAccount.GE + byAccount['E&S'];
+        
+        setIncomeResults({
+          incomes: data,
+          byAccount,
+          byConcept,
+          byAccountAndConcept,
+          byDate,
+          totalIncomes,
+          filters: {
+            account: incomeReportAccount,
+            concept: incomeReportConcept,
+            startDate: incomeStartDate,
+            endDate: incomeEndDate,
+          }
+        });
+      }
+    } catch (error) {
+      toast.error('Error al generar el informe de ingresos');
+      console.error(error);
+    } finally {
+      setIncomeLoading(false);
+    }
+  }
+
   // Export expense report to PDF
   async function exportExpensePDF() {
     if (!expenseResults) return;
