@@ -845,7 +845,7 @@ async function handleCollectPayment(body) {
     }
     
     // Get current departure data
-    const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AV');
+    const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AX');
     const departures = parseSheetToObjects(data);
     const index = departures.findIndex(d => d.id === departureId);
     
@@ -1181,7 +1181,7 @@ async function handleGet(request, path) {
   // Get all departures
   if (path === 'departures') {
     try {
-      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AV');
+      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AX');
       const departures = parseSheetToObjects(data);
       
       // Apply filters
@@ -1221,7 +1221,7 @@ async function handleGet(request, path) {
       }
 
       // Get existing departures for this slot
-      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AV');
+      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AX');
       const departures = parseSheetToObjects(departuresData);
       
       const existingDepartures = departures.filter(d => 
@@ -1333,7 +1333,7 @@ async function handleGet(request, path) {
       const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
       
       // Read all columns including paymentSplitCruise, gygDiscount, isPendingCruise
-      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AV');
+      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AX');
       const departures = parseSheetToObjects(departuresData);
       
       const todayDepartures = departures.filter(d => d.date === date);
@@ -1619,7 +1619,7 @@ async function handlePost(request, path) {
         userId,
       ];
 
-      await appendSheetData(SPREADSHEET_ID, 'Departures!A:AV', [entry]);
+      await appendSheetData(SPREADSHEET_ID, 'Departures!A:AX', [entry]);
       
       await addAuditLog('CREATE', 'Departure', id, { entry }, userId, userName);
 
@@ -1840,7 +1840,7 @@ async function handlePost(request, path) {
           try {
             console.log('About to append to sheet:', {
               spreadsheetId: SPREADSHEET_ID,
-              range: 'Departures!A:AV',
+              range: 'Departures!A:AX',
               valuesLength: [entry].length,
               firstValues: entry.slice(0, 5)
             });
@@ -1986,7 +1986,7 @@ async function handlePut(request, path) {
       const { userId = 'system', userName = 'System', ...updates } = body;
 
       // Get current data - extended to AV to include discount and manualTotal columns
-      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AV');
+      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AX');
       const departures = parseSheetToObjects(data);
       const index = departures.findIndex(d => d.id === id);
 
@@ -2171,7 +2171,7 @@ async function handleDelete(request, path) {
       const userName = searchParams.get('userName') || 'System';
 
       // Get current data
-      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AV');
+      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AX');
       const departures = parseSheetToObjects(data);
       const departure = departures.find(d => d.id === id);
 
