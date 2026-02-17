@@ -1937,7 +1937,7 @@ async function handlePost(request, path) {
   // Create time slot
   if (path === 'timeslots') {
     try {
-      const { time, active = true, userId = 'system' } = body;
+      const { time, quadCapacity = 10, buggyCapacity = 6, active = true, userId = 'system' } = body;
 
       if (!time) {
         return NextResponse.json({ error: 'Time is required' }, { status: 400 });
@@ -1948,8 +1948,8 @@ async function handlePost(request, path) {
       const slotRow = [
         id,
         time,
-        '10', // default quad capacity
-        '6',  // default buggy capacity
+        String(quadCapacity),
+        String(buggyCapacity),
         active ? 'TRUE' : 'FALSE',
       ];
 
@@ -1962,8 +1962,8 @@ async function handlePost(request, path) {
         slot: {
           id,
           time,
-          quadCapacity: '10',
-          buggyCapacity: '6',
+          quadCapacity: String(quadCapacity),
+          buggyCapacity: String(buggyCapacity),
           active,
         }
       });
