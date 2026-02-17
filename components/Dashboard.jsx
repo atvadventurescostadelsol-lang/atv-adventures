@@ -534,6 +534,7 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
 
       {/* Tours by Time Slot */}
@@ -542,11 +543,11 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
           <CardTitle>{t('toursByTimeSlot')}</CardTitle>
         </CardHeader>
         <CardContent>
-          {Object.keys(stats.departuresBySlot).length === 0 ? (
+          {Object.keys(filteredDeparturesBySlot).length === 0 ? (
             <p className="text-center text-muted-foreground py-8">{t('noToursScheduled')}</p>
           ) : (
             <div className="space-y-6">
-              {Object.entries(stats.departuresBySlot).sort((a, b) => a[0].localeCompare(b[0])).map(([timeSlot, slotDepartures]) => (
+              {Object.entries(filteredDeparturesBySlot).sort((a, b) => a[0].localeCompare(b[0])).map(([timeSlot, slotDepartures]) => (
                 <div key={timeSlot} className="border rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-4">
                     <Clock className="h-5 w-5 text-orange-600" />
