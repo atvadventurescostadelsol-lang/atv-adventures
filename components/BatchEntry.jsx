@@ -125,6 +125,8 @@ export default function BatchEntry() {
       isPendingCruise: false,
       commission: 0,
       commissionMethod: 'cash',
+      discount: 0,
+      manualTotal: '',
     }]);
   }
 
