@@ -725,6 +725,7 @@ export default function Reports() {
                       <TableHead>{t('product')}</TableHead>
                       <TableHead className="text-right">{t('veh')}</TableHead>
                       <TableHead className="text-right">{t('total')}</TableHead>
+                      <TableHead className="text-right">💰 {language === 'es' ? 'Com.' : 'Comm.'}</TableHead>
                       <TableHead>{t('paymentBreakdown')}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -737,6 +738,8 @@ export default function Reports() {
                       if (parseNumber(d.paymentSplitWeb) > 0) payments.push(`🌐€${parseNumber(d.paymentSplitWeb).toFixed(2)}`);
                       if (parseNumber(d.paymentSplitGyg) > 0) payments.push(`🎫€${parseNumber(d.paymentSplitGyg).toFixed(2)}`);
                       if (parseNumber(d.paymentSplitCruise) > 0) payments.push(`🚢€${parseNumber(d.paymentSplitCruise).toFixed(2)}`);
+                      
+                      const commission = parseNumber(d.commission);
                       
                       return (
                         <TableRow key={idx}>
@@ -752,6 +755,13 @@ export default function Reports() {
                           <TableCell className="text-sm">{d.productName}</TableCell>
                           <TableCell className="text-right text-sm">{d.vehiclesCount}</TableCell>
                           <TableCell className="text-right font-medium">€{parseNumber(d.totalGross).toFixed(2)}</TableCell>
+                          <TableCell className="text-right">
+                            {commission > 0 ? (
+                              <span className="text-purple-600 font-medium">€{commission.toFixed(2)}</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1 text-xs">
                               {payments.length > 0 ? payments.map((p, i) => (
