@@ -141,13 +141,18 @@ export default function BatchEntry() {
     if (entry.gygDiscount > 0) {
       total = baseTotal * (1 - entry.gygDiscount);
     }
-    // Commission is a SEPARATE expense, NOT subtracted from total
-    return total;
+    // Subtract commission from total (it's deducted from payment method)
+    const commission = parseFloat(entry.commission) || 0;
+    return total - commission;
   }
 
-  // Get total before commission (same as getEntryTotal now)
+  // Get total before commission
   function getPreCommissionTotal(entry) {
-    return getEntryTotal(entry);
+    const baseTotal = getBaseTotal(entry);
+    if (entry.gygDiscount > 0) {
+      return baseTotal * (1 - entry.gygDiscount);
+    }
+    return baseTotal;
   }
 
   function addPaymentSplit(entryId) {
