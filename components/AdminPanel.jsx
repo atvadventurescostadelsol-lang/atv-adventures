@@ -405,6 +405,8 @@ export default function AdminPanel() {
                   handleDeleteSlot(deleteDialog.id);
                 } else if (deleteDialog.type === 'categoría' || deleteDialog.type === 'category') {
                   handleDeleteCategory(deleteDialog.id);
+                } else if (deleteDialog.type === 'concepto de gasto' || deleteDialog.type === 'expense concept') {
+                  handleDeleteExpenseCategory(deleteDialog.id);
                 }
               }}
             >
