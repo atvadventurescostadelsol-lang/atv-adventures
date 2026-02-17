@@ -76,10 +76,11 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
   async function loadDashboard() {
     setLoading(true);
     try {
-      // Load departures and expenses for the selected date
-      const [dashboardRes, expensesRes] = await Promise.all([
+      // Load departures, expenses and incomes for the selected date
+      const [dashboardRes, expensesRes, incomesRes] = await Promise.all([
         fetch(`/api/dashboard?date=${selectedDate}`),
-        fetch(`/api/expenses?startDate=${selectedDate}&endDate=${selectedDate}`)
+        fetch(`/api/expenses?startDate=${selectedDate}&endDate=${selectedDate}`),
+        fetch(`/api/incomes?startDate=${selectedDate}&endDate=${selectedDate}`)
       ]);
       
       if (dashboardRes.ok) {
@@ -90,6 +91,11 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
       if (expensesRes.ok) {
         const expensesData = await expensesRes.json();
         setExpenses(expensesData);
+      }
+
+      if (incomesRes.ok) {
+        const incomesData = await incomesRes.json();
+        setIncomes(incomesData);
       }
     } catch (error) {
       console.error('Error loading dashboard:', error);
