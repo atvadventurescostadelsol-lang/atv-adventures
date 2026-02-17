@@ -46,6 +46,7 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
   const { canAccessCategory, canAccessExpenseAccount, getAllowedCategories } = useAuth();
   const [data, setData] = useState(null);
   const [expenses, setExpenses] = useState([]);
+  const [incomes, setIncomes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(propDate || new Date().toISOString().split('T')[0]);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, departureId: null, departureName: '' });
