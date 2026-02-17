@@ -312,7 +312,8 @@ export default function Expenses() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeAccount} onValueChange={setActiveAccount} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className={`grid w-full ${canViewGE && canViewES ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {canViewGE && (
               <TabsTrigger value="GE" className="gap-2">
                 <Car className="h-4 w-4" />
                 <span className="font-bold">GE</span>
@@ -320,6 +321,8 @@ export default function Expenses() {
                   {formatCurrency(geTotal)}
                 </Badge>
               </TabsTrigger>
+              )}
+              {canViewES && (
               <TabsTrigger value="E&S" className="gap-2">
                 <Truck className="h-4 w-4" />
                 <span className="font-bold">E&S</span>
@@ -327,9 +330,10 @@ export default function Expenses() {
                   {formatCurrency(esTotal)}
                 </Badge>
               </TabsTrigger>
+              )}
             </TabsList>
 
-            {['GE', 'E&S'].map(account => (
+            {['GE', 'E&S'].filter(acc => (acc === 'GE' && canViewGE) || (acc === 'E&S' && canViewES)).map(account => (
               <TabsContent key={account} value={account} className="space-y-4">
                 {/* Add Expense Form */}
                 <Card className={`${account === 'GE' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'}`}>
