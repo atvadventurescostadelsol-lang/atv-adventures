@@ -61,26 +61,54 @@ export default function PendingPayments() {
           const num = parseFloat(String(value).replace(',', '.'));
           return !isNaN(num) && num > 0;
         };
+
+        // Helper to check if date is valid
+        const isValidDate = (date) => {
+          return date && date !== '' && !date.includes('T') && /^\d{4}-\d{2}-\d{2}$/.test(date);
+        };
         
         // Filter GYG pending (has valid paymentSplitGyg > 0 and not collected)
         const gyg = departures.filter(d => {
-          // Must have a valid date
-          if (!d.date || d.date === '' || d.date.includes('T')) return false;
-          // Must have a valid GYG amount
+          if (!isValidDate(d.date)) return false;
           if (!isValidAmount(d.paymentSplitGyg)) return false;
-          // Must not be already collected
           if (d.gygCollected === 'true' || d.gygCollected === true) return false;
           return true;
         });
         
         // Filter Cruise pending (has valid paymentSplitCruise > 0 and not collected)
         const cruise = departures.filter(d => {
-          // Must have a valid date
-          if (!d.date || d.date === '' || d.date.includes('T')) return false;
-          // Must have a valid Cruise amount
+          if (!isValidDate(d.date)) return false;
           if (!isValidAmount(d.paymentSplitCruise)) return false;
-          // Must not be already collected
           if (d.cruiseCollected === 'true' || d.cruiseCollected === true) return false;
+          return true;
+        });
+
+        // Filter GYG already collected
+        const gygDone = departures.filter(d => {
+          if (!isValidDate(d.date)) return false;
+          if (d.gygCollected === 'true' || d.gygCollected === true) return true;
+          return false;
+        });
+
+        // Filter Cruise already collected
+        const cruiseDone = departures.filter(d => {
+          if (!isValidDate(d.date)) return false;
+          if (d.cruiseCollected === 'true' || d.cruiseCollected === true) return true;
+          return false;
+        });
+        
+        setGygPending(gyg);
+        setCruisePending(cruise);
+        setGygCollected(gygDone);
+        setCruiseCollected(cruiseDone);
+      }
+    } catch (error) {
+      console.error('Error loading pending payments:', error);
+      toast.error(language === 'es' ? 'Error al cargar pagos pendientes' : 'Error loading pending payments');
+    } finally {
+      setLoading(false);
+    }
+  }
           return true;
         });
         
