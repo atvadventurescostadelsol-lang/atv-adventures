@@ -1486,7 +1486,7 @@ async function handleDelete(request, path) {
       const headers = data[0];
       const emptyRow = headers.map(() => '');
       
-      await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AO${index + 2}`, [emptyRow]);
+      await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AT${index + 2}`, [emptyRow]);
 
       await addAuditLog('DELETE', 'Departure', id, { deleted: departure }, userId, userName);
 
