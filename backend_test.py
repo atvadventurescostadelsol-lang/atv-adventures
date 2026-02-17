@@ -285,6 +285,349 @@ def test_expense_categories_api():
     except Exception as e:
         print_test_result("GET /api/expense-categories", False, f"Exception: {str(e)}")
 
+def test_incomes_api():
+    """Test incomes endpoints as per review request"""
+    print("=== TESTING INCOMES API ===")
+    
+    # Test 1: GET /api/incomes - Should return list of incomes
+    print("Testing GET /api/incomes...")
+    try:
+        response = requests.get(f"{BASE_URL}/incomes")
+        
+        if response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                print_test_result("GET /api/incomes", True, 
+                                f"Returned {len(data)} incomes as array")
+                
+                # Check data structure if we have incomes
+                if len(data) > 0:
+                    income = data[0]
+                    expected_fields = ['id', 'date', 'amount', 'concept', 'account', 'notes', 'createdAt']
+                    missing_fields = [field for field in expected_fields if field not in income]
+                    if missing_fields:
+                        print(f"    Warning: Missing expected fields: {missing_fields}")
+                    else:
+                        print(f"    Sample income structure looks good")
+            else:
+                print_test_result("GET /api/incomes", False, 
+                                f"Expected array, got: {type(data)}")
+        else:
+            print_test_result("GET /api/incomes", False, 
+                            f"HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        print_test_result("GET /api/incomes", False, f"Exception: {str(e)}")
+
+    # Test 2: GET /api/incomes with date range filter
+    print("Testing GET /api/incomes with date range filter...")
+    try:
+        test_date = "2026-02-17"
+        response = requests.get(f"{BASE_URL}/incomes", 
+                               params={"startDate": test_date, "endDate": test_date})
+        
+        if response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                print_test_result("GET /api/incomes with date filter", True, 
+                                f"Returned {len(data)} incomes for date range {test_date}")
+                # Verify all returned incomes are within date range
+                if data:
+                    out_of_range = [i for i in data if i.get('date') < test_date or i.get('date') > test_date]
+                    if out_of_range:
+                        print(f"    Warning: Found {len(out_of_range)} incomes outside date range")
+                    else:
+                        print(f"    Date filtering working correctly")
+            else:
+                print_test_result("GET /api/incomes with date filter", False, 
+                                f"Expected array, got: {type(data)}")
+        else:
+            print_test_result("GET /api/incomes with date filter", False, 
+                            f"HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        print_test_result("GET /api/incomes with date filter", False, f"Exception: {str(e)}")
+
+    # Test 3: GET /api/incomes with account filter
+    print("Testing GET /api/incomes with account filter...")
+    try:
+        response = requests.get(f"{BASE_URL}/incomes", params={"account": "GE"})
+        
+        if response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                print_test_result("GET /api/incomes?account=GE", True, 
+                                f"Returned {len(data)} GE incomes")
+                # Verify all returned incomes are for GE account
+                if data:
+                    non_ge_incomes = [i for i in data if i.get('account') != 'GE']
+                    if non_ge_incomes:
+                        print(f"    Warning: Found {len(non_ge_incomes)} non-GE incomes in filtered results")
+                    else:
+                        print(f"    Account filtering working correctly")
+            else:
+                print_test_result("GET /api/incomes?account=GE", False, 
+                                f"Expected array, got: {type(data)}")
+        else:
+            print_test_result("GET /api/incomes?account=GE", False, 
+                            f"HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        print_test_result("GET /api/incomes?account=GE", False, f"Exception: {str(e)}")
+
+    # Test 4: POST /api/incomes - Create an income
+    print("Testing POST /api/incomes (create income)...")
+    created_income_id = None
+    try:
+        test_income = {
+            "date": "2026-02-17",
+            "amount": 50,
+            "concept": "Transferencia",
+            "account": "E&S",
+            "notes": "Test income creation"
+        }
+        
+        response = requests.post(f"{BASE_URL}/incomes", json=test_income)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('success') and 'income' in data:
+                created_income_id = data['income'].get('id')
+                print_test_result("POST /api/incomes (create)", True, 
+                                f"Income created successfully with ID: {created_income_id}")
+                
+                # Verify the created income structure
+                income = data['income']
+                expected_fields = ['id', 'date', 'amount', 'concept', 'account', 'notes']
+                missing_fields = [field for field in expected_fields if field not in income]
+                if missing_fields:
+                    print(f"    Warning: Created income missing fields: {missing_fields}")
+                else:
+                    print(f"    Created income structure is complete")
+                    
+                # Verify field values
+                if income.get('amount') == "50.00" and income.get('concept') == "Transferencia":
+                    print(f"    Created income field values are correct")
+                else:
+                    print(f"    Warning: Field values don't match input")
+            else:
+                print_test_result("POST /api/incomes (create)", False, 
+                                f"Unexpected response structure: {data}")
+        else:
+            print_test_result("POST /api/incomes (create)", False, 
+                            f"HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        print_test_result("POST /api/incomes (create)", False, f"Exception: {str(e)}")
+
+    # Test 5: POST /api/incomes with invalid data
+    print("Testing POST /api/incomes with invalid data...")
+    try:
+        invalid_income = {
+            "date": "2026-02-17",
+            "amount": 25,
+            "concept": "Test",
+            "account": "INVALID"  # Invalid account
+        }
+        
+        response = requests.post(f"{BASE_URL}/incomes", json=invalid_income)
+        
+        if response.status_code == 400:
+            data = response.json()
+            if 'error' in data and 'account' in data['error'].lower():
+                print_test_result("POST /api/incomes (invalid account)", True, 
+                                f"Correctly rejected invalid account: {data.get('error')}")
+            else:
+                print_test_result("POST /api/incomes (invalid account)", False, 
+                                f"Unexpected error message: {data}")
+        else:
+            print_test_result("POST /api/incomes (invalid account)", False, 
+                            f"Expected 400, got HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        print_test_result("POST /api/incomes (invalid account)", False, f"Exception: {str(e)}")
+
+    # Test 6: DELETE /api/incomes/{id} - Delete the created income
+    if created_income_id:
+        print(f"Testing DELETE /api/incomes/{created_income_id}...")
+        try:
+            response = requests.delete(f"{BASE_URL}/incomes/{created_income_id}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('success'):
+                    print_test_result("DELETE /api/incomes/{id}", True, 
+                                    f"Income {created_income_id} deleted successfully")
+                else:
+                    print_test_result("DELETE /api/incomes/{id}", False, 
+                                    f"Unexpected response: {data}")
+            else:
+                print_test_result("DELETE /api/incomes/{id}", False, 
+                                f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            print_test_result("DELETE /api/incomes/{id}", False, f"Exception: {str(e)}")
+    else:
+        print("Skipping DELETE test - no income was created")
+
+    # Test 7: DELETE /api/incomes/{nonexistent_id}
+    print("Testing DELETE /api/incomes with nonexistent ID...")
+    try:
+        fake_id = "nonexistent-id-12345"
+        response = requests.delete(f"{BASE_URL}/incomes/{fake_id}")
+        
+        if response.status_code == 404:
+            data = response.json()
+            if 'error' in data and 'not found' in data['error'].lower():
+                print_test_result("DELETE /api/incomes (nonexistent)", True, 
+                                f"Correctly returned 404 for nonexistent income: {data.get('error')}")
+            else:
+                print_test_result("DELETE /api/incomes (nonexistent)", False, 
+                                f"Unexpected error message: {data}")
+        else:
+            print_test_result("DELETE /api/incomes (nonexistent)", False, 
+                            f"Expected 404, got HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        print_test_result("DELETE /api/incomes (nonexistent)", False, f"Exception: {str(e)}")
+
+def test_income_categories_api():
+    """Test income categories endpoints as per review request"""
+    print("=== TESTING INCOME CATEGORIES API ===")
+    
+    # Test 1: GET /api/income-categories - Should return income categories
+    print("Testing GET /api/income-categories...")
+    try:
+        response = requests.get(f"{BASE_URL}/income-categories")
+        
+        if response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                print_test_result("GET /api/income-categories", True, 
+                                f"Returned {len(data)} income categories as array")
+                
+                # Check data structure if we have categories
+                if len(data) > 0:
+                    category = data[0]
+                    expected_fields = ['id', 'name', 'account', 'createdAt']
+                    missing_fields = [field for field in expected_fields if field not in category]
+                    if missing_fields:
+                        print(f"    Warning: Missing expected fields: {missing_fields}")
+                    else:
+                        print(f"    Sample category structure looks good")
+                    
+                    # Check if we have default categories (Transferencia, Pago pendiente, Otros)
+                    category_names = [c.get('name') for c in data]
+                    expected_categories = ['Transferencia', 'Pago pendiente', 'Otros']
+                    found_categories = [cat for cat in expected_categories if cat in category_names]
+                    print(f"    Found default income categories: {found_categories}")
+                    
+                    # Check accounts
+                    accounts = [c.get('account') for c in data]
+                    expected_accounts = ['GE', 'E&S']
+                    found_accounts = list(set(accounts))
+                    print(f"    Found accounts: {found_accounts}")
+            else:
+                print_test_result("GET /api/income-categories", False, 
+                                f"Expected array, got: {type(data)}")
+        else:
+            print_test_result("GET /api/income-categories", False, 
+                            f"HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        print_test_result("GET /api/income-categories", False, f"Exception: {str(e)}")
+
+    # Test 2: POST /api/income-categories - Create category
+    print("Testing POST /api/income-categories...")
+    created_category_id = None
+    try:
+        test_category = {
+            "name": "Test Category",
+            "account": "GE"
+        }
+        
+        response = requests.post(f"{BASE_URL}/income-categories", json=test_category)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('success') and 'category' in data:
+                created_category_id = data['category'].get('id')
+                print_test_result("POST /api/income-categories (create)", True, 
+                                f"Category created successfully with ID: {created_category_id}")
+                
+                # Verify the created category structure
+                category = data['category']
+                if category.get('name') == "Test Category" and category.get('account') == "GE":
+                    print(f"    Created category field values are correct")
+                else:
+                    print(f"    Warning: Field values don't match input")
+            else:
+                print_test_result("POST /api/income-categories (create)", False, 
+                                f"Unexpected response structure: {data}")
+        else:
+            print_test_result("POST /api/income-categories (create)", False, 
+                            f"HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        print_test_result("POST /api/income-categories (create)", False, f"Exception: {str(e)}")
+
+    # Test 3: POST /api/income-categories with invalid account
+    print("Testing POST /api/income-categories with invalid account...")
+    try:
+        invalid_category = {
+            "name": "Invalid Category",
+            "account": "INVALID"
+        }
+        
+        response = requests.post(f"{BASE_URL}/income-categories", json=invalid_category)
+        
+        if response.status_code == 400:
+            data = response.json()
+            if 'error' in data and 'account' in data['error'].lower():
+                print_test_result("POST /api/income-categories (invalid account)", True, 
+                                f"Correctly rejected invalid account: {data.get('error')}")
+            else:
+                print_test_result("POST /api/income-categories (invalid account)", False, 
+                                f"Unexpected error message: {data}")
+        else:
+            print_test_result("POST /api/income-categories (invalid account)", False, 
+                            f"Expected 400, got HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        print_test_result("POST /api/income-categories (invalid account)", False, f"Exception: {str(e)}")
+
+    # Test 4: DELETE /api/income-categories/{id} - Delete the created category
+    if created_category_id:
+        print(f"Testing DELETE /api/income-categories/{created_category_id}...")
+        try:
+            response = requests.delete(f"{BASE_URL}/income-categories/{created_category_id}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('success'):
+                    print_test_result("DELETE /api/income-categories/{id}", True, 
+                                    f"Category {created_category_id} deleted successfully")
+                else:
+                    print_test_result("DELETE /api/income-categories/{id}", False, 
+                                    f"Unexpected response: {data}")
+            else:
+                print_test_result("DELETE /api/income-categories/{id}", False, 
+                                f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            print_test_result("DELETE /api/income-categories/{id}", False, f"Exception: {str(e)}")
+    else:
+        print("Skipping DELETE test - no category was created")
+
+    # Test 5: DELETE /api/income-categories/{nonexistent_id}
+    print("Testing DELETE /api/income-categories with nonexistent ID...")
+    try:
+        fake_id = "nonexistent-category-id"
+        response = requests.delete(f"{BASE_URL}/income-categories/{fake_id}")
+        
+        if response.status_code == 404:
+            data = response.json()
+            if 'error' in data and 'not found' in data['error'].lower():
+                print_test_result("DELETE /api/income-categories (nonexistent)", True, 
+                                f"Correctly returned 404 for nonexistent category: {data.get('error')}")
+            else:
+                print_test_result("DELETE /api/income-categories (nonexistent)", False, 
+                                f"Unexpected error message: {data}")
+        else:
+            print_test_result("DELETE /api/income-categories (nonexistent)", False, 
+                            f"Expected 404, got HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        print_test_result("DELETE /api/income-categories (nonexistent)", False, f"Exception: {str(e)}")
+
 def test_additional_endpoints():
     """Test other important endpoints mentioned in test_result.md"""
     print("=== TESTING ADDITIONAL ENDPOINTS ===")
