@@ -329,6 +329,10 @@ function AppContent() {
             <PendingPayments />
           </TabsContent>
 
+          <TabsContent value="expenses">
+            <Expenses />
+          </TabsContent>
+
           <TabsContent value="reports">
             <Reports />
           </TabsContent>
