@@ -834,6 +834,156 @@ export default function AdminPanel() {
               </Card>
             </TabsContent>
 
+            {/* Expense Concepts Tab */}
+            <TabsContent value="expense-concepts" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Receipt className="h-5 w-5" />
+                    {language === 'es' ? 'Conceptos de Gastos' : 'Expense Concepts'}
+                  </CardTitle>
+                  <CardDescription>
+                    {language === 'es' 
+                      ? 'Gestiona los conceptos (categorías) de gastos para cada cuenta. GE = Quads, E&S = Buggies.'
+                      : 'Manage expense concepts (categories) for each account. GE = Quads, E&S = Buggies.'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Add New Concept */}
+                  <Card className="bg-muted/50">
+                    <CardContent className="p-4">
+                      <div className="grid gap-4 md:grid-cols-4 items-end">
+                        <div>
+                          <Label>{language === 'es' ? 'Cuenta' : 'Account'}</Label>
+                          <Select 
+                            value={newExpenseCategory.account} 
+                            onValueChange={(value) => setNewExpenseCategory({...newExpenseCategory, account: value})}
+                          >
+                            <SelectTrigger className="mt-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="GE">
+                                <span className="flex items-center gap-2">
+                                  <Car className="h-4 w-4 text-blue-600" />
+                                  GE (Quads)
+                                </span>
+                              </SelectItem>
+                              <SelectItem value="E&S">
+                                <span className="flex items-center gap-2">
+                                  <Truck className="h-4 w-4 text-green-600" />
+                                  E&S (Buggies)
+                                </span>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="md:col-span-2">
+                          <Label>{language === 'es' ? 'Nombre del Concepto' : 'Concept Name'}</Label>
+                          <Input
+                            value={newExpenseCategory.name}
+                            onChange={(e) => setNewExpenseCategory({...newExpenseCategory, name: e.target.value})}
+                            placeholder={language === 'es' ? 'Ej: Reparaciones' : 'E.g.: Repairs'}
+                            className="mt-1"
+                          />
+                        </div>
+                        <Button onClick={handleAddExpenseCategory}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          {language === 'es' ? 'Añadir' : 'Add'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* GE Concepts */}
+                  <Card className="border-l-4 border-l-blue-500">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Car className="h-5 w-5 text-blue-600" />
+                        GE (Quads)
+                      </CardTitle>
+                      <CardDescription>
+                        {language === 'es' 
+                          ? 'Estos conceptos se usan para gastos de la cuenta GE, que se restan del efectivo de Quads.'
+                          : 'These concepts are used for GE account expenses, deducted from Quad cash.'}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {expenseCategories.GE.length === 0 ? (
+                        <p className="text-muted-foreground text-sm">
+                          {language === 'es' ? 'No hay conceptos definidos' : 'No concepts defined'}
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {expenseCategories.GE.map(cat => (
+                            <Badge key={cat.id} variant="secondary" className="text-sm py-1.5 px-3 gap-2">
+                              {cat.name}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 ml-1 hover:bg-red-100 hover:text-red-600"
+                                onClick={() => setDeleteDialog({
+                                  open: true,
+                                  type: language === 'es' ? 'concepto de gasto' : 'expense concept',
+                                  id: cat.id,
+                                  name: cat.name
+                                })}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* E&S Concepts */}
+                  <Card className="border-l-4 border-l-green-500">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Truck className="h-5 w-5 text-green-600" />
+                        E&S (Buggies)
+                      </CardTitle>
+                      <CardDescription>
+                        {language === 'es' 
+                          ? 'Estos conceptos se usan para gastos de la cuenta E&S, que se restan del efectivo de Buggies.'
+                          : 'These concepts are used for E&S account expenses, deducted from Buggy cash.'}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {expenseCategories['E&S'].length === 0 ? (
+                        <p className="text-muted-foreground text-sm">
+                          {language === 'es' ? 'No hay conceptos definidos' : 'No concepts defined'}
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {expenseCategories['E&S'].map(cat => (
+                            <Badge key={cat.id} variant="secondary" className="text-sm py-1.5 px-3 gap-2">
+                              {cat.name}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 ml-1 hover:bg-red-100 hover:text-red-600"
+                                onClick={() => setDeleteDialog({
+                                  open: true,
+                                  type: language === 'es' ? 'concepto de gasto' : 'expense concept',
+                                  id: cat.id,
+                                  name: cat.name
+                                })}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             {/* Users Tab */}
             <TabsContent value="users" className="space-y-4">
               <UserManagement />
