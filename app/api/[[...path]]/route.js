@@ -1270,7 +1270,8 @@ async function handleGet(request, path) {
     try {
       const data = await getSheetData(SPREADSHEET_ID, 'TimeSlots!A:E');
       const slots = parseSheetToObjects(data);
-      const active = slots.filter(s => s.active.toLowerCase() === 'true');
+      // Filter active slots, handling undefined/null active values
+      const active = slots.filter(s => s.id && (s.active === 'TRUE' || s.active === 'true' || s.active === true));
       return NextResponse.json(active);
     } catch (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
