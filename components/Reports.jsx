@@ -714,8 +714,20 @@ export default function Reports() {
                 <h4 className="font-semibold text-purple-800 mb-2">
                   💰 {language === 'es' ? 'Comisiones Pagadas a Colaboradores' : 'Commissions Paid to Collaborators'}
                 </h4>
-                <div className="text-2xl font-bold text-purple-700">
+                <div className="text-2xl font-bold text-purple-700 mb-2">
                   €{results.totals.commissionTotal.toFixed(2)}
+                </div>
+                <div className="flex gap-4 text-sm">
+                  {results.totals.commissionCash > 0 && (
+                    <span className="text-purple-600">
+                      💵 {language === 'es' ? 'Efectivo' : 'Cash'}: €{results.totals.commissionCash.toFixed(2)}
+                    </span>
+                  )}
+                  {results.totals.commissionBank > 0 && (
+                    <span className="text-purple-600">
+                      🏦 {language === 'es' ? 'Banco' : 'Bank'}: €{results.totals.commissionBank.toFixed(2)}
+                    </span>
+                  )}
                 </div>
               </div>
             )}
