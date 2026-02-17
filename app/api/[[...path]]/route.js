@@ -1475,6 +1475,16 @@ async function handlePost(request, path) {
     return handleCreateExpenseCategory(body);
   }
 
+  // Create income
+  if (path === 'incomes') {
+    return createIncome(body);
+  }
+
+  // Create income category
+  if (path === 'income-categories') {
+    return createIncomeCategory(body);
+  }
+
   // Create single departure
   if (path === 'departures') {
     try {
