@@ -1839,7 +1839,7 @@ async function handlePost(request, path) {
           try {
             console.log('About to append to sheet:', {
               spreadsheetId: SPREADSHEET_ID,
-              range: 'Departures!A:AT',
+              range: 'Departures!A:AV',
               valuesLength: [entry].length,
               firstValues: entry.slice(0, 5)
             });
