@@ -15,6 +15,13 @@ import { es, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Import jsPDF and autoTable plugin properly
+import { jsPDF } from 'jspdf';
+import { applyPlugin } from 'jspdf-autotable';
+
+// Register the autoTable plugin with jsPDF (must be done once)
+applyPlugin(jsPDF);
+
 export default function Reports() {
   const { language, t } = useLanguage();
   const { canAccessCategory, canAccessExpenseAccount } = useAuth();
