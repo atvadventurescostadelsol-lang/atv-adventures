@@ -709,8 +709,13 @@ export default function BatchEntry() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {canAccessCategory('quad') && <SelectItem value="quad">Quad</SelectItem>}
-                            {canAccessCategory('buggy') && <SelectItem value="buggy">Buggy</SelectItem>}
+                            {categories.map(cat => (
+                              canAccessCategory(cat) && (
+                                <SelectItem key={cat} value={cat}>
+                                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                                </SelectItem>
+                              )
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
