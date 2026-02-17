@@ -280,7 +280,7 @@ function AppContent() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-6' : 'grid-cols-5'} lg:w-auto lg:inline-grid`}>
+          <TabsList className={`grid w-full ${isAdmin() ? 'grid-cols-7' : 'grid-cols-6'} lg:w-auto lg:inline-grid`}>
             <TabsTrigger value="dashboard" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">{t('dashboard')}</span>
@@ -296,6 +296,10 @@ function AppContent() {
             <TabsTrigger value="payments" className="gap-2">
               <CreditCard className="h-4 w-4" />
               <span className="hidden sm:inline">{language === 'es' ? 'Cobros' : 'Payments'}</span>
+            </TabsTrigger>
+            <TabsTrigger value="expenses" className="gap-2">
+              <Receipt className="h-4 w-4" />
+              <span className="hidden sm:inline">{language === 'es' ? 'Gastos' : 'Expenses'}</span>
             </TabsTrigger>
             <TabsTrigger value="reports" className="gap-2">
               <BarChart3 className="h-4 w-4" />
