@@ -372,6 +372,7 @@ export default function BatchEntry() {
           gygDiscount: e.gygDiscount || 0,
           isPendingCruise: e.isPendingCruise || false,
           commission: parseFloat(e.commission) || 0,
+          commissionMethod: e.commissionMethod || 'cash',
           userId: 'user-1',
           userName: 'Usuario Demo',
         })),
