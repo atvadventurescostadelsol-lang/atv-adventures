@@ -58,6 +58,16 @@ export default function Reports() {
   const [expenseReportConcept, setExpenseReportConcept] = useState('all');
   const [expenseResults, setExpenseResults] = useState(null);
   const [expenseLoading, setExpenseLoading] = useState(false);
+
+  // Income-only report state
+  const [incomeStartDate, setIncomeStartDate] = useState('');
+  const [incomeEndDate, setIncomeEndDate] = useState('');
+  const defaultIncomeAccount = !canViewGE && canViewES ? 'E&S' : (!canViewES && canViewGE ? 'GE' : 'all');
+  const [incomeReportAccount, setIncomeReportAccount] = useState(defaultIncomeAccount);
+  const [incomeReportConcept, setIncomeReportConcept] = useState('all');
+  const [incomeResults, setIncomeResults] = useState(null);
+  const [incomeLoading, setIncomeLoading] = useState(false);
+  const [incomeCategories, setIncomeCategories] = useState({ GE: [], 'E&S': [] });
   
   const dateLocale = language === 'es' ? es : enUS;
 
