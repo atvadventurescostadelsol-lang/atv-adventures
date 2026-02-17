@@ -50,16 +50,35 @@ export default function PendingPayments() {
       if (res.ok) {
         const departures = await res.json();
         
-        // Filter GYG pending (has paymentSplitGyg > 0 and not collected)
+        // Helper to check if a value is a valid monetary amount (not a date or empty)
+        const isValidAmount = (value) => {
+          if (!value || value === '' || value === '0' || value === '0.00') return false;
+          // Check if it looks like a date (ISO format)
+          if (String(value).includes('T') || String(value).includes('-') && String(value).length > 10) return false;
+          const num = parseFloat(String(value).replace(',', '.'));
+          return !isNaN(num) && num > 0;
+        };
+        
+        // Filter GYG pending (has valid paymentSplitGyg > 0 and not collected)
         const gyg = departures.filter(d => {
-          const gygAmount = parseFloat(d.paymentSplitGyg) || 0;
-          return gygAmount > 0 && d.gygCollectedDate !== 'true' && !d.gygCollected;
+          // Must have a valid date
+          if (!d.date || d.date === '' || d.date.includes('T')) return false;
+          // Must have a valid GYG amount
+          if (!isValidAmount(d.paymentSplitGyg)) return false;
+          // Must not be already collected
+          if (d.gygCollected === 'true' || d.gygCollected === true) return false;
+          return true;
         });
         
-        // Filter Cruise pending (has paymentSplitCruise > 0 and not collected)
+        // Filter Cruise pending (has valid paymentSplitCruise > 0 and not collected)
         const cruise = departures.filter(d => {
-          const cruiseAmount = parseFloat(d.paymentSplitCruise) || 0;
-          return cruiseAmount > 0 && d.cruiseCollectedDate !== 'true' && !d.cruiseCollected;
+          // Must have a valid date
+          if (!d.date || d.date === '' || d.date.includes('T')) return false;
+          // Must have a valid Cruise amount
+          if (!isValidAmount(d.paymentSplitCruise)) return false;
+          // Must not be already collected
+          if (d.cruiseCollected === 'true' || d.cruiseCollected === true) return false;
+          return true;
         });
         
         setGygPending(gyg);
