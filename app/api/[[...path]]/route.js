@@ -1087,6 +1087,9 @@ async function handlePost(request, path) {
 
           // Check if pending cruise
           const isPendingCruise = entryData.isPendingCruise || false;
+          
+          // Get commission
+          const commission = parseFloat(entryData.commission || 0);
 
           // Create entry
           const id = uuidv4();
@@ -1100,7 +1103,7 @@ async function handlePost(request, path) {
             productId,
             product.name,
             vehiclesCount,
-            groupLabel || '',
+            '', // groupLabel removed - keeping for backwards compatibility
             notes || '',
             effectivePrice,
             financials.totalGross,
@@ -1129,6 +1132,7 @@ async function handlePost(request, path) {
             userId,
             now,
             userId,
+            commission.toFixed(2), // collaborator commission
           ];
 
           console.log('Appending entry:', {
