@@ -97,17 +97,25 @@ export default function Reports() {
     }
   }
 
-  // Get available concepts for expense-only report
+  // Get available concepts for expense-only report (respecting permissions)
   function getExpenseReportConcepts() {
+    let concepts = [];
+    
     if (expenseReportAccount === 'all') {
-      const allConcepts = [...expenseCategories.GE, ...expenseCategories['E&S']];
-      const uniqueNames = [...new Set(allConcepts.map(c => c.name))];
-      return uniqueNames;
-    } else if (expenseReportAccount === 'GE') {
+      // Only include concepts from accounts the user can access
+      if (canViewGE) {
+        concepts = [...concepts, ...expenseCategories.GE];
+      }
+      if (canViewES) {
+        concepts = [...concepts, ...expenseCategories['E&S']];
+      }
+      return [...new Set(concepts.map(c => c.name))];
+    } else if (expenseReportAccount === 'GE' && canViewGE) {
       return expenseCategories.GE.map(c => c.name);
-    } else {
+    } else if (expenseReportAccount === 'E&S' && canViewES) {
       return expenseCategories['E&S'].map(c => c.name);
     }
+    return [];
   }
 
   // Reset concept filter when account changes
