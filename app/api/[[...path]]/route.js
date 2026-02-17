@@ -1618,7 +1618,7 @@ async function handlePost(request, path) {
         userId,
       ];
 
-      await appendSheetData(SPREADSHEET_ID, 'Departures!A:AT', [entry]);
+      await appendSheetData(SPREADSHEET_ID, 'Departures!A:AV', [entry]);
       
       await addAuditLog('CREATE', 'Departure', id, { entry }, userId, userName);
 
