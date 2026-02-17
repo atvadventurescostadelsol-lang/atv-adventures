@@ -405,27 +405,30 @@ export default function Reports() {
       const weekEnd = format(endOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
       const weeklyData = allDepartures.filter(d => d.date >= weekStart && d.date <= weekEnd);
       const weeklyExpenses = allExpenses.filter(e => e.date >= weekStart && e.date <= weekEnd);
+      const weeklyIncomes = allIncomes.filter(i => i.date >= weekStart && i.date <= weekEnd);
       
       // Monthly
       const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
       const monthEnd = format(endOfMonth(today), 'yyyy-MM-dd');
       const monthlyData = allDepartures.filter(d => d.date >= monthStart && d.date <= monthEnd);
       const monthlyExpenses = allExpenses.filter(e => e.date >= monthStart && e.date <= monthEnd);
+      const monthlyIncomes = allIncomes.filter(i => i.date >= monthStart && i.date <= monthEnd);
       
       // Yearly
       const yearStart = format(startOfYear(today), 'yyyy-MM-dd');
       const yearEnd = format(endOfYear(today), 'yyyy-MM-dd');
       const yearlyData = allDepartures.filter(d => d.date >= yearStart && d.date <= yearEnd);
       const yearlyExpenses = allExpenses.filter(e => e.date >= yearStart && e.date <= yearEnd);
+      const yearlyIncomes = allIncomes.filter(i => i.date >= yearStart && i.date <= yearEnd);
       
       const weekLabel = language === 'es' 
         ? `Semana: ${format(startOfWeek(today, { weekStartsOn: 1 }), 'd MMM', { locale: es })} - ${format(endOfWeek(today, { weekStartsOn: 1 }), 'd MMM', { locale: es })}`
         : `Week: ${format(startOfWeek(today, { weekStartsOn: 1 }), 'MMM d', { locale: enUS })} - ${format(endOfWeek(today, { weekStartsOn: 1 }), 'MMM d', { locale: enUS })}`;
       
       setPeriodStats({
-        weekly: calculateStats(weeklyData, weeklyExpenses, weekLabel),
-        monthly: calculateStats(monthlyData, monthlyExpenses, format(today, 'MMMM yyyy', { locale: dateLocale })),
-        yearly: calculateStats(yearlyData, yearlyExpenses, format(today, 'yyyy'))
+        weekly: calculateStats(weeklyData, weeklyExpenses, weekLabel, weeklyIncomes),
+        monthly: calculateStats(monthlyData, monthlyExpenses, format(today, 'MMMM yyyy', { locale: dateLocale }), monthlyIncomes),
+        yearly: calculateStats(yearlyData, yearlyExpenses, format(today, 'yyyy'), yearlyIncomes)
       });
     } catch (error) {
       console.error('Error loading period stats:', error);
