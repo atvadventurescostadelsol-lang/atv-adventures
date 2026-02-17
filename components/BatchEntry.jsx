@@ -626,7 +626,7 @@ export default function BatchEntry() {
                           min="0"
                           step="0.01"
                           value={entry.commission || ''}
-                          onChange={(e) => updateEntry(entry.id, 'commission', e.target.value)}
+                          onChange={(e) => handleCommissionChange(entry.id, e.target.value)}
                           placeholder="0.00"
                           className="mt-1"
                         />
