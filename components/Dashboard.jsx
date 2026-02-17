@@ -184,9 +184,16 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
 
   const { stats, departures } = data;
 
-  // Calculate stats separated by category
-  const quadDepartures = departures.filter(d => d.category === 'quad');
-  const buggyDepartures = departures.filter(d => d.category === 'buggy');
+  // Filter departures based on user restrictions
+  const filteredDepartures = departures.filter(d => {
+    if (d.category === 'quad' && !canViewQuads) return false;
+    if (d.category === 'buggy' && !canViewBuggies) return false;
+    return true;
+  });
+
+  // Calculate stats separated by category (only for visible categories)
+  const quadDepartures = canViewQuads ? departures.filter(d => d.category === 'quad') : [];
+  const buggyDepartures = canViewBuggies ? departures.filter(d => d.category === 'buggy') : [];
 
   const quadStats = {
     totalGross: quadDepartures.reduce((sum, d) => sum + parseNumber(d.totalGross), 0),
@@ -208,15 +215,40 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
     vehiclesCount: buggyDepartures.reduce((sum, d) => sum + parseInt(d.vehiclesCount || 0), 0),
   };
 
-  // Calculate expenses by account for today
-  const geExpenses = expenses.filter(e => e.account === 'GE');
-  const esExpenses = expenses.filter(e => e.account === 'E&S');
+  // Calculate expenses by account for today (filtered by user access)
+  const geExpenses = canViewGE ? expenses.filter(e => e.account === 'GE') : [];
+  const esExpenses = canViewES ? expenses.filter(e => e.account === 'E&S') : [];
   const geExpenseTotal = geExpenses.reduce((sum, e) => sum + parseNumber(e.amount), 0);
   const esExpenseTotal = esExpenses.reduce((sum, e) => sum + parseNumber(e.amount), 0);
 
   // Net cash after expenses
   const quadCashNet = quadStats.cashTotal - geExpenseTotal;
   const buggyCashNet = buggyStats.cashTotal - esExpenseTotal;
+
+  // Calculate totals based on what user can see
+  const visibleTotalGross = (canViewQuads ? quadStats.totalGross : 0) + (canViewBuggies ? buggyStats.totalGross : 0);
+  const visibleNetBase = visibleTotalGross / 1.21;
+  const visibleVatAmount = visibleTotalGross - visibleNetBase;
+  const visibleCashTotal = (canViewQuads ? quadStats.cashTotal : 0) + (canViewBuggies ? buggyStats.cashTotal : 0);
+  const visibleBankTotal = (canViewQuads ? quadStats.bankTotal : 0) + (canViewBuggies ? buggyStats.bankTotal : 0);
+  const visibleWebTotal = (canViewQuads ? quadStats.webTotal : 0) + (canViewBuggies ? buggyStats.webTotal : 0);
+  const visibleGygTotal = (canViewQuads ? quadStats.gygTotal : 0) + (canViewBuggies ? buggyStats.gygTotal : 0);
+  const visibleCruiseTotal = (canViewQuads ? quadStats.cruiseTotal : 0) + (canViewBuggies ? buggyStats.cruiseTotal : 0);
+  const visibleQuadCount = canViewQuads ? quadStats.vehiclesCount : 0;
+  const visibleBuggyCount = canViewBuggies ? buggyStats.vehiclesCount : 0;
+
+  // Filter departuresBySlot to only show accessible tours
+  const filteredDeparturesBySlot = {};
+  Object.entries(stats.departuresBySlot || {}).forEach(([slot, slotDepartures]) => {
+    const filtered = slotDepartures.filter(d => {
+      if (d.category === 'quad' && !canViewQuads) return false;
+      if (d.category === 'buggy' && !canViewBuggies) return false;
+      return true;
+    });
+    if (filtered.length > 0) {
+      filteredDeparturesBySlot[slot] = filtered;
+    }
+  });
 
   return (
     <div className="space-y-6">
