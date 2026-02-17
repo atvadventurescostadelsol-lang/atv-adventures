@@ -1170,12 +1170,12 @@ export default function Reports() {
         </Card>
       )}
 
-      {/* Custom Report */}
+      {/* Custom Tour Report */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            {language === 'es' ? 'Generar Informe Personalizado' : 'Generate Custom Report'}
+            {language === 'es' ? 'Informe de Tours/Ventas' : 'Tours/Sales Report'}
           </CardTitle>
           <CardDescription>
             {language === 'es' 
