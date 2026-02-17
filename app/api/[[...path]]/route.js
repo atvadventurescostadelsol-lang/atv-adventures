@@ -1821,6 +1821,8 @@ async function handlePost(request, path) {
             userId,
             commission.toFixed(2), // collaborator commission
             commissionMethod, // 'cash' or 'bank'
+            manualDiscount.toFixed(2), // discount amount
+            manualTotal !== null && manualTotal !== undefined ? parseFloat(manualTotal).toFixed(2) : '', // manual total
           ];
 
           console.log('Appending entry:', {
