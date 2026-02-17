@@ -216,10 +216,16 @@ export default function Reports() {
     if (!expenseResults) return;
     
     try {
-      const jsPDF = (await import('jspdf')).default;
-      await import('jspdf-autotable');
-
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default;
+      const autoTableModule = await import('jspdf-autotable');
+      
       const doc = new jsPDF();
+      
+      // Register autoTable plugin
+      if (autoTableModule.default) {
+        autoTableModule.default(doc);
+      }
       
       // Title
       doc.setFontSize(18);
@@ -227,16 +233,19 @@ export default function Reports() {
       doc.setFontSize(12);
       doc.text(`${expenseResults.filters.startDate} - ${expenseResults.filters.endDate}`, 14, 30);
       
+      let yPosition = 38;
       if (expenseResults.filters.account !== 'all') {
-        doc.text(`${language === 'es' ? 'Cuenta' : 'Account'}: ${expenseResults.filters.account}`, 14, 38);
+        doc.text(`${language === 'es' ? 'Cuenta' : 'Account'}: ${expenseResults.filters.account}`, 14, yPosition);
+        yPosition += 8;
       }
       if (expenseResults.filters.concept !== 'all') {
-        doc.text(`${language === 'es' ? 'Concepto' : 'Concept'}: ${expenseResults.filters.concept}`, 14, 46);
+        doc.text(`${language === 'es' ? 'Concepto' : 'Concept'}: ${expenseResults.filters.concept}`, 14, yPosition);
+        yPosition += 8;
       }
       
       // Summary by account
       doc.setFontSize(14);
-      doc.text(language === 'es' ? 'Resumen por Cuenta' : 'Summary by Account', 14, 58);
+      doc.text(language === 'es' ? 'Resumen por Cuenta' : 'Summary by Account', 14, yPosition + 10);
       
       const accountData = [
         ['GE (Quads)', formatCurrency(expenseResults.byAccount.GE)],
@@ -245,7 +254,7 @@ export default function Reports() {
       ];
 
       doc.autoTable({
-        startY: 63,
+        startY: yPosition + 15,
         head: [[language === 'es' ? 'Cuenta' : 'Account', language === 'es' ? 'Total' : 'Total']],
         body: accountData,
         theme: 'striped',
@@ -253,50 +262,54 @@ export default function Reports() {
       });
 
       // Summary by concept
-      doc.text(language === 'es' ? 'Resumen por Concepto' : 'Summary by Concept', 14, doc.lastAutoTable.finalY + 15);
-      
       const conceptData = Object.entries(expenseResults.byConcept)
         .sort((a, b) => b[1] - a[1])
         .map(([concept, amount]) => [concept, formatCurrency(amount)]);
 
-      doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 20,
-        head: [[language === 'es' ? 'Concepto' : 'Concept', language === 'es' ? 'Total' : 'Total']],
-        body: conceptData,
-        theme: 'striped',
-        headStyles: { fillColor: [239, 68, 68] },
-      });
+      if (conceptData.length > 0) {
+        doc.text(language === 'es' ? 'Resumen por Concepto' : 'Summary by Concept', 14, doc.lastAutoTable.finalY + 15);
+        
+        doc.autoTable({
+          startY: doc.lastAutoTable.finalY + 20,
+          head: [[language === 'es' ? 'Concepto' : 'Concept', language === 'es' ? 'Total' : 'Total']],
+          body: conceptData,
+          theme: 'striped',
+          headStyles: { fillColor: [239, 68, 68] },
+        });
+      }
 
       // Detail
-      doc.text(language === 'es' ? 'Detalle de Gastos' : 'Expense Detail', 14, doc.lastAutoTable.finalY + 15);
-      
-      const detailData = expenseResults.expenses.map(e => [
-        format(new Date(e.date), 'dd/MM/yyyy'),
-        e.account,
-        e.concept,
-        e.notes || '-',
-        formatCurrency(e.amount),
-      ]);
+      if (expenseResults.expenses.length > 0) {
+        doc.text(language === 'es' ? 'Detalle de Gastos' : 'Expense Detail', 14, doc.lastAutoTable.finalY + 15);
+        
+        const detailData = expenseResults.expenses.map(e => [
+          format(new Date(e.date), 'dd/MM/yyyy'),
+          e.account,
+          e.concept,
+          e.notes || '-',
+          formatCurrency(e.amount),
+        ]);
 
-      doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 20,
-        head: [[
-          language === 'es' ? 'Fecha' : 'Date',
-          language === 'es' ? 'Cuenta' : 'Account',
-          language === 'es' ? 'Concepto' : 'Concept',
-          language === 'es' ? 'Notas' : 'Notes',
-          language === 'es' ? 'Cantidad' : 'Amount',
-        ]],
-        body: detailData,
-        theme: 'striped',
-        headStyles: { fillColor: [239, 68, 68] },
-      });
+        doc.autoTable({
+          startY: doc.lastAutoTable.finalY + 20,
+          head: [[
+            language === 'es' ? 'Fecha' : 'Date',
+            language === 'es' ? 'Cuenta' : 'Account',
+            language === 'es' ? 'Concepto' : 'Concept',
+            language === 'es' ? 'Notas' : 'Notes',
+            language === 'es' ? 'Cantidad' : 'Amount',
+          ]],
+          body: detailData,
+          theme: 'striped',
+          headStyles: { fillColor: [239, 68, 68] },
+        });
+      }
 
-      doc.save(`gastos_${expenseStartDate}_${expenseEndDate}.pdf`);
+      doc.save(`gastos_${expenseResults.filters.startDate}_${expenseResults.filters.endDate}.pdf`);
       toast.success(language === 'es' ? 'PDF generado' : 'PDF generated');
     } catch (error) {
       console.error('PDF export error:', error);
-      toast.error('Error al exportar PDF');
+      toast.error(language === 'es' ? 'Error al exportar PDF' : 'Error exporting PDF');
     }
   }
 
