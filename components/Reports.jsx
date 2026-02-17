@@ -1136,6 +1136,97 @@ export default function Reports() {
               </div>
             )}
 
+            {/* Expense Summary by Concept - Show when expenses are filtered or available */}
+            {results.expensesByAccount && (Object.keys(results.expensesByAccount.GE).length > 0 || Object.keys(results.expensesByAccount['E&S']).length > 0) && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    📊 {language === 'es' ? 'Resumen de Gastos por Concepto' : 'Expense Summary by Concept'}
+                  </CardTitle>
+                  <CardDescription>
+                    {language === 'es' 
+                      ? 'Total gastado en cada concepto durante el período seleccionado'
+                      : 'Total spent on each concept during the selected period'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {/* GE Summary by Concept */}
+                    {(results.expenseAccountFilter === 'all' || results.expenseAccountFilter === 'GE') && 
+                     Object.keys(results.expensesByAccount.GE).length > 0 && (
+                      <Card className="border-l-4 border-l-blue-500">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Car className="h-4 w-4 text-blue-600" />
+                            GE (Quads) - {language === 'es' ? 'Por Concepto' : 'By Concept'}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            {Object.entries(results.expensesByAccount.GE)
+                              .sort((a, b) => b[1] - a[1])
+                              .map(([concept, amount]) => (
+                                <div key={concept} className="flex justify-between items-center p-2 bg-blue-50 rounded">
+                                  <span className="font-medium">{concept}</span>
+                                  <span className="text-red-600 font-bold">-{formatCurrency(amount)}</span>
+                                </div>
+                              ))
+                            }
+                            <div className="flex justify-between items-center p-2 bg-blue-100 rounded font-bold border-t-2 border-blue-300">
+                              <span>{t('total')} GE</span>
+                              <span className="text-red-600">-{formatCurrency(results.expenseTotalsByAccount.GE)}</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* E&S Summary by Concept */}
+                    {(results.expenseAccountFilter === 'all' || results.expenseAccountFilter === 'E&S') && 
+                     Object.keys(results.expensesByAccount['E&S']).length > 0 && (
+                      <Card className="border-l-4 border-l-green-500">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Truck className="h-4 w-4 text-green-600" />
+                            E&S (Buggies) - {language === 'es' ? 'Por Concepto' : 'By Concept'}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            {Object.entries(results.expensesByAccount['E&S'])
+                              .sort((a, b) => b[1] - a[1])
+                              .map(([concept, amount]) => (
+                                <div key={concept} className="flex justify-between items-center p-2 bg-green-50 rounded">
+                                  <span className="font-medium">{concept}</span>
+                                  <span className="text-red-600 font-bold">-{formatCurrency(amount)}</span>
+                                </div>
+                              ))
+                            }
+                            <div className="flex justify-between items-center p-2 bg-green-100 rounded font-bold border-t-2 border-green-300">
+                              <span>{t('total')} E&S</span>
+                              <span className="text-red-600">-{formatCurrency(results.expenseTotalsByAccount['E&S'])}</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+
+                  {/* Grand Total */}
+                  <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-lg">
+                        {language === 'es' ? 'TOTAL GASTOS' : 'TOTAL EXPENSES'}
+                      </span>
+                      <span className="text-red-600 font-bold text-2xl">
+                        -{formatCurrency(results.expenseTotalsByAccount.GE + results.expenseTotalsByAccount['E&S'])}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Expenses Detail - Single list when filter is quad or buggy */}
             {results.categoryFilter !== 'all' && results.expenses.length > 0 && (
               <Card>
