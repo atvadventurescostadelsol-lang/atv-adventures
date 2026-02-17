@@ -612,11 +612,14 @@ export default function Reports() {
       // Incomes
       geIncomeTotal: 0,
       esIncomeTotal: 0,
+      // Products breakdown
+      byProduct: {},
     };
 
     data.forEach(d => {
       const gross = parseNumber(d.totalGross);
       const vehicles = parseInt(d.vehiclesCount || 0);
+      const productName = d.productName || 'Sin producto';
       
       // Calculate IVA with proper decimals
       const vatRate = 0.21;
@@ -626,6 +629,19 @@ export default function Reports() {
       stats.totalGross += gross;
       stats.netBase += netBase;
       stats.vatAmount += vatAmount;
+
+      // Product breakdown
+      if (!stats.byProduct[productName]) {
+        stats.byProduct[productName] = {
+          count: 0,
+          vehicles: 0,
+          gross: 0,
+          category: d.category
+        };
+      }
+      stats.byProduct[productName].count += 1;
+      stats.byProduct[productName].vehicles += vehicles;
+      stats.byProduct[productName].gross += gross;
 
       const cashAmount = parseNumber(d.paymentSplitCash);
       const webAmount = parseNumber(d.paymentSplitWeb);
