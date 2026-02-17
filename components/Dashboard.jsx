@@ -303,46 +303,109 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                     <Badge variant="secondary">{slotDepartures.length} {t('entries')}</Badge>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {slotDepartures.map((dep, idx) => (
-                      <Card key={idx} className="bg-muted/50 relative">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-2 right-2 h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => setDeleteDialog({
-                            open: true,
-                            departureId: dep.id,
-                            departureName: `${dep.productName} - ${dep.groupLabel || (language === 'es' ? 'Sin grupo' : 'No group')}`
-                          })}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                        <CardContent className="p-3">
-                          <div className="flex items-start justify-between mb-2">
-                            <Badge variant={dep.category === 'quad' ? 'default' : 'secondary'}>
-                              {dep.category === 'quad' ? 'Quad' : 'Buggy'}
-                            </Badge>
-                            <span className="text-sm font-medium">{dep.vehiclesCount}x</span>
+                    {slotDepartures.map((dep, idx) => {
+                      // Parse payment amounts
+                      const cashAmt = parseNumber(dep.paymentSplitCash);
+                      const bankAmt = parseNumber(dep.paymentSplitBank);
+                      const webAmt = parseNumber(dep.paymentSplitWeb);
+                      const gygAmt = parseNumber(dep.paymentSplitGyg);
+                      const cruiseAmt = parseNumber(dep.paymentSplitCruise);
+                      const commission = parseNumber(dep.commission);
+                      const isPendingCruise = dep.isPendingCruise === 'true' || dep.isPendingCruise === true;
+                      
+                      return (
+                        <Card key={idx} className="bg-muted/50 relative">
+                          <div className="absolute top-2 right-2 flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              onClick={() => openEditDialog(dep)}
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => setDeleteDialog({
+                                open: true,
+                                departureId: dep.id,
+                                departureName: `${dep.productName}`
+                              })}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                           </div>
-                          <p className="text-sm font-medium mb-1">{dep.productName}</p>
-                          {dep.groupLabel && (
-                            <p className="text-xs text-muted-foreground mb-1">{t('group')}: {dep.groupLabel}</p>
-                          )}
-                          <div className="flex items-center justify-between text-sm mt-2 pt-2 border-t">
-                            <span className="text-muted-foreground">{t('total')}:</span>
-                            <span className="font-semibold">€{parseNumber(dep.totalGross).toFixed(2)}</span>
-                          </div>
-                          <div className="flex gap-2 mt-2">
-                            {dep.depositPaid === 'true' && (
-                              <Badge variant="outline" className="text-xs">✓ {t('deposit')}</Badge>
+                          <CardContent className="p-3">
+                            <div className="flex items-start justify-between mb-2">
+                              <Badge variant={dep.category === 'quad' ? 'default' : 'secondary'}>
+                                {dep.category === 'quad' ? 'Quad' : 'Buggy'}
+                              </Badge>
+                              <span className="text-sm font-medium">{dep.vehiclesCount}x</span>
+                            </div>
+                            <p className="text-sm font-medium mb-2">{dep.productName}</p>
+                            
+                            {/* Total */}
+                            <div className="flex items-center justify-between text-sm mb-2 pb-2 border-b">
+                              <span className="text-muted-foreground">{t('total')}:</span>
+                              <span className="font-bold text-lg">€{parseNumber(dep.totalGross).toFixed(2)}</span>
+                            </div>
+                            
+                            {/* Payment breakdown */}
+                            <div className="space-y-1 text-xs">
+                              {cashAmt > 0 && (
+                                <div className="flex justify-between">
+                                  <span>💵 {language === 'es' ? 'Efectivo' : 'Cash'}</span>
+                                  <span className="font-medium">€{cashAmt.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {bankAmt > 0 && (
+                                <div className="flex justify-between">
+                                  <span>🏦 {language === 'es' ? 'Banco' : 'Bank'}</span>
+                                  <span className="font-medium">€{bankAmt.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {webAmt > 0 && (
+                                <div className="flex justify-between">
+                                  <span>🌐 Web</span>
+                                  <span className="font-medium">€{webAmt.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {gygAmt > 0 && (
+                                <div className="flex justify-between text-green-600">
+                                  <span>🎫 GYG</span>
+                                  <span className="font-medium">€{gygAmt.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {(cruiseAmt > 0 || isPendingCruise) && (
+                                <div className="flex justify-between text-blue-600">
+                                  <span>🚢 {language === 'es' ? 'Crucero' : 'Cruise'}</span>
+                                  <span className="font-medium">€{cruiseAmt > 0 ? cruiseAmt.toFixed(2) : parseNumber(dep.totalGross).toFixed(2)}</span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Commission if any */}
+                            {commission > 0 && (
+                              <div className="mt-2 pt-2 border-t">
+                                <div className="flex justify-between text-xs text-purple-600">
+                                  <span>💰 {language === 'es' ? 'Comisión' : 'Commission'} ({dep.commissionMethod === 'bank' ? '🏦' : '💵'})</span>
+                                  <span className="font-medium">€{commission.toFixed(2)}</span>
+                                </div>
+                              </div>
                             )}
-                            {dep.remainingPaid === 'true' && (
-                              <Badge variant="outline" className="text-xs">✓ {t('complete')}</Badge>
+                            
+                            {/* Notes if any */}
+                            {dep.notes && (
+                              <div className="mt-2 pt-2 border-t">
+                                <p className="text-xs text-muted-foreground italic">📝 {dep.notes}</p>
+                              </div>
                             )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
