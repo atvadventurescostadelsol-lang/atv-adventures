@@ -63,10 +63,11 @@ export default function AdminPanel() {
   async function loadData() {
     setLoading(true);
     try {
-      const [productsRes, slotsRes, expenseCategoriesRes] = await Promise.all([
+      const [productsRes, slotsRes, expenseCategoriesRes, incomeCategoriesRes] = await Promise.all([
         fetch('/api/products'),
         fetch('/api/timeslots'),
-        fetch('/api/expense-categories')
+        fetch('/api/expense-categories'),
+        fetch('/api/income-categories')
       ]);
 
       if (productsRes.ok) {
@@ -99,6 +100,17 @@ export default function AdminPanel() {
           else if (cat.account === 'E&S') grouped['E&S'].push(cat);
         });
         setExpenseCategories(grouped);
+      }
+
+      if (incomeCategoriesRes.ok) {
+        const data = await incomeCategoriesRes.json();
+        // Group by account
+        const grouped = { GE: [], 'E&S': [] };
+        data.forEach(cat => {
+          if (cat.account === 'GE') grouped.GE.push(cat);
+          else if (cat.account === 'E&S') grouped['E&S'].push(cat);
+        });
+        setIncomeCategories(grouped);
       }
     } catch (error) {
       toast.error('Error al cargar datos');
