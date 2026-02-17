@@ -1538,6 +1538,12 @@ export default function Reports() {
                         <span className="font-medium">-{formatCurrency(results.totals.geExpenseTotal)}</span>
                       </div>
                     )}
+                    {results.totals.geIncomeTotal > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>{language === 'es' ? 'Ingresos GE' : 'GE Incomes'}:</span>
+                        <span className="font-medium">+{formatCurrency(results.totals.geIncomeTotal)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between pt-2 border-t bg-blue-50 -mx-4 px-4 py-2 rounded-b-lg">
                       <span className="font-semibold text-blue-800">
                         💰 {language === 'es' ? 'Efectivo Neto' : 'Net Cash'}:
@@ -1574,6 +1580,12 @@ export default function Reports() {
                       <div className="flex justify-between text-red-600">
                         <span>{language === 'es' ? 'Gastos E&S' : 'E&S Expenses'}:</span>
                         <span className="font-medium">-{formatCurrency(results.totals.esExpenseTotal)}</span>
+                      </div>
+                    )}
+                    {results.totals.esIncomeTotal > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>{language === 'es' ? 'Ingresos E&S' : 'E&S Incomes'}:</span>
+                        <span className="font-medium">+{formatCurrency(results.totals.esIncomeTotal)}</span>
                       </div>
                     )}
                     <div className="flex justify-between pt-2 border-t bg-green-50 -mx-4 px-4 py-2 rounded-b-lg">
