@@ -102,6 +102,8 @@ export default function Reports() {
       pendingCruise: 0,
       // Commissions
       commissionTotal: 0,
+      commissionCash: 0,
+      commissionBank: 0,
     };
 
     data.forEach(d => {
@@ -133,6 +135,7 @@ export default function Reports() {
       const gygAmount = parseNumber(d.paymentSplitGyg);
       const cruiseAmount = parseNumber(d.paymentSplitCruise);
       const commission = parseNumber(d.commission);
+      const commissionMethod = d.commissionMethod || 'cash';
       
       stats.webTotal += webAmount;
       stats.cashTotal += cashAmount;
@@ -140,6 +143,15 @@ export default function Reports() {
       stats.gygTotal += gygAmount;
       stats.cruiseTotal += cruiseAmount;
       stats.commissionTotal += commission;
+      
+      // Track commission by payment method
+      if (commission > 0) {
+        if (commissionMethod === 'bank') {
+          stats.commissionBank += commission;
+        } else {
+          stats.commissionCash += commission;
+        }
+      }
       
       // Calculate IVA2 (excluding cash payments)
       const nonCashGross = gross - cashAmount;
