@@ -885,8 +885,13 @@ export default function Reports() {
                     -{formatCurrency(stats.geExpenseTotal)} ({language === 'es' ? 'gastos GE' : 'GE expenses'})
                   </p>
                 )}
+                {stats.geIncomeTotal > 0 && (
+                  <p className="text-sm text-green-600">
+                    +{formatCurrency(stats.geIncomeTotal)} ({language === 'es' ? 'ingresos GE' : 'GE incomes'})
+                  </p>
+                )}
                 <p className="text-sm font-bold text-blue-700 mt-1">
-                  {language === 'es' ? 'Efectivo Neto' : 'Net Cash'}: {formatCurrency(stats.quadCashNet || (stats.quadCash - (stats.geExpenseTotal || 0)))}
+                  {language === 'es' ? 'Efectivo Neto' : 'Net Cash'}: {formatCurrency(stats.quadCashNet || (stats.quadCash - (stats.geExpenseTotal || 0) + (stats.geIncomeTotal || 0)))}
                 </p>
               </div>
               
@@ -904,8 +909,13 @@ export default function Reports() {
                     -{formatCurrency(stats.esExpenseTotal)} ({language === 'es' ? 'gastos E&S' : 'E&S expenses'})
                   </p>
                 )}
+                {stats.esIncomeTotal > 0 && (
+                  <p className="text-sm text-green-600">
+                    +{formatCurrency(stats.esIncomeTotal)} ({language === 'es' ? 'ingresos E&S' : 'E&S incomes'})
+                  </p>
+                )}
                 <p className="text-sm font-bold text-green-700 mt-1">
-                  {language === 'es' ? 'Efectivo Neto' : 'Net Cash'}: {formatCurrency(stats.buggyCashNet || (stats.buggyCash - (stats.esExpenseTotal || 0)))}
+                  {language === 'es' ? 'Efectivo Neto' : 'Net Cash'}: {formatCurrency(stats.buggyCashNet || (stats.buggyCash - (stats.esExpenseTotal || 0) + (stats.esIncomeTotal || 0)))}
                 </p>
               </div>
             </div>
