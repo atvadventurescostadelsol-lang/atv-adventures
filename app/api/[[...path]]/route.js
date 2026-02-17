@@ -1046,54 +1046,7 @@ async function handlePost(request, path) {
             effectivePrice = effectivePrice * (1 - gygDiscount);
           }
 
-          // Calculate financials
-          const financials = calculateFinancials(
-            parseInt(vehiclesCount),
-            effectivePrice,
-            parseFloat(depositPercent || 0.20)
-          );
-
-          // Calculate payout date
-          const expectedPayoutDate = calculatePayoutDate(salesChannel || 'otros', date);
-
-          // Process payment splits (now using exact amounts instead of percentages)
-          const totalGross = financials.totalGross;
-          let paymentSplitWeb = 0;
-          let paymentSplitCash = 0;
-          let paymentSplitBank = 0;
-          let paymentSplitGyg = 0;
-          let paymentSplitCruise = 0;
-
-          if (paymentSplit && Array.isArray(paymentSplit)) {
-            paymentSplit.forEach(split => {
-              const amount = parseFloat(split.amount || 0);
-              switch(split.method) {
-                case 'web':
-                  paymentSplitWeb = amount;
-                  break;
-                case 'cash':
-                  paymentSplitCash = amount;
-                  break;
-                case 'bank':
-                  paymentSplitBank = amount;
-                  break;
-                case 'gyg':
-                  paymentSplitGyg = amount;
-                  break;
-                case 'cruceros':
-                  paymentSplitCruise = amount;
-                  break;
-              }
-            });
-          } else {
-            // Default: all to cash
-            paymentSplitCash = totalGross;
-          }
-
-          // Check if pending cruise
-          const isPendingCruise = entryData.isPendingCruise || false;
-          
-          // Get commission
+          // Get commission first
           const commission = parseFloat(entryData.commission || 0);
 
           // Calculate financials (commission is subtracted from gross)
