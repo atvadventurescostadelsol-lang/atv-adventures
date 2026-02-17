@@ -417,6 +417,12 @@ async function handleResetPassword(body) {
 async function handleGet(request, path) {
   const { searchParams } = new URL(request.url);
 
+  // Initialize users (force)
+  if (path === 'init-users') {
+    const result = await forceInitUsers();
+    return NextResponse.json(result);
+  }
+
   // Get all users (Admin)
   if (path === 'users') {
     return handleGetUsers();
