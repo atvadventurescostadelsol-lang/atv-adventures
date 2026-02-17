@@ -135,6 +135,18 @@ export default function BatchEntry() {
   function getEntryTotal(entry) {
     const baseTotal = getBaseTotal(entry);
     // Apply GYG discount if applicable
+    let total = baseTotal;
+    if (entry.gygDiscount > 0) {
+      total = baseTotal * (1 - entry.gygDiscount);
+    }
+    // Subtract commission - this is the real money received
+    const commission = parseFloat(entry.commission) || 0;
+    return total - commission;
+  }
+
+  // Get total before commission (for display purposes)
+  function getPreCommissionTotal(entry) {
+    const baseTotal = getBaseTotal(entry);
     if (entry.gygDiscount > 0) {
       return baseTotal * (1 - entry.gygDiscount);
     }
