@@ -585,6 +585,125 @@ export default function PendingPayments() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* History of Collected Payments */}
+      {(gygCollected.length > 0 || cruiseCollected.length > 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              {language === 'es' ? 'Historial de Cobros Realizados' : 'Collection History'}
+            </CardTitle>
+            <CardDescription>
+              {language === 'es' 
+                ? 'Pagos que ya han sido marcados como cobrados y transferidos a banco' 
+                : 'Payments that have been marked as collected and transferred to bank'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="gyg-history" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="gyg-history" className="gap-2">
+                  <span className="font-bold text-green-600">GYG</span>
+                  <Badge variant="outline" className="bg-green-50">{gygCollected.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="cruise-history" className="gap-2">
+                  <span className="font-bold text-blue-600">
+                    {language === 'es' ? 'Cruceros' : 'Cruises'}
+                  </span>
+                  <Badge variant="outline" className="bg-blue-50">{cruiseCollected.length}</Badge>
+                </TabsTrigger>
+              </TabsList>
+
+              {/* GYG History */}
+              <TabsContent value="gyg-history">
+                {gygCollected.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    {language === 'es' ? 'No hay cobros de GYG realizados' : 'No GYG collections yet'}
+                  </p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{language === 'es' ? 'Fecha Tour' : 'Tour Date'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Producto' : 'Product'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Veh.' : 'Veh.'}</TableHead>
+                        <TableHead className="text-right">{language === 'es' ? 'Monto' : 'Amount'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Fecha Cobro' : 'Collection Date'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {gygCollected.map((item) => (
+                        <TableRow key={item.id} className="bg-green-50/30">
+                          <TableCell className="font-medium">{item.date}</TableCell>
+                          <TableCell>
+                            <Badge variant={item.category === 'quad' ? 'default' : 'secondary'} className="mr-2">
+                              {item.category}
+                            </Badge>
+                            {item.productName}
+                          </TableCell>
+                          <TableCell>{item.vehiclesCount}</TableCell>
+                          <TableCell className="text-right font-bold text-green-600">
+                            {formatCurrency(item.paymentSplitBank || item.totalGross)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-green-100 text-green-700">
+                              ✓ {item.gygCollectedDate || '-'}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </TabsContent>
+
+              {/* Cruise History */}
+              <TabsContent value="cruise-history">
+                {cruiseCollected.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    {language === 'es' ? 'No hay cobros de Cruceros realizados' : 'No Cruise collections yet'}
+                  </p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{language === 'es' ? 'Fecha Tour' : 'Tour Date'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Producto' : 'Product'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Veh.' : 'Veh.'}</TableHead>
+                        <TableHead className="text-right">{language === 'es' ? 'Monto' : 'Amount'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Fecha Cobro' : 'Collection Date'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {cruiseCollected.map((item) => (
+                        <TableRow key={item.id} className="bg-blue-50/30">
+                          <TableCell className="font-medium">{item.date}</TableCell>
+                          <TableCell>
+                            <Badge variant={item.category === 'quad' ? 'default' : 'secondary'} className="mr-2">
+                              {item.category}
+                            </Badge>
+                            {item.productName}
+                          </TableCell>
+                          <TableCell>{item.vehiclesCount}</TableCell>
+                          <TableCell className="text-right font-bold text-blue-600">
+                            {formatCurrency(item.paymentSplitBank || item.totalGross)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-blue-100 text-blue-700">
+                              ✓ {item.cruiseCollectedDate || '-'}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
