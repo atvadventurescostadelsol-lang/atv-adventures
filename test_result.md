@@ -334,6 +334,29 @@ agent_communication:
       - Entry appears in GET /api/dashboard response
       
       Please verify the batch creation endpoint works correctly with multiple entries.
+      
+  - agent: "main"
+    message: |
+      FIXES APPLIED (Feb 17, 2026):
+      
+      1. PDF EXPORT FIX:
+         - Changed jspdf import from dynamic import to static import with proper plugin registration
+         - Added: import { jsPDF } from 'jspdf'; import { applyPlugin } from 'jspdf-autotable';
+         - Registered plugin at module level: applyPlugin(jsPDF);
+         - Removed the dynamic import pattern that was causing TypeError
+         
+      2. CHARLY PERMISSIONS FIX IN REPORTS:
+         - Added filterDeparturesByPermissions() and filterExpensesByPermissions() helper functions
+         - Updated loadPeriodStats() to filter data by user permissions before calculating stats
+         - Updated runReport() to filter data by user permissions first
+         - Updated dropdown filters to only show options user has access to (category, expense account)
+         - Set default values for filters based on user permissions
+         
+      Files modified: /app/components/Reports.jsx
+      
+      Testing needed:
+      1. Login as admin (Zorroaud/25592776) and verify PDF export works
+      2. Login as Charly and verify only Buggy/E&S data is visible in reports
 
   - agent: "main"
     message: |
