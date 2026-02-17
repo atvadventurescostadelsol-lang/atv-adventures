@@ -1490,6 +1490,249 @@ export default function Reports() {
         </Card>
       )}
 
+      {/* Income-Only Report */}
+      <Card className="border-2 border-green-200">
+        <CardHeader className="bg-green-50">
+          <CardTitle className="flex items-center gap-2 text-green-700">
+            <TrendingUp className="h-5 w-5" />
+            {language === 'es' ? 'Informe de Ingresos' : 'Income Report'}
+          </CardTitle>
+          <CardDescription>
+            {language === 'es' 
+              ? 'Genera un informe exclusivo de ingresos, filtrando por cuenta y concepto'
+              : 'Generate an income-only report, filtering by account and concept'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="space-y-4">
+            {/* Quick date buttons */}
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => {
+                const today = new Date();
+                setIncomeStartDate(format(today, 'yyyy-MM-dd'));
+                setIncomeEndDate(format(today, 'yyyy-MM-dd'));
+              }}>
+                {t('today')}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const today = new Date();
+                setIncomeStartDate(format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd'));
+                setIncomeEndDate(format(endOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd'));
+              }}>
+                {language === 'es' ? 'Esta Semana' : 'This Week'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const today = new Date();
+                setIncomeStartDate(format(startOfMonth(today), 'yyyy-MM-dd'));
+                setIncomeEndDate(format(endOfMonth(today), 'yyyy-MM-dd'));
+              }}>
+                {language === 'es' ? 'Este Mes' : 'This Month'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                const today = new Date();
+                setIncomeStartDate(format(startOfYear(today), 'yyyy-MM-dd'));
+                setIncomeEndDate(format(endOfYear(today), 'yyyy-MM-dd'));
+              }}>
+                {language === 'es' ? 'Este Año' : 'This Year'}
+              </Button>
+            </div>
+
+            {/* Filters */}
+            <div className="grid gap-4 md:grid-cols-5">
+              <div>
+                <Label>{language === 'es' ? 'Desde' : 'From'}</Label>
+                <Input
+                  type="date"
+                  value={incomeStartDate}
+                  onChange={(e) => setIncomeStartDate(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>{language === 'es' ? 'Hasta' : 'To'}</Label>
+                <Input
+                  type="date"
+                  value={incomeEndDate}
+                  onChange={(e) => setIncomeEndDate(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>{language === 'es' ? 'Cuenta' : 'Account'}</Label>
+                <Select value={incomeReportAccount} onValueChange={setIncomeReportAccount}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {canViewGE && canViewES && (
+                      <SelectItem value="all">{language === 'es' ? 'Todas' : 'All'}</SelectItem>
+                    )}
+                    {canViewGE && <SelectItem value="GE">GE (Quads)</SelectItem>}
+                    {canViewES && <SelectItem value="E&S">E&S (Buggies)</SelectItem>}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>{language === 'es' ? 'Concepto' : 'Concept'}</Label>
+                <Select value={incomeReportConcept} onValueChange={setIncomeReportConcept}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
+                    {getIncomeReportConcepts().map(concept => (
+                      <SelectItem key={concept} value={concept}>{concept}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button onClick={runIncomeReport} className="w-full bg-green-600 hover:bg-green-700" disabled={incomeLoading}>
+                  {incomeLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
+                  {language === 'es' ? 'Generar' : 'Generate'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Income Report Results */}
+      {incomeResults && (
+        <Card className="border-2 border-green-300">
+          <CardHeader className="bg-green-50">
+            <div className="flex justify-between items-start flex-wrap gap-4">
+              <div>
+                <CardTitle className="text-green-700">
+                  {language === 'es' ? 'Resultados del Informe de Ingresos' : 'Income Report Results'}
+                </CardTitle>
+                <CardDescription>
+                  {incomeResults.filters.startDate} - {incomeResults.filters.endDate}
+                  {incomeResults.filters.account !== 'all' && ` | ${incomeResults.filters.account}`}
+                  {incomeResults.filters.concept !== 'all' && ` | ${incomeResults.filters.concept}`}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            {/* Summary */}
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card className="bg-green-50 border-green-200">
+                <CardContent className="pt-4">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">{language === 'es' ? 'Total Ingresos' : 'Total Incomes'}</p>
+                    <p className="text-3xl font-bold text-green-600">+{formatCurrency(incomeResults.totalIncomes)}</p>
+                    <p className="text-sm text-muted-foreground">{incomeResults.incomes.length} {language === 'es' ? 'registros' : 'records'}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="pt-4">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">GE (Quads)</p>
+                    <p className="text-2xl font-bold text-blue-600">+{formatCurrency(incomeResults.byAccount.GE)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-green-50 border-green-200">
+                <CardContent className="pt-4">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">E&S (Buggies)</p>
+                    <p className="text-2xl font-bold text-green-600">+{formatCurrency(incomeResults.byAccount['E&S'])}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* By Concept */}
+            {Object.keys(incomeResults.byConcept).length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">{language === 'es' ? 'Totales por Concepto' : 'Totals by Concept'}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-2">
+                    {Object.entries(incomeResults.byConcept)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([concept, amount]) => (
+                        <div key={concept} className="flex justify-between items-center p-2 bg-muted rounded">
+                          <span className="font-medium">{concept}</span>
+                          <span className="text-green-600 font-bold">+{formatCurrency(amount)}</span>
+                        </div>
+                      ))
+                    }
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Detailed list by date */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">{language === 'es' ? 'Detalle por Fecha' : 'Detail by Date'}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {Object.keys(incomeResults.byDate).length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">
+                    {language === 'es' ? 'No hay ingresos en el período seleccionado' : 'No incomes in the selected period'}
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {Object.entries(incomeResults.byDate)
+                      .sort((a, b) => b[0].localeCompare(a[0]))
+                      .map(([date, dayIncomes]) => {
+                        const dayTotal = dayIncomes.reduce((sum, i) => sum + parseNumber(i.amount), 0);
+                        return (
+                          <Card key={date}>
+                            <CardHeader className="py-2 px-4 bg-muted/50">
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">
+                                  {format(new Date(date), 'EEEE, d MMMM yyyy', { locale: dateLocale })}
+                                </span>
+                                <Badge variant="default" className="bg-green-600">+{formatCurrency(dayTotal)}</Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>{language === 'es' ? 'Cuenta' : 'Account'}</TableHead>
+                                    <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
+                                    <TableHead>{language === 'es' ? 'Notas' : 'Notes'}</TableHead>
+                                    <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {dayIncomes.map((inc, idx) => (
+                                    <TableRow key={idx}>
+                                      <TableCell>
+                                        <Badge variant={inc.account === 'GE' ? 'default' : 'secondary'} 
+                                               className={inc.account === 'GE' ? 'bg-blue-600' : 'bg-green-600'}>
+                                          {inc.account}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell className="font-medium">{inc.concept}</TableCell>
+                                      <TableCell className="text-muted-foreground">{inc.notes || '-'}</TableCell>
+                                      <TableCell className="text-right font-bold text-green-600">
+                                        +{formatCurrency(inc.amount)}
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </CardContent>
+                          </Card>
+                        );
+                      })
+                    }
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Custom Tour Report */}
       <Card>
         <CardHeader>
