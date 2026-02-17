@@ -192,6 +192,78 @@ backend:
     priority: "medium"
     needs_retesting: false
 
+  - task: "POST /api/auth/login - User authentication"
+    implemented: true
+    working: "NA"
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Authentication system implemented with Google Sheets backend. Need to test login with admin (Zorrouad/25592776) and user (Jesus/GECA2023) credentials."
+
+  - task: "POST /api/auth/change-password - Change own password"
+    implemented: true
+    working: "NA"
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Password change functionality implemented requiring current password verification."
+
+  - task: "GET /api/users - List all users (Admin only)"
+    implemented: true
+    working: "NA"
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Admin endpoint to list all users without passwords. Should return username, role, createdAt, lastLogin."
+
+  - task: "POST /api/users - Create new user (Admin only)"
+    implemented: true
+    working: "NA"
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Admin functionality to create new users with username, password, role validation."
+
+  - task: "DELETE /api/users/:username - Delete user (Admin only)"
+    implemented: true
+    working: "NA"
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Admin functionality to delete users with soft delete implementation."
+
+  - task: "POST /api/users/reset-password - Admin reset user password"
+    implemented: true
+    working: "NA"
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Admin functionality to reset any user's password without requiring current password."
+
 frontend:
   - task: "Dashboard view with stats and departures"
     implemented: true
