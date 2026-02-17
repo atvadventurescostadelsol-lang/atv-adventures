@@ -1904,6 +1904,128 @@ export default function Reports() {
               </Card>
             )}
 
+            {/* Incomes Summary and Detail */}
+            {results.incomes && results.incomes.length > 0 && (
+              <Card className="border-2 border-green-200">
+                <CardHeader className="bg-green-50 pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2 text-green-700">
+                    <TrendingUp className="h-5 w-5" />
+                    {language === 'es' ? 'Detalle de Ingresos' : 'Income Detail'}
+                  </CardTitle>
+                  <CardDescription>
+                    {language === 'es' 
+                      ? `${results.incomes.length} ingresos registrados en el período`
+                      : `${results.incomes.length} incomes recorded in this period`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  {/* Income Summary by Account */}
+                  {results.incomesByAccount && (Object.keys(results.incomesByAccount.GE || {}).length > 0 || Object.keys(results.incomesByAccount['E&S'] || {}).length > 0) && (
+                    <div className="grid gap-4 md:grid-cols-2 mb-6">
+                      {Object.keys(results.incomesByAccount.GE || {}).length > 0 && (
+                        <Card className="border-l-4 border-l-blue-500">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm flex items-center gap-2">
+                              <Car className="h-4 w-4 text-blue-600" />
+                              GE (Quads) - {language === 'es' ? 'Por Concepto' : 'By Concept'}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              {Object.entries(results.incomesByAccount.GE || {})
+                                .sort((a, b) => b[1] - a[1])
+                                .map(([concept, amount]) => (
+                                  <div key={concept} className="flex justify-between items-center p-2 bg-green-50 rounded">
+                                    <span className="font-medium">{concept}</span>
+                                    <span className="text-green-600 font-bold">+{formatCurrency(amount)}</span>
+                                  </div>
+                                ))
+                              }
+                              <div className="flex justify-between items-center p-2 bg-blue-100 rounded font-bold border-t-2 border-blue-300">
+                                <span>{t('total')} GE</span>
+                                <span className="text-green-600">+{formatCurrency(results.incomeTotalsByAccount?.GE || 0)}</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {Object.keys(results.incomesByAccount['E&S'] || {}).length > 0 && (
+                        <Card className="border-l-4 border-l-green-500">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm flex items-center gap-2">
+                              <Truck className="h-4 w-4 text-green-600" />
+                              E&S (Buggies) - {language === 'es' ? 'Por Concepto' : 'By Concept'}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              {Object.entries(results.incomesByAccount['E&S'] || {})
+                                .sort((a, b) => b[1] - a[1])
+                                .map(([concept, amount]) => (
+                                  <div key={concept} className="flex justify-between items-center p-2 bg-green-50 rounded">
+                                    <span className="font-medium">{concept}</span>
+                                    <span className="text-green-600 font-bold">+{formatCurrency(amount)}</span>
+                                  </div>
+                                ))
+                              }
+                              <div className="flex justify-between items-center p-2 bg-green-100 rounded font-bold border-t-2 border-green-300">
+                                <span>{t('total')} E&S</span>
+                                <span className="text-green-600">+{formatCurrency(results.incomeTotalsByAccount?.['E&S'] || 0)}</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Grand Total Incomes */}
+                  <div className="mb-4 p-4 bg-green-100 rounded-lg border border-green-200">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-lg">
+                        {language === 'es' ? 'TOTAL INGRESOS' : 'TOTAL INCOMES'}
+                      </span>
+                      <span className="text-green-600 font-bold text-2xl">
+                        +{formatCurrency((results.incomeTotalsByAccount?.GE || 0) + (results.incomeTotalsByAccount?.['E&S'] || 0))}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Income Detail Table */}
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{language === 'es' ? 'Fecha' : 'Date'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Cuenta' : 'Account'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Notas' : 'Notes'}</TableHead>
+                        <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {results.incomes.map((inc, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>{format(new Date(inc.date), 'dd/MM/yyyy')}</TableCell>
+                          <TableCell>
+                            <Badge variant={inc.account === 'GE' ? 'default' : 'secondary'} 
+                                   className={inc.account === 'GE' ? 'bg-blue-600' : 'bg-green-600'}>
+                              {inc.account}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{inc.concept}</TableCell>
+                          <TableCell className="text-muted-foreground">{inc.notes || '-'}</TableCell>
+                          <TableCell className="text-right font-medium text-green-600">
+                            +{formatCurrency(inc.amount)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Detailed data table */}
             <Card>
               <CardHeader>
