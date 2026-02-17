@@ -700,7 +700,7 @@ def test_additional_endpoints():
 
 def main():
     """Run all backend API tests"""
-    print("🚀 Starting Backend API Tests")
+    print("🚀 Starting Backend API Tests - Including Income Functionality")
     print(f"Base URL: {BASE_URL}")
     print("=" * 60)
     
@@ -716,11 +716,17 @@ def main():
     # Test expense categories API
     test_expense_categories_api()
     
+    # Test incomes API (NEW)
+    test_incomes_api()
+    
+    # Test income categories API (NEW)
+    test_income_categories_api()
+    
     # Test additional endpoints
     test_additional_endpoints()
     
     print("=" * 60)
-    print("✅ Backend API Testing Complete")
+    print("✅ Backend API Testing Complete - All Income functionality tested")
 
 if __name__ == "__main__":
     main()
