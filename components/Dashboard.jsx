@@ -303,11 +303,11 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
         <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
           <CardHeader className="pb-2">
             <CardDescription className="text-orange-100">{t('totalGross')}</CardDescription>
-            <CardTitle className="text-3xl">€{stats.totalGross.toFixed(2)}</CardTitle>
+            <CardTitle className="text-3xl">€{visibleTotalGross.toFixed(2)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-sm text-orange-100">
-              {t('net')}: €{stats.netBase.toFixed(2)} | {t('vat')}: €{stats.vatAmount.toFixed(2)}
+              {t('net')}: €{visibleNetBase.toFixed(2)} | {t('vat')}: €{visibleVatAmount.toFixed(2)}
             </div>
           </CardContent>
         </Card>
@@ -315,20 +315,24 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>{t('vehicles')}</CardDescription>
-            <CardTitle className="text-3xl">{stats.quadCount + stats.buggyCount}</CardTitle>
+            <CardTitle className="text-3xl">{visibleQuadCount + visibleBuggyCount}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex gap-4 text-sm">
-              <div className="flex items-center gap-1">
-                <Car className="h-4 w-4 text-blue-600" />
-                <span className="font-medium">{stats.quadCount}</span>
-                <span className="text-muted-foreground">{t('quads')}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Truck className="h-4 w-4 text-green-600" />
-                <span className="font-medium">{stats.buggyCount}</span>
-                <span className="text-muted-foreground">{t('buggies')}</span>
-              </div>
+              {canViewQuads && (
+                <div className="flex items-center gap-1">
+                  <Car className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium">{visibleQuadCount}</span>
+                  <span className="text-muted-foreground">{t('quads')}</span>
+                </div>
+              )}
+              {canViewBuggies && (
+                <div className="flex items-center gap-1">
+                  <Truck className="h-4 w-4 text-green-600" />
+                  <span className="font-medium">{visibleBuggyCount}</span>
+                  <span className="text-muted-foreground">{t('buggies')}</span>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -336,7 +340,7 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>{t('paymentsReceived')}</CardDescription>
-            <CardTitle className="text-3xl">€{((stats.cashTotal || 0) + (stats.bankTotal || 0) + (stats.webTotal || 0)).toFixed(2)}</CardTitle>
+            <CardTitle className="text-3xl">€{(visibleCashTotal + visibleBankTotal + visibleWebTotal).toFixed(2)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-2 text-xs">
