@@ -1997,27 +1997,27 @@ async function handlePut(request, path) {
       const current = departures[index];
       const updated = { ...current, ...updates, updatedAt: new Date().toISOString(), updatedBy: userId };
 
-      // Recalculate financials if needed
+      // Recalculate financials if needed (using local data instead of internal fetch)
       if (updates.vehiclesCount || updates.productId || updates.depositPercent) {
-        const pricingUrl = new URL(request.url);
-        pricingUrl.pathname = '/api/pricing';
-        pricingUrl.searchParams.set('productId', updated.productId);
-        pricingUrl.searchParams.set('date', updated.date);
+        // Get product data directly
+        const productsData = await getSheetData(SPREADSHEET_ID, 'Products!A:F');
+        const products = parseSheetToObjects(productsData);
+        const product = products.find(p => p.id === updated.productId);
         
-        const pricingRes = await fetch(pricingUrl);
-        const pricing = await pricingRes.json();
+        if (product) {
+          const effectivePrice = parseFloat(product.basePrice) || 0;
+          const financials = calculateFinancials(
+            parseInt(updated.vehiclesCount),
+            effectivePrice,
+            parseFloat(updated.depositPercent || 0.20)
+          );
 
-        const financials = calculateFinancials(
-          parseInt(updated.vehiclesCount),
-          pricing.effectivePrice,
-          parseFloat(updated.depositPercent || 0.20)
-        );
-
-        Object.assign(updated, financials);
-        updated.pricePerVehicleGross = pricing.effectivePrice;
+          Object.assign(updated, financials);
+          updated.pricePerVehicleGross = effectivePrice;
+        }
       }
 
-      // Update in sheet - extended to AV
+      // Update in sheet
       const headers = data[0];
       const rowData = headers.map(header => updated[header] !== undefined ? updated[header] : '');
       await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AX${index + 2}`, [rowData]);
