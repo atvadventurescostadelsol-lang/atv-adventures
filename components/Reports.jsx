@@ -434,6 +434,20 @@ export default function Reports() {
               <p className="text-2xl font-bold">{stats.count}</p>
             </div>
           </div>
+
+          {/* IVA Section */}
+          <div className="border-t pt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-muted p-2 rounded">
+                <p className="text-xs text-muted-foreground">{t('vat')}</p>
+                <p className="font-bold">{formatCurrency(stats.vatAmount)}</p>
+              </div>
+              <div className="bg-purple-100 p-2 rounded">
+                <p className="text-xs text-purple-700">IVA2 ({language === 'es' ? 'sin efectivo' : 'excl. cash'})</p>
+                <p className="font-bold text-purple-800">{formatCurrency(stats.vatAmount2)}</p>
+              </div>
+            </div>
+          </div>
           
           {/* Category Breakdown */}
           <div className="border-t pt-4">
