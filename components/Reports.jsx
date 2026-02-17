@@ -76,10 +76,28 @@ export default function Reports() {
     }
   }
 
+  // Get available concepts for expense-only report
+  function getExpenseReportConcepts() {
+    if (expenseReportAccount === 'all') {
+      const allConcepts = [...expenseCategories.GE, ...expenseCategories['E&S']];
+      const uniqueNames = [...new Set(allConcepts.map(c => c.name))];
+      return uniqueNames;
+    } else if (expenseReportAccount === 'GE') {
+      return expenseCategories.GE.map(c => c.name);
+    } else {
+      return expenseCategories['E&S'].map(c => c.name);
+    }
+  }
+
   // Reset concept filter when account changes
   useEffect(() => {
     setExpenseConcept('all');
   }, [expenseAccount]);
+
+  // Reset expense report concept when account changes
+  useEffect(() => {
+    setExpenseReportConcept('all');
+  }, [expenseReportAccount]);
 
   // Helper to parse numbers that may use comma as decimal separator (Spanish format)
   function parseNumber(value) {
@@ -91,6 +109,195 @@ export default function Reports() {
 
   function formatCurrency(amount) {
     return `€${parseNumber(amount).toFixed(2)}`;
+  }
+
+  // Set quick date range for expense report
+  function setExpenseQuickDateRange(period) {
+    const today = new Date();
+    let start, end;
+
+    switch (period) {
+      case 'today':
+        start = end = today;
+        break;
+      case 'week':
+        start = startOfWeek(today, { weekStartsOn: 1 });
+        end = endOfWeek(today, { weekStartsOn: 1 });
+        break;
+      case 'month':
+        start = startOfMonth(today);
+        end = endOfMonth(today);
+        break;
+      case 'year':
+        start = startOfYear(today);
+        end = endOfYear(today);
+        break;
+      default:
+        return;
+    }
+
+    setExpenseStartDate(format(start, 'yyyy-MM-dd'));
+    setExpenseEndDate(format(end, 'yyyy-MM-dd'));
+  }
+
+  // Generate expense-only report
+  async function runExpenseReport() {
+    if (!expenseStartDate || !expenseEndDate) {
+      toast.error(language === 'es' ? 'Por favor selecciona las fechas' : 'Please select dates');
+      return;
+    }
+
+    setExpenseLoading(true);
+    try {
+      const res = await fetch(`/api/expenses?startDate=${expenseStartDate}&endDate=${expenseEndDate}`);
+      
+      if (res.ok) {
+        let data = await res.json();
+        
+        // Filter by account
+        if (expenseReportAccount !== 'all') {
+          data = data.filter(e => e.account === expenseReportAccount);
+        }
+        
+        // Filter by concept
+        if (expenseReportConcept !== 'all') {
+          data = data.filter(e => e.concept === expenseReportConcept);
+        }
+        
+        // Calculate totals by account and concept
+        const byAccount = { GE: 0, 'E&S': 0 };
+        const byConcept = {};
+        const byAccountAndConcept = { GE: {}, 'E&S': {} };
+        const byDate = {};
+        
+        data.forEach(e => {
+          const amount = parseNumber(e.amount);
+          byAccount[e.account] += amount;
+          
+          if (!byConcept[e.concept]) byConcept[e.concept] = 0;
+          byConcept[e.concept] += amount;
+          
+          if (!byAccountAndConcept[e.account][e.concept]) {
+            byAccountAndConcept[e.account][e.concept] = 0;
+          }
+          byAccountAndConcept[e.account][e.concept] += amount;
+          
+          if (!byDate[e.date]) byDate[e.date] = [];
+          byDate[e.date].push(e);
+        });
+        
+        const totalExpenses = byAccount.GE + byAccount['E&S'];
+        
+        setExpenseResults({
+          expenses: data,
+          byAccount,
+          byConcept,
+          byAccountAndConcept,
+          byDate,
+          totalExpenses,
+          filters: {
+            account: expenseReportAccount,
+            concept: expenseReportConcept,
+            startDate: expenseStartDate,
+            endDate: expenseEndDate,
+          }
+        });
+      }
+    } catch (error) {
+      toast.error('Error al generar el informe de gastos');
+      console.error(error);
+    } finally {
+      setExpenseLoading(false);
+    }
+  }
+
+  // Export expense report to PDF
+  async function exportExpensePDF() {
+    if (!expenseResults) return;
+    
+    try {
+      const jsPDF = (await import('jspdf')).default;
+      await import('jspdf-autotable');
+
+      const doc = new jsPDF();
+      
+      // Title
+      doc.setFontSize(18);
+      doc.text(language === 'es' ? 'Informe de Gastos' : 'Expense Report', 14, 20);
+      doc.setFontSize(12);
+      doc.text(`${expenseResults.filters.startDate} - ${expenseResults.filters.endDate}`, 14, 30);
+      
+      if (expenseResults.filters.account !== 'all') {
+        doc.text(`${language === 'es' ? 'Cuenta' : 'Account'}: ${expenseResults.filters.account}`, 14, 38);
+      }
+      if (expenseResults.filters.concept !== 'all') {
+        doc.text(`${language === 'es' ? 'Concepto' : 'Concept'}: ${expenseResults.filters.concept}`, 14, 46);
+      }
+      
+      // Summary by account
+      doc.setFontSize(14);
+      doc.text(language === 'es' ? 'Resumen por Cuenta' : 'Summary by Account', 14, 58);
+      
+      const accountData = [
+        ['GE (Quads)', formatCurrency(expenseResults.byAccount.GE)],
+        ['E&S (Buggies)', formatCurrency(expenseResults.byAccount['E&S'])],
+        [language === 'es' ? 'TOTAL' : 'TOTAL', formatCurrency(expenseResults.totalExpenses)],
+      ];
+
+      doc.autoTable({
+        startY: 63,
+        head: [[language === 'es' ? 'Cuenta' : 'Account', language === 'es' ? 'Total' : 'Total']],
+        body: accountData,
+        theme: 'striped',
+        headStyles: { fillColor: [239, 68, 68] },
+      });
+
+      // Summary by concept
+      doc.text(language === 'es' ? 'Resumen por Concepto' : 'Summary by Concept', 14, doc.lastAutoTable.finalY + 15);
+      
+      const conceptData = Object.entries(expenseResults.byConcept)
+        .sort((a, b) => b[1] - a[1])
+        .map(([concept, amount]) => [concept, formatCurrency(amount)]);
+
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [[language === 'es' ? 'Concepto' : 'Concept', language === 'es' ? 'Total' : 'Total']],
+        body: conceptData,
+        theme: 'striped',
+        headStyles: { fillColor: [239, 68, 68] },
+      });
+
+      // Detail
+      doc.text(language === 'es' ? 'Detalle de Gastos' : 'Expense Detail', 14, doc.lastAutoTable.finalY + 15);
+      
+      const detailData = expenseResults.expenses.map(e => [
+        format(new Date(e.date), 'dd/MM/yyyy'),
+        e.account,
+        e.concept,
+        e.notes || '-',
+        formatCurrency(e.amount),
+      ]);
+
+      doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [[
+          language === 'es' ? 'Fecha' : 'Date',
+          language === 'es' ? 'Cuenta' : 'Account',
+          language === 'es' ? 'Concepto' : 'Concept',
+          language === 'es' ? 'Notas' : 'Notes',
+          language === 'es' ? 'Cantidad' : 'Amount',
+        ]],
+        body: detailData,
+        theme: 'striped',
+        headStyles: { fillColor: [239, 68, 68] },
+      });
+
+      doc.save(`gastos_${expenseStartDate}_${expenseEndDate}.pdf`);
+      toast.success(language === 'es' ? 'PDF generado' : 'PDF generated');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Error al exportar PDF');
+    }
   }
 
   async function loadPeriodStats() {
