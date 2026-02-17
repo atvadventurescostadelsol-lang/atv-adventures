@@ -194,15 +194,18 @@ backend:
 
   - task: "POST /api/auth/login - User authentication"
     implemented: true
-    working: "NA"
+    working: true
     file: "app/api/[[...path]]/route.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Authentication system implemented with Google Sheets backend. Need to test login with admin (Zorrouad/25592776) and user (Jesus/GECA2023) credentials."
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE AUTHENTICATION TESTING COMPLETED: ✅ Admin login working with both 'Zorrouad/25592776' and 'Zorroaud/25592776' credentials (both work). ✅ User login working with 'Charly/Sajer' credentials. ❌ Note: 'Charly/Charly2024' credentials from review request don't work - actual password is 'Sajer'. ✅ Invalid credential rejection working correctly with 401 status. Authentication system fully functional."
 
   - task: "POST /api/auth/change-password - Change own password"
     implemented: true
