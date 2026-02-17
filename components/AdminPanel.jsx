@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit2, Save, X, Check, Trash2, Users } from 'lucide-react';
+import { Plus, Edit2, Save, X, Check, Trash2, Users, Receipt, Car, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import UserManagement from '@/components/UserManagement';
@@ -25,10 +25,11 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function AdminPanel() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [products, setProducts] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
   const [categories, setCategories] = useState(['quad', 'buggy']);
+  const [expenseCategories, setExpenseCategories] = useState({ GE: [], 'E&S': [] });
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingSlot, setEditingSlot] = useState(null);
@@ -37,6 +38,7 @@ export default function AdminPanel() {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, type: '', id: '', name: '' });
   const [capacities, setCapacities] = useState({ quad: 10, buggy: 6 });
   const [editingCapacity, setEditingCapacity] = useState(false);
+  const [newExpenseCategory, setNewExpenseCategory] = useState({ name: '', account: 'GE' });
   
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -59,9 +61,10 @@ export default function AdminPanel() {
   async function loadData() {
     setLoading(true);
     try {
-      const [productsRes, slotsRes] = await Promise.all([
+      const [productsRes, slotsRes, expenseCategoriesRes] = await Promise.all([
         fetch('/api/products'),
-        fetch('/api/timeslots')
+        fetch('/api/timeslots'),
+        fetch('/api/expense-categories')
       ]);
 
       if (productsRes.ok) {
@@ -84,11 +87,63 @@ export default function AdminPanel() {
           });
         }
       }
+
+      if (expenseCategoriesRes.ok) {
+        const data = await expenseCategoriesRes.json();
+        // Group by account
+        const grouped = { GE: [], 'E&S': [] };
+        data.forEach(cat => {
+          if (cat.account === 'GE') grouped.GE.push(cat);
+          else if (cat.account === 'E&S') grouped['E&S'].push(cat);
+        });
+        setExpenseCategories(grouped);
+      }
     } catch (error) {
       toast.error('Error al cargar datos');
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleAddExpenseCategory() {
+    if (!newExpenseCategory.name.trim()) {
+      toast.error(language === 'es' ? 'Ingresa un nombre para el concepto' : 'Enter a concept name');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/expense-categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newExpenseCategory)
+      });
+
+      if (res.ok) {
+        toast.success(language === 'es' ? 'Concepto añadido' : 'Concept added');
+        setNewExpenseCategory({ name: '', account: 'GE' });
+        loadData();
+      } else {
+        const error = await res.json();
+        toast.error(error.error || 'Error');
+      }
+    } catch (error) {
+      toast.error('Error');
+      console.error(error);
+    }
+  }
+
+  async function handleDeleteExpenseCategory(id) {
+    try {
+      const res = await fetch(`/api/expense-categories/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast.success(language === 'es' ? 'Concepto eliminado' : 'Concept deleted');
+        loadData();
+      }
+    } catch (error) {
+      toast.error('Error');
+    } finally {
+      setDeleteDialog({ open: false, type: '', id: '', name: '' });
     }
   }
 
