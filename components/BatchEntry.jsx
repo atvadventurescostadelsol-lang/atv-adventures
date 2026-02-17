@@ -24,12 +24,12 @@ export default function BatchEntry() {
     category: 'quad',
     productId: '',
     vehiclesCount: 1,
-    groupLabel: '',
     notes: '',
     salesChannel: 'cash',
     paymentSplit: [{ method: 'cash', amount: 0 }],
     gygDiscount: 0,
     isPendingCruise: false,
+    commission: 0,
   }]);
 
   const [products, setProducts] = useState([]);
