@@ -1047,28 +1047,21 @@ async function handlePost(request, path) {
             effectivePrice = effectivePrice * (1 - gygDiscount);
           }
 
-          // Get commission first
+          // Get commission first (commission is a separate expense, NOT subtracted from gross)
           const commission = parseFloat(entryData.commission || 0);
+          const commissionMethod = entryData.commissionMethod || 'cash';
 
-          // Calculate financials (commission is subtracted from gross)
-          const baseGross = parseInt(vehiclesCount) * effectivePrice;
-          const actualGross = baseGross - commission; // Real money received
-          
+          // Calculate financials based on full price (commission doesn't reduce gross)
           const financials = calculateFinancials(
-            1, // We calculate with actual gross directly
-            actualGross,
+            parseInt(vehiclesCount),
+            effectivePrice,
             parseFloat(depositPercent || 0.20)
           );
-          
-          // Override totalGross with the actual amount after commission
-          financials.totalGross = parseFloat(actualGross.toFixed(2));
-          financials.netBase = parseFloat((actualGross / 1.21).toFixed(2));
-          financials.vatAmount = parseFloat((actualGross - financials.netBase).toFixed(2));
 
           // Calculate payout date
           const expectedPayoutDate = calculatePayoutDate(salesChannel || 'otros', date);
 
-          // Process payment splits - these should sum to actualGross (after commission)
+          // Process payment splits - these should sum to totalGross (full amount)
           let paymentSplitWeb = 0;
           let paymentSplitCash = 0;
           let paymentSplitBank = 0;
@@ -1098,14 +1091,11 @@ async function handlePost(request, path) {
             });
           } else {
             // Default: all to cash
-            paymentSplitCash = actualGross;
+            paymentSplitCash = financials.totalGross;
           }
 
           // Check if pending cruise
           const isPendingCruise = entryData.isPendingCruise || false;
-          
-          // Get commission method
-          const commissionMethod = entryData.commissionMethod || 'cash';
 
           // Create entry
           const id = uuidv4();
