@@ -1128,6 +1128,16 @@ async function handleGet(request, path) {
     return handleGetExpenseCategories();
   }
 
+  // Get incomes
+  if (path === 'incomes') {
+    return getIncomes(searchParams);
+  }
+
+  // Get income categories
+  if (path === 'income-categories') {
+    return getIncomeCategories();
+  }
+
   // Initialize sheet
   if (path === 'init') {
     try {
