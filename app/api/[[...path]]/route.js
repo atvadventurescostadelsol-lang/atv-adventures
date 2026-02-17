@@ -1984,8 +1984,8 @@ async function handlePut(request, path) {
       const id = path.split('/')[1];
       const { userId = 'system', userName = 'System', ...updates } = body;
 
-      // Get current data
-      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AT');
+      // Get current data - extended to AV to include discount and manualTotal columns
+      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AV');
       const departures = parseSheetToObjects(data);
       const index = departures.findIndex(d => d.id === id);
 
@@ -2016,15 +2016,16 @@ async function handlePut(request, path) {
         updated.pricePerVehicleGross = pricing.effectivePrice;
       }
 
-      // Update in sheet
+      // Update in sheet - extended to AV
       const headers = data[0];
       const rowData = headers.map(header => updated[header] !== undefined ? updated[header] : '');
-      await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AT${index + 2}`, [rowData]);
+      await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AV${index + 2}`, [rowData]);
 
       await addAuditLog('UPDATE', 'Departure', id, { before: current, after: updated }, userId, userName);
 
       return NextResponse.json({ success: true, updated });
     } catch (error) {
+      console.error('Error updating departure:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
   }
