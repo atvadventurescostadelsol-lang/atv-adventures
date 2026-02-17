@@ -323,7 +323,6 @@ export default function BatchEntry() {
           category: e.category,
           productId: e.productId,
           vehiclesCount: parseInt(e.vehiclesCount),
-          groupLabel: e.groupLabel,
           notes: e.notes,
           salesChannel: e.paymentSplit[0]?.method || 'otros',
           paymentSplit: e.paymentSplit.map(s => ({
@@ -332,6 +331,7 @@ export default function BatchEntry() {
           })),
           gygDiscount: e.gygDiscount || 0,
           isPendingCruise: e.isPendingCruise || false,
+          commission: parseFloat(e.commission) || 0,
           userId: 'user-1',
           userName: 'Usuario Demo',
         })),
