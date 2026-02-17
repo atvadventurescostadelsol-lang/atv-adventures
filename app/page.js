@@ -320,6 +320,10 @@ function AppContent() {
             <CalendarView onDateSelect={handleDateSelect} />
           </TabsContent>
 
+          <TabsContent value="payments">
+            <PendingPayments />
+          </TabsContent>
+
           <TabsContent value="reports">
             <Reports />
           </TabsContent>
