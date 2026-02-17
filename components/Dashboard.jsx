@@ -349,11 +349,11 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                 <span className="text-muted-foreground"> 💵 {t('cash')}</span>
               </div>
               <div>
-                <span className="font-medium">€{(stats.bankTotal || 0).toFixed(2)}</span>
+                <span className="font-medium">€{visibleBankTotal.toFixed(2)}</span>
                 <span className="text-muted-foreground"> 🏦 {t('bank')}</span>
               </div>
               <div>
-                <span className="font-medium">€{(stats.webTotal || 0).toFixed(2)}</span>
+                <span className="font-medium">€{visibleWebTotal.toFixed(2)}</span>
                 <span className="text-muted-foreground"> 🌐 {t('web')}</span>
               </div>
             </div>
@@ -363,20 +363,21 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
         <Card className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white">
           <CardHeader className="pb-2">
             <CardDescription className="text-yellow-100">{t('pendingArrival')}</CardDescription>
-            <CardTitle className="text-3xl">€{((stats.gygTotal || 0) + (stats.cruiseTotal || 0)).toFixed(2)}</CardTitle>
+            <CardTitle className="text-3xl">€{(visibleGygTotal + visibleCruiseTotal).toFixed(2)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-1 text-xs text-yellow-100">
-              <div>🎫 GYG: €{(stats.gygTotal || 0).toFixed(2)}</div>
-              <div>🚢 {t('cruises')}: €{(stats.cruiseTotal || 0).toFixed(2)}</div>
+              <div>🎫 GYG: €{visibleGygTotal.toFixed(2)}</div>
+              <div>🚢 {t('cruises')}: €{visibleCruiseTotal.toFixed(2)}</div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Breakdown by Category: Quads vs Buggies */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* QUADS (GE) */}
+      {/* Breakdown by Category: Quads vs Buggies - Only show accessible categories */}
+      <div className={`grid gap-4 ${canViewQuads && canViewBuggies ? 'md:grid-cols-2' : 'md:grid-cols-1'}`}>
+        {/* QUADS (GE) - Only show if user can access */}
+        {canViewQuads && (
         <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
