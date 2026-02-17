@@ -934,6 +934,30 @@ export default function Reports() {
               </div>
             </div>
           )}
+
+          {/* Incomes */}
+          {(stats.geIncomeTotal > 0 || stats.esIncomeTotal > 0) && (
+            <div className="border-t pt-4">
+              <h4 className="font-semibold mb-2 flex items-center gap-1 text-green-600">
+                <TrendingUp className="h-4 w-4" />
+                {language === 'es' ? 'Ingresos Totales' : 'Total Incomes'}
+              </h4>
+              <div className="bg-green-50 p-3 rounded-lg">
+                <div className="flex justify-between text-sm">
+                  <span>GE (Quads):</span>
+                  <span className="font-medium">+{formatCurrency(stats.geIncomeTotal)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>E&S (Buggies):</span>
+                  <span className="font-medium">+{formatCurrency(stats.esIncomeTotal)}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold border-t mt-2 pt-2">
+                  <span>{t('total')}:</span>
+                  <span className="text-green-600">+{formatCurrency(stats.geIncomeTotal + stats.esIncomeTotal)}</span>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Payments */}
           <div className="border-t pt-4">
