@@ -1162,10 +1162,11 @@ async function handleGet(request, path) {
         'paymentSplitCruise', 'gygDiscount', 'isPendingCruise',
         'createdAt', 'createdBy', 'updatedAt', 'updatedBy', 
         'commission', 'commissionMethod',
-        'gygCollected', 'gygCollectedDate', 'cruiseCollected', 'cruiseCollectedDate'
+        'gygCollected', 'gygCollectedDate', 'cruiseCollected', 'cruiseCollectedDate',
+        'discount', 'manualTotal'
       ];
       
-      await updateSheetData(SPREADSHEET_ID, 'Departures!A1:AV1', [newHeaders]);
+      await updateSheetData(SPREADSHEET_ID, 'Departures!A1:AX1', [newHeaders]);
       
       return NextResponse.json({ 
         success: true, 
