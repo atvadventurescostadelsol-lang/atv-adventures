@@ -351,6 +351,441 @@ class AuthTester:
         else:
             self.log_result("GET /api/dashboard", False, f"Status: {response['status_code']}", response.get("data"))
 
+    # ==================== EXPENSES TESTS ====================
+    
+    def test_get_expense_categories_initialization(self):
+        """Test GET /api/expense-categories returns default categories"""
+        print("💰 Testing Expense Categories Initialization...")
+        
+        response = self.make_request("GET", "expense-categories")
+        
+        if not response["success"]:
+            self.log_result("GET /api/expense-categories", False, f"Request failed: {response['data']['error']}")
+            return False
+            
+        if response["status_code"] == 200:
+            data = response["data"]
+            if isinstance(data, list):
+                # Should have default categories for both GE and E&S accounts
+                ge_categories = [cat for cat in data if cat.get("account") == "GE"]
+                es_categories = [cat for cat in data if cat.get("account") == "E&S"]
+                
+                expected_names = ["Gasolina", "Alimentación", "Guía", "Mantenimiento", "Otros"]
+                ge_names = [cat.get("name") for cat in ge_categories]
+                es_names = [cat.get("name") for cat in es_categories]
+                
+                if len(ge_categories) >= 5 and len(es_categories) >= 5:
+                    if all(name in ge_names for name in expected_names) and all(name in es_names for name in expected_names):
+                        self.log_result("GET /api/expense-categories", True, f"Retrieved {len(data)} categories with defaults for both accounts")
+                        return True
+                    else:
+                        self.log_result("GET /api/expense-categories", False, "Missing expected default categories", {"ge": ge_names, "es": es_names})
+                        return False
+                else:
+                    self.log_result("GET /api/expense-categories", False, f"Insufficient categories: GE={len(ge_categories)}, E&S={len(es_categories)}")
+                    return False
+            else:
+                self.log_result("GET /api/expense-categories", False, "Invalid response format", data)
+                return False
+        else:
+            self.log_result("GET /api/expense-categories", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return False
+
+    def test_create_expense_category(self):
+        """Test POST /api/expense-categories"""
+        print("💰 Testing Create Expense Category...")
+        
+        response = self.make_request("POST", "expense-categories", {
+            "name": "Test Category",
+            "account": "GE"
+        })
+        
+        if not response["success"]:
+            self.log_result("POST /api/expense-categories", False, f"Request failed: {response['data']['error']}")
+            return None
+            
+        if response["status_code"] == 200:
+            data = response["data"]
+            if data.get("success") and data.get("category", {}).get("name") == "Test Category":
+                self.log_result("POST /api/expense-categories", True, "Successfully created Test Category for GE account")
+                return data["category"]["id"]
+            else:
+                self.log_result("POST /api/expense-categories", False, "Category creation failed", data)
+                return None
+        else:
+            self.log_result("POST /api/expense-categories", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return None
+
+    def test_create_expense_category_duplicate(self):
+        """Test POST /api/expense-categories with duplicate name"""
+        print("💰 Testing Create Duplicate Category...")
+        
+        response = self.make_request("POST", "expense-categories", {
+            "name": "Gasolina",  # This should already exist
+            "account": "GE"
+        })
+        
+        if not response["success"]:
+            self.log_result("POST /api/expense-categories (duplicate)", False, f"Request failed: {response['data']['error']}")
+            return False
+            
+        if response["status_code"] == 400:
+            data = response["data"]
+            if not data.get("success", True) and "already exists" in data.get("error", "").lower():
+                self.log_result("POST /api/expense-categories (duplicate)", True, "Correctly rejected duplicate category")
+                return True
+            else:
+                self.log_result("POST /api/expense-categories (duplicate)", False, "Should reject duplicate category", data)
+                return False
+        else:
+            self.log_result("POST /api/expense-categories (duplicate)", False, f"Expected 400, got {response['status_code']}", response["data"])
+            return False
+
+    def test_create_expense_category_invalid_account(self):
+        """Test POST /api/expense-categories with invalid account"""
+        print("💰 Testing Create Category Invalid Account...")
+        
+        response = self.make_request("POST", "expense-categories", {
+            "name": "Invalid Account Category",
+            "account": "INVALID"
+        })
+        
+        if not response["success"]:
+            self.log_result("POST /api/expense-categories (invalid account)", False, f"Request failed: {response['data']['error']}")
+            return False
+            
+        if response["status_code"] == 400:
+            data = response["data"]
+            if not data.get("success", True) and "invalid account" in data.get("error", "").lower():
+                self.log_result("POST /api/expense-categories (invalid account)", True, "Correctly rejected invalid account")
+                return True
+            else:
+                self.log_result("POST /api/expense-categories (invalid account)", False, "Should reject invalid account", data)
+                return False
+        else:
+            self.log_result("POST /api/expense-categories (invalid account)", False, f"Expected 400, got {response['status_code']}", response["data"])
+            return False
+
+    def test_create_expense(self):
+        """Test POST /api/expenses"""
+        print("💰 Testing Create Expense...")
+        
+        expense_data = {
+            "date": "2026-02-17",
+            "amount": 25.50,
+            "concept": "Gasolina",
+            "account": "GE",
+            "notes": "Test expense for fuel",
+            "userId": "testuser"
+        }
+        
+        response = self.make_request("POST", "expenses", expense_data)
+        
+        if not response["success"]:
+            self.log_result("POST /api/expenses", False, f"Request failed: {response['data']['error']}")
+            return None
+            
+        if response["status_code"] == 200:
+            data = response["data"]
+            if data.get("success") and data.get("expense"):
+                expense = data["expense"]
+                if (expense.get("amount") == "25.50" and 
+                    expense.get("concept") == "Gasolina" and 
+                    expense.get("account") == "GE"):
+                    self.log_result("POST /api/expenses", True, f"Successfully created expense with ID: {expense['id']}")
+                    return expense["id"]
+                else:
+                    self.log_result("POST /api/expenses", False, "Expense data mismatch", expense)
+                    return None
+            else:
+                self.log_result("POST /api/expenses", False, "Expense creation failed", data)
+                return None
+        else:
+            self.log_result("POST /api/expenses", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return None
+
+    def test_create_expense_missing_fields(self):
+        """Test POST /api/expenses with missing required fields"""
+        print("💰 Testing Create Expense Missing Fields...")
+        
+        response = self.make_request("POST", "expenses", {
+            "date": "2026-02-17",
+            "amount": 25.50
+            # Missing concept and account
+        })
+        
+        if not response["success"]:
+            self.log_result("POST /api/expenses (missing fields)", False, f"Request failed: {response['data']['error']}")
+            return False
+            
+        if response["status_code"] == 400:
+            data = response["data"]
+            if not data.get("success", True) and "missing required fields" in data.get("error", "").lower():
+                self.log_result("POST /api/expenses (missing fields)", True, "Correctly rejected missing fields")
+                return True
+            else:
+                self.log_result("POST /api/expenses (missing fields)", False, "Should reject missing fields", data)
+                return False
+        else:
+            self.log_result("POST /api/expenses (missing fields)", False, f"Expected 400, got {response['status_code']}", response["data"])
+            return False
+
+    def test_create_expense_invalid_account(self):
+        """Test POST /api/expenses with invalid account"""
+        print("💰 Testing Create Expense Invalid Account...")
+        
+        response = self.make_request("POST", "expenses", {
+            "date": "2026-02-17",
+            "amount": 25.50,
+            "concept": "Test",
+            "account": "INVALID"
+        })
+        
+        if not response["success"]:
+            self.log_result("POST /api/expenses (invalid account)", False, f"Request failed: {response['data']['error']}")
+            return False
+            
+        if response["status_code"] == 400:
+            data = response["data"]
+            if not data.get("success", True) and "invalid account" in data.get("error", "").lower():
+                self.log_result("POST /api/expenses (invalid account)", True, "Correctly rejected invalid account")
+                return True
+            else:
+                self.log_result("POST /api/expenses (invalid account)", False, "Should reject invalid account", data)
+                return False
+        else:
+            self.log_result("POST /api/expenses (invalid account)", False, f"Expected 400, got {response['status_code']}", response["data"])
+            return False
+
+    def test_get_expenses_all(self):
+        """Test GET /api/expenses"""
+        print("💰 Testing Get All Expenses...")
+        
+        response = self.make_request("GET", "expenses")
+        
+        if not response["success"]:
+            self.log_result("GET /api/expenses", False, f"Request failed: {response['data']['error']}")
+            return False
+            
+        if response["status_code"] == 200:
+            data = response["data"]
+            if isinstance(data, list):
+                # Should have at least the expense we created
+                if len(data) > 0:
+                    first_expense = data[0]
+                    required_fields = ["id", "date", "amount", "concept", "account"]
+                    if all(field in first_expense for field in required_fields):
+                        self.log_result("GET /api/expenses", True, f"Retrieved {len(data)} expenses with correct structure")
+                        return True
+                    else:
+                        self.log_result("GET /api/expenses", False, "Expenses missing required fields", first_expense)
+                        return False
+                else:
+                    self.log_result("GET /api/expenses", True, "Retrieved empty expenses list (expected initially)")
+                    return True
+            else:
+                self.log_result("GET /api/expenses", False, "Invalid response format", data)
+                return False
+        else:
+            self.log_result("GET /api/expenses", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return False
+
+    def test_get_expenses_filtered_by_account(self):
+        """Test GET /api/expenses?account=GE"""
+        print("💰 Testing Get Expenses Filtered by Account...")
+        
+        response = self.make_request("GET", "expenses", params={"account": "GE"})
+        
+        if not response["success"]:
+            self.log_result("GET /api/expenses (filtered)", False, f"Request failed: {response['data']['error']}")
+            return False
+            
+        if response["status_code"] == 200:
+            data = response["data"]
+            if isinstance(data, list):
+                # All returned expenses should be for GE account
+                ge_expenses = [exp for exp in data if exp.get("account") == "GE"]
+                if len(data) == len(ge_expenses):
+                    self.log_result("GET /api/expenses (filtered)", True, f"Correctly filtered {len(data)} GE expenses")
+                    return True
+                else:
+                    self.log_result("GET /api/expenses (filtered)", False, f"Filter failed: {len(data)} total, {len(ge_expenses)} GE")
+                    return False
+            else:
+                self.log_result("GET /api/expenses (filtered)", False, "Invalid response format", data)
+                return False
+        else:
+            self.log_result("GET /api/expenses (filtered)", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return False
+
+    def test_get_expenses_filtered_by_date_range(self):
+        """Test GET /api/expenses?startDate=2026-02-01&endDate=2026-02-28"""
+        print("💰 Testing Get Expenses Filtered by Date Range...")
+        
+        response = self.make_request("GET", "expenses", params={
+            "startDate": "2026-02-01",
+            "endDate": "2026-02-28"
+        })
+        
+        if not response["success"]:
+            self.log_result("GET /api/expenses (date filtered)", False, f"Request failed: {response['data']['error']}")
+            return False
+            
+        if response["status_code"] == 200:
+            data = response["data"]
+            if isinstance(data, list):
+                # All returned expenses should be within date range
+                valid_dates = all(
+                    "2026-02-01" <= exp.get("date", "") <= "2026-02-28" 
+                    for exp in data
+                )
+                if valid_dates:
+                    self.log_result("GET /api/expenses (date filtered)", True, f"Correctly filtered {len(data)} expenses by date range")
+                    return True
+                else:
+                    self.log_result("GET /api/expenses (date filtered)", False, "Date filter failed - expenses outside range found")
+                    return False
+            else:
+                self.log_result("GET /api/expenses (date filtered)", False, "Invalid response format", data)
+                return False
+        else:
+            self.log_result("GET /api/expenses (date filtered)", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return False
+
+    def test_delete_expense(self, expense_id):
+        """Test DELETE /api/expenses/:id"""
+        if not expense_id:
+            self.log_result("DELETE /api/expenses/:id", False, "No expense ID to delete")
+            return False
+            
+        print(f"💰 Testing Delete Expense {expense_id}...")
+        
+        response = self.make_request("DELETE", f"expenses/{expense_id}")
+        
+        if not response["success"]:
+            self.log_result("DELETE /api/expenses/:id", False, f"Request failed: {response['data']['error']}")
+            return False
+            
+        if response["status_code"] == 200:
+            data = response["data"]
+            if data.get("success"):
+                self.log_result("DELETE /api/expenses/:id", True, f"Successfully deleted expense {expense_id}")
+                return True
+            else:
+                self.log_result("DELETE /api/expenses/:id", False, "Expense deletion failed", data)
+                return False
+        else:
+            self.log_result("DELETE /api/expenses/:id", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return False
+
+    def test_delete_expense_category(self, category_id):
+        """Test DELETE /api/expense-categories/:id"""
+        if not category_id:
+            self.log_result("DELETE /api/expense-categories/:id", False, "No category ID to delete")
+            return False
+            
+        print(f"💰 Testing Delete Expense Category {category_id}...")
+        
+        response = self.make_request("DELETE", f"expense-categories/{category_id}")
+        
+        if not response["success"]:
+            self.log_result("DELETE /api/expense-categories/:id", False, f"Request failed: {response['data']['error']}")
+            return False
+            
+        if response["status_code"] == 200:
+            data = response["data"]
+            if data.get("success"):
+                self.log_result("DELETE /api/expense-categories/:id", True, f"Successfully deleted category {category_id}")
+                return True
+            else:
+                self.log_result("DELETE /api/expense-categories/:id", False, "Category deletion failed", data)
+                return False
+        else:
+            self.log_result("DELETE /api/expense-categories/:id", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return False
+
+    def test_delete_nonexistent_expense(self):
+        """Test DELETE /api/expenses/:id with nonexistent ID"""
+        print("💰 Testing Delete Nonexistent Expense...")
+        
+        response = self.make_request("DELETE", "expenses/nonexistent-id")
+        
+        if not response["success"]:
+            self.log_result("DELETE /api/expenses/:id (nonexistent)", False, f"Request failed: {response['data']['error']}")
+            return False
+            
+        if response["status_code"] == 404:
+            data = response["data"]
+            if not data.get("success", True) and "not found" in data.get("error", "").lower():
+                self.log_result("DELETE /api/expenses/:id (nonexistent)", True, "Correctly returned 404 for nonexistent expense")
+                return True
+            else:
+                self.log_result("DELETE /api/expenses/:id (nonexistent)", False, "Should return proper 404 error", data)
+                return False
+        else:
+            self.log_result("DELETE /api/expenses/:id (nonexistent)", False, f"Expected 404, got {response['status_code']}", response["data"])
+            return False
+
+    def test_dashboard_with_date_param(self):
+        """Test GET /api/dashboard?date=2026-02-17"""
+        print("💰 Testing Dashboard with Date Parameter...")
+        
+        response = self.make_request("GET", "dashboard", params={"date": "2026-02-17"})
+        
+        if not response["success"]:
+            self.log_result("GET /api/dashboard?date", False, f"Request failed: {response['data']['error']}")
+            return False
+            
+        if response["status_code"] == 200:
+            data = response["data"]
+            if "stats" in data and "departures" in data and "date" in data:
+                if data["date"] == "2026-02-17":
+                    stats = data["stats"]
+                    required_stats = ["totalGross", "quadCount", "buggyCount", "cashTotal", "bankTotal"]
+                    if all(stat in stats for stat in required_stats):
+                        self.log_result("GET /api/dashboard?date", True, f"Dashboard correctly returned stats for {data['date']}")
+                        return True
+                    else:
+                        self.log_result("GET /api/dashboard?date", False, "Dashboard missing required stats fields", stats)
+                        return False
+                else:
+                    self.log_result("GET /api/dashboard?date", False, f"Expected date 2026-02-17, got {data.get('date')}")
+                    return False
+            else:
+                self.log_result("GET /api/dashboard?date", False, "Dashboard missing required fields", data)
+                return False
+        else:
+            self.log_result("GET /api/dashboard?date", False, f"Expected 200, got {response['status_code']}", response["data"])
+            return False
+
+    def run_expense_tests(self):
+        """Run all expense-related tests"""
+        print("\n" + "=" * 60)
+        print("💰 EXPENSES FEATURE TESTS")
+        print("=" * 60)
+        
+        # Test expense categories
+        self.test_get_expense_categories_initialization()
+        category_id = self.test_create_expense_category()
+        self.test_create_expense_category_duplicate()
+        self.test_create_expense_category_invalid_account()
+        
+        # Test expenses
+        expense_id = self.test_create_expense()
+        self.test_create_expense_missing_fields()
+        self.test_create_expense_invalid_account()
+        self.test_get_expenses_all()
+        self.test_get_expenses_filtered_by_account()
+        self.test_get_expenses_filtered_by_date_range()
+        
+        # Test deletion
+        self.test_delete_nonexistent_expense()
+        self.test_delete_expense(expense_id)
+        self.test_delete_expense_category(category_id)
+        
+        # Test dashboard integration
+        self.test_dashboard_with_date_param()
+
     def run_all_tests(self):
         """Run all authentication tests"""
         print("🚀 Starting Authentication System Tests")
