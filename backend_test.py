@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 
 # Get base URL from environment 
-BASE_URL = "https://gastos-permissions.preview.emergentagent.com/api"
+BASE_URL = "https://financial-tracker-56.preview.emergentagent.com/api"
 
 def print_test_result(test_name, passed, details=""):
     """Print test results with consistent formatting"""
