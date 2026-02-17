@@ -787,8 +787,8 @@ class AuthTester:
         self.test_dashboard_with_date_param()
 
     def run_all_tests(self):
-        """Run all authentication tests"""
-        print("🚀 Starting Authentication System Tests")
+        """Run all tests including authentication and expenses"""
+        print("🚀 Starting Comprehensive Backend API Tests")
         print("=" * 60)
         
         # Initialize users sheet if needed
@@ -816,9 +816,12 @@ class AuthTester:
         # Test existing functionality still works
         self.test_existing_endpoints()
         
+        # Run expense tests
+        self.run_expense_tests()
+        
         # Summary
-        print("=" * 60)
-        print("🏁 TEST SUMMARY")
+        print("\n" + "=" * 60)
+        print("🏁 COMPREHENSIVE TEST SUMMARY")
         print("=" * 60)
         
         passed = len(self.results["passed"])
