@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Receipt, Car, Truck, RefreshCw, Calendar, TrendingDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import {
@@ -27,10 +28,21 @@ import {
 
 export default function Expenses() {
   const { language } = useLanguage();
+  const { canAccessExpenseAccount, getAllowedExpenseAccounts } = useAuth();
+  
+  // Determine default account based on user permissions
+  const allowedAccounts = getAllowedExpenseAccounts();
+  const defaultAccount = allowedAccounts && allowedAccounts.length === 1 
+    ? allowedAccounts[0] 
+    : 'GE';
+  
+  const canViewGE = canAccessExpenseAccount('GE');
+  const canViewES = canAccessExpenseAccount('E&S');
+  
   const [expenses, setExpenses] = useState([]);
   const [categories, setCategories] = useState({ GE: [], 'E&S': [] });
   const [loading, setLoading] = useState(true);
-  const [activeAccount, setActiveAccount] = useState('GE');
+  const [activeAccount, setActiveAccount] = useState(defaultAccount);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
   const [dateFilter, setDateFilter] = useState({
     startDate: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
