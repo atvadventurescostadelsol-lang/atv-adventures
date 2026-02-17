@@ -594,18 +594,21 @@ export default function Reports() {
 
     setLoading(true);
     try {
-      const [depRes, expRes] = await Promise.all([
+      const [depRes, expRes, incRes] = await Promise.all([
         fetch('/api/departures'),
-        fetch(`/api/expenses?startDate=${startDate}&endDate=${endDate}`)
+        fetch(`/api/expenses?startDate=${startDate}&endDate=${endDate}`),
+        fetch(`/api/incomes?startDate=${startDate}&endDate=${endDate}`)
       ]);
       
       if (depRes.ok) {
         let data = await depRes.json();
         let expensesData = expRes.ok ? await expRes.json() : [];
+        let incomesData = incRes.ok ? await incRes.json() : [];
         
         // FIRST: Apply user permission filters
         data = filterDeparturesByPermissions(data);
         expensesData = filterExpensesByPermissions(expensesData);
+        incomesData = filterIncomesByPermissions(incomesData);
         
         // Filter by date range
         data = data.filter(d => d.date >= startDate && d.date <= endDate);
@@ -622,10 +625,13 @@ export default function Reports() {
         
         // Filter expenses based on selected tour category (quad->GE, buggy->E&S)
         let filteredExpenses = expensesData;
+        let filteredIncomes = incomesData;
         if (category === 'quad') {
           filteredExpenses = expensesData.filter(e => e.account === 'GE');
+          filteredIncomes = incomesData.filter(i => i.account === 'GE');
         } else if (category === 'buggy') {
           filteredExpenses = expensesData.filter(e => e.account === 'E&S');
+          filteredIncomes = incomesData.filter(i => i.account === 'E&S');
         }
         
         // Apply expense account filter (additional filter for expense-specific reports)
@@ -638,7 +644,7 @@ export default function Reports() {
           filteredExpenses = filteredExpenses.filter(e => e.concept === expenseConcept);
         }
         
-        const totals = calculateStats(data, filteredExpenses, `${startDate} - ${endDate}`);
+        const totals = calculateStats(data, filteredExpenses, `${startDate} - ${endDate}`, filteredIncomes);
         
         // Calculate expense totals by concept for detailed breakdown
         const expensesByAccount = { GE: {}, 'E&S': {} };
@@ -655,17 +661,37 @@ export default function Reports() {
           expensesByAccount[account][concept] += amount;
           expenseTotalsByAccount[account] += amount;
         });
+
+        // Calculate income totals by concept for detailed breakdown
+        const incomesByAccount = { GE: {}, 'E&S': {} };
+        const incomeTotalsByAccount = { GE: 0, 'E&S': 0 };
+        
+        filteredIncomes.forEach(i => {
+          const amount = parseNumber(i.amount);
+          const account = i.account;
+          const concept = i.concept;
+          
+          if (!incomesByAccount[account][concept]) {
+            incomesByAccount[account][concept] = 0;
+          }
+          incomesByAccount[account][concept] += amount;
+          incomeTotalsByAccount[account] += amount;
+        });
         
         setResults({
           data,
           expenses: filteredExpenses,
+          incomes: filteredIncomes,
           allExpenses: expensesData, // Keep all for separate display when category='all'
+          allIncomes: incomesData,
           totals,
           categoryFilter: category,
           expenseAccountFilter: expenseAccount,
           expenseConceptFilter: expenseConcept,
           expensesByAccount,
           expenseTotalsByAccount,
+          incomesByAccount,
+          incomeTotalsByAccount,
         });
       }
     } catch (error) {
