@@ -487,6 +487,10 @@ export default function AdminPanel() {
                 <Receipt className="h-4 w-4" />
                 {language === 'es' ? 'Conceptos Gastos' : 'Expense Concepts'}
               </TabsTrigger>
+              <TabsTrigger value="income-concepts" className="gap-2">
+                <Wallet className="h-4 w-4" />
+                {language === 'es' ? 'Conceptos Ingresos' : 'Income Concepts'}
+              </TabsTrigger>
               <TabsTrigger value="users" className="gap-2">
                 <Users className="h-4 w-4" />
                 {t('users')}
