@@ -50,8 +50,8 @@
 
 ## 🔗 Production URLs
 
-- **Application**: https://atv-auth-preview.preview.emergentagent.com
-- **API Base**: https://atv-auth-preview.preview.emergentagent.com/api
+- **Application**: https://tour-expense-split.preview.emergentagent.com
+- **API Base**: https://tour-expense-split.preview.emergentagent.com/api
 - **Google Sheet**: https://docs.google.com/spreadsheets/d/1WeP9I6Phj28xsIqVHefg599u5tZerGj88P0dx4Pn9tA/edit
 
 ---
