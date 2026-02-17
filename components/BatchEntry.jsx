@@ -670,8 +670,8 @@ export default function BatchEntry() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="quad">Quad</SelectItem>
-                            <SelectItem value="buggy">Buggy</SelectItem>
+                            {canAccessCategory('quad') && <SelectItem value="quad">Quad</SelectItem>}
+                            {canAccessCategory('buggy') && <SelectItem value="buggy">Buggy</SelectItem>}
                           </SelectContent>
                         </Select>
                       </div>
