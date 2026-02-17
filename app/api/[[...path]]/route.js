@@ -1165,7 +1165,7 @@ async function handleGet(request, path) {
         'gygCollected', 'gygCollectedDate', 'cruiseCollected', 'cruiseCollectedDate'
       ];
       
-      await updateSheetData(SPREADSHEET_ID, 'Departures!A1:AT1', [newHeaders]);
+      await updateSheetData(SPREADSHEET_ID, 'Departures!A1:AV1', [newHeaders]);
       
       return NextResponse.json({ 
         success: true, 
