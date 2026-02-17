@@ -13,12 +13,24 @@ import { toast } from 'sonner';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Reports() {
   const { language, t } = useLanguage();
+  const { canAccessCategory, canAccessExpenseAccount } = useAuth();
+  
+  // Check user restrictions
+  const canViewQuads = canAccessCategory('quad');
+  const canViewBuggies = canAccessCategory('buggy');
+  const canViewGE = canAccessExpenseAccount('GE');
+  const canViewES = canAccessExpenseAccount('E&S');
+  
+  // Determine default category based on permissions
+  const defaultCategory = !canViewQuads && canViewBuggies ? 'buggy' : (!canViewBuggies && canViewQuads ? 'quad' : 'all');
+  
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [category, setCategory] = useState('all');
+  const [category, setCategory] = useState(defaultCategory);
   const [channel, setChannel] = useState('all');
   const [expenseAccount, setExpenseAccount] = useState('all'); // Filter: all, GE, E&S
   const [expenseConcept, setExpenseConcept] = useState('all'); // Filter by concept
