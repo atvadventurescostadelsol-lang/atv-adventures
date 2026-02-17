@@ -1702,16 +1702,33 @@ async function handlePost(request, path) {
             effectivePrice = effectivePrice * (1 - gygDiscount);
           }
 
+          // Apply manual discount if present
+          const manualDiscount = parseFloat(entryData.discount || 0);
+          
+          // Check if manual total is provided
+          const manualTotal = entryData.manualTotal;
+          let totalGross;
+          
+          if (manualTotal !== null && manualTotal !== undefined && !isNaN(parseFloat(manualTotal))) {
+            // Use manual total directly
+            totalGross = parseFloat(manualTotal);
+          } else {
+            // Calculate total: (effective price * vehicles) - manual discount
+            totalGross = (effectivePrice * parseInt(vehiclesCount)) - manualDiscount;
+            totalGross = Math.max(0, totalGross); // Ensure non-negative
+          }
+
           // Get commission first
           const commission = parseFloat(entryData.commission || 0);
           const commissionMethod = entryData.commissionMethod || 'cash';
 
-          // Calculate financials based on full price first
-          const financials = calculateFinancials(
-            parseInt(vehiclesCount),
-            effectivePrice,
-            parseFloat(depositPercent || 0.20)
-          );
+          // Calculate financials based on total gross (which may be manual or calculated)
+          // Instead of using calculateFinancials with base price, we'll set totalGross directly
+          const financials = {
+            totalGross: totalGross,
+            depositAmount: totalGross * parseFloat(depositPercent || 0.20),
+            remainingAmount: totalGross * (1 - parseFloat(depositPercent || 0.20)),
+          };
 
           // Calculate payout date
           const expectedPayoutDate = calculatePayoutDate(salesChannel || 'otros', date);
