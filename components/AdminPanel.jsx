@@ -423,11 +423,15 @@ export default function AdminPanel() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="products" className="space-y-4">
-            <TabsList>
+            <TabsList className="flex flex-wrap">
               <TabsTrigger value="products">{t('products')}</TabsTrigger>
               <TabsTrigger value="timeslots">{t('timeSlots')}</TabsTrigger>
               <TabsTrigger value="capacity">{t('capacities')}</TabsTrigger>
               <TabsTrigger value="categories">{t('categories')}</TabsTrigger>
+              <TabsTrigger value="expense-concepts" className="gap-2">
+                <Receipt className="h-4 w-4" />
+                {language === 'es' ? 'Conceptos Gastos' : 'Expense Concepts'}
+              </TabsTrigger>
               <TabsTrigger value="users" className="gap-2">
                 <Users className="h-4 w-4" />
                 {t('users')}
