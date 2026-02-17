@@ -1061,7 +1061,8 @@ async function handlePost(request, path) {
           // Calculate payout date
           const expectedPayoutDate = calculatePayoutDate(salesChannel || 'otros', date);
 
-          // Process payment splits
+          // Process payment splits - Frontend already deducted commission from the right method
+          // So we just use the amounts as-is
           let paymentSplitWeb = 0;
           let paymentSplitCash = 0;
           let paymentSplitBank = 0;
@@ -1090,25 +1091,17 @@ async function handlePost(request, path) {
               }
             });
           } else {
-            // Default: all to cash
-            paymentSplitCash = financials.totalGross;
+            // Default: all to cash (minus commission if cash)
+            paymentSplitCash = commission > 0 && commissionMethod === 'cash' 
+              ? financials.totalGross - commission 
+              : financials.totalGross;
           }
 
-          // IMPORTANT: Subtract commission from the corresponding payment method
-          // This reflects the REAL money that stays
-          if (commission > 0) {
-            if (commissionMethod === 'cash') {
-              paymentSplitCash = paymentSplitCash - commission;
-            } else if (commissionMethod === 'bank') {
-              paymentSplitBank = paymentSplitBank - commission;
-            }
-          }
-
-          // Recalculate totalGross as sum of all payments (after commission deduction)
+          // Calculate actual totalGross as sum of all payments (what really stays)
           const actualTotalGross = paymentSplitWeb + paymentSplitCash + paymentSplitBank + paymentSplitGyg + paymentSplitCruise;
-          financials.totalGross = parseFloat(actualTotalGross.toFixed(2));
-          financials.netBase = parseFloat((actualTotalGross / 1.21).toFixed(2));
-          financials.vatAmount = parseFloat((actualTotalGross - financials.netBase).toFixed(2));
+          financials.totalGross = parseFloat(Math.max(0, actualTotalGross).toFixed(2));
+          financials.netBase = parseFloat((financials.totalGross / 1.21).toFixed(2));
+          financials.vatAmount = parseFloat((financials.totalGross - financials.netBase).toFixed(2));
 
           // Check if pending cruise
           const isPendingCruise = entryData.isPendingCruise || false;
