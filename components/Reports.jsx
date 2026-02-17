@@ -100,6 +100,8 @@ export default function Reports() {
       // Pending (GYG and Cruceros)
       pendingGYG: 0,
       pendingCruise: 0,
+      // Commissions
+      commissionTotal: 0,
     };
 
     data.forEach(d => {
@@ -130,12 +132,14 @@ export default function Reports() {
       const bankAmount = parseNumber(d.paymentSplitBank);
       const gygAmount = parseNumber(d.paymentSplitGyg);
       const cruiseAmount = parseNumber(d.paymentSplitCruise);
+      const commission = parseNumber(d.commission);
       
       stats.webTotal += webAmount;
       stats.cashTotal += cashAmount;
       stats.bankTotal += bankAmount;
       stats.gygTotal += gygAmount;
       stats.cruiseTotal += cruiseAmount;
+      stats.commissionTotal += commission;
       
       // Calculate IVA2 (excluding cash payments)
       const nonCashGross = gross - cashAmount;
