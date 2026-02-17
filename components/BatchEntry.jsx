@@ -46,6 +46,7 @@ export default function BatchEntry() {
 
   const [products, setProducts] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
+  const [categories, setCategories] = useState(['quad', 'buggy']); // Dynamic categories from products
   const [capacity, setCapacity] = useState({ quad: { max: 0, used: 0, available: 0 }, buggy: { max: 0, used: 0, available: 0 } });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -67,6 +68,11 @@ export default function BatchEntry() {
       if (res.ok) {
         const data = await res.json();
         setProducts(data);
+        // Extract unique categories from products
+        const uniqueCategories = [...new Set(data.filter(p => p.active === 'TRUE' || p.active === true).map(p => p.category))];
+        if (uniqueCategories.length > 0) {
+          setCategories(uniqueCategories);
+        }
       }
     } catch (error) {
       console.error('Error loading products:', error);
