@@ -155,6 +155,26 @@ export default function Reports() {
     return [];
   }
 
+  // Get available concepts for income-only report (respecting permissions)
+  function getIncomeReportConcepts() {
+    let concepts = [];
+    
+    if (incomeReportAccount === 'all') {
+      if (canViewGE) {
+        concepts = [...concepts, ...incomeCategories.GE];
+      }
+      if (canViewES) {
+        concepts = [...concepts, ...incomeCategories['E&S']];
+      }
+      return [...new Set(concepts.map(c => c.name))];
+    } else if (incomeReportAccount === 'GE' && canViewGE) {
+      return incomeCategories.GE.map(c => c.name);
+    } else if (incomeReportAccount === 'E&S' && canViewES) {
+      return incomeCategories['E&S'].map(c => c.name);
+    }
+    return [];
+  }
+
   // Reset concept filter when account changes
   useEffect(() => {
     setExpenseConcept('all');
@@ -164,6 +184,11 @@ export default function Reports() {
   useEffect(() => {
     setExpenseReportConcept('all');
   }, [expenseReportAccount]);
+
+  // Reset income report concept when account changes
+  useEffect(() => {
+    setIncomeReportConcept('all');
+  }, [incomeReportAccount]);
 
   // Helper to parse numbers that may use comma as decimal separator (Spanish format)
   function parseNumber(value) {
