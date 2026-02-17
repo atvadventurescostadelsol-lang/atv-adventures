@@ -74,6 +74,7 @@ export default function Reports() {
   useEffect(() => {
     loadPeriodStats();
     loadExpenseCategories();
+    loadIncomeCategories();
   }, []);
 
   // Load expense categories for filter dropdowns
@@ -89,6 +90,28 @@ export default function Reports() {
         });
         setExpenseCategories(grouped);
       }
+    } catch (error) {
+      console.error('Error loading expense categories:', error);
+    }
+  }
+
+  // Load income categories for filter dropdowns
+  async function loadIncomeCategories() {
+    try {
+      const res = await fetch('/api/income-categories');
+      if (res.ok) {
+        const data = await res.json();
+        const grouped = { GE: [], 'E&S': [] };
+        data.forEach(cat => {
+          if (cat.account === 'GE') grouped.GE.push(cat);
+          else if (cat.account === 'E&S') grouped['E&S'].push(cat);
+        });
+        setIncomeCategories(grouped);
+      }
+    } catch (error) {
+      console.error('Error loading income categories:', error);
+    }
+  }
     } catch (error) {
       console.error('Error loading expense categories:', error);
     }
