@@ -40,6 +40,7 @@ export default function AdminPanel() {
   const [capacities, setCapacities] = useState({ quad: 10, buggy: 6 });
   const [editingCapacity, setEditingCapacity] = useState(false);
   const [newExpenseCategory, setNewExpenseCategory] = useState({ name: '', account: 'GE' });
+  const [newIncomeCategory, setNewIncomeCategory] = useState({ name: '', account: 'GE' });
   
   const [newProduct, setNewProduct] = useState({
     name: '',
