@@ -109,19 +109,6 @@ export default function PendingPayments() {
       setLoading(false);
     }
   }
-          return true;
-        });
-        
-        setGygPending(gyg);
-        setCruisePending(cruise);
-      }
-    } catch (error) {
-      console.error('Error loading pending payments:', error);
-      toast.error(language === 'es' ? 'Error al cargar pagos pendientes' : 'Error loading pending payments');
-    } finally {
-      setLoading(false);
-    }
-  }
 
   function parseNumber(value) {
     if (value === null || value === undefined || value === '') return 0;
