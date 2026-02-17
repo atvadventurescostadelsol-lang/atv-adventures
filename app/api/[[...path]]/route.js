@@ -890,7 +890,7 @@ async function handleCollectPayment(body) {
       return departure[header] || '';
     });
     
-    await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AO${index + 2}`, [rowData]);
+    await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AV${index + 2}`, [rowData]);
     
     await addAuditLog('COLLECT_PAYMENT', 'Departure', departureId, { 
       paymentType, 
