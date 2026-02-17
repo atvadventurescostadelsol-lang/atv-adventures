@@ -298,24 +298,52 @@ export default function Reports() {
           data = data.filter(d => d.salesChannel === channel);
         }
         
-        // Filter expenses based on selected category
-        // quad -> only GE expenses, buggy -> only E&S expenses, all -> all expenses
+        // Filter expenses based on selected tour category (quad->GE, buggy->E&S)
         let filteredExpenses = expensesData;
         if (category === 'quad') {
           filteredExpenses = expensesData.filter(e => e.account === 'GE');
         } else if (category === 'buggy') {
           filteredExpenses = expensesData.filter(e => e.account === 'E&S');
         }
-        // When 'all', keep all expenses (they will be displayed separately)
+        
+        // Apply expense account filter (additional filter for expense-specific reports)
+        if (expenseAccount !== 'all') {
+          filteredExpenses = filteredExpenses.filter(e => e.account === expenseAccount);
+        }
+        
+        // Apply expense concept filter
+        if (expenseConcept !== 'all') {
+          filteredExpenses = filteredExpenses.filter(e => e.concept === expenseConcept);
+        }
         
         const totals = calculateStats(data, filteredExpenses, `${startDate} - ${endDate}`);
+        
+        // Calculate expense totals by concept for detailed breakdown
+        const expensesByAccount = { GE: {}, 'E&S': {} };
+        const expenseTotalsByAccount = { GE: 0, 'E&S': 0 };
+        
+        filteredExpenses.forEach(e => {
+          const amount = parseNumber(e.amount);
+          const account = e.account;
+          const concept = e.concept;
+          
+          if (!expensesByAccount[account][concept]) {
+            expensesByAccount[account][concept] = 0;
+          }
+          expensesByAccount[account][concept] += amount;
+          expenseTotalsByAccount[account] += amount;
+        });
         
         setResults({
           data,
           expenses: filteredExpenses,
           allExpenses: expensesData, // Keep all for separate display when category='all'
           totals,
-          categoryFilter: category, // Store the filter for display logic
+          categoryFilter: category,
+          expenseAccountFilter: expenseAccount,
+          expenseConceptFilter: expenseConcept,
+          expensesByAccount,
+          expenseTotalsByAccount,
         });
       }
     } catch (error) {
