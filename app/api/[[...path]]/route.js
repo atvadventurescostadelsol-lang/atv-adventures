@@ -97,6 +97,124 @@ function calculatePayoutDate(salesChannel, date) {
   }
 }
 
+// ==================== EXPENSES HELPERS ====================
+
+// Ensure Expenses sheet exists
+async function ensureExpensesSheet() {
+  try {
+    let data;
+    try {
+      data = await getSheetData(SPREADSHEET_ID, 'Expenses!A:H');
+    } catch (e) {
+      console.log('Expenses sheet might not exist, will create it');
+      data = null;
+    }
+    
+    const needsInit = !data || data.length === 0 || (data.length === 1 && data[0][0] === 'id');
+    
+    if (needsInit) {
+      console.log('Initializing Expenses sheet...');
+      const headers = ['id', 'date', 'amount', 'concept', 'account', 'notes', 'createdAt', 'createdBy'];
+      
+      try {
+        const { getSheetsClient } = require('@/lib/google-sheets');
+        const sheets = await getSheetsClient();
+        
+        try {
+          await sheets.spreadsheets.batchUpdate({
+            spreadsheetId: SPREADSHEET_ID,
+            requestBody: {
+              requests: [{
+                addSheet: {
+                  properties: { title: 'Expenses' }
+                }
+              }]
+            }
+          });
+        } catch (sheetErr) {
+          console.log('Expenses sheet might already exist:', sheetErr.message);
+        }
+        
+        await updateSheetData(SPREADSHEET_ID, 'Expenses!A1:H1', [headers]);
+      } catch (e) {
+        console.error('Error initializing Expenses sheet:', e);
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error('Error ensuring Expenses sheet:', error);
+    return false;
+  }
+}
+
+// Ensure ExpenseCategories sheet exists with default categories
+async function ensureExpenseCategoriesSheet() {
+  try {
+    let data;
+    try {
+      data = await getSheetData(SPREADSHEET_ID, 'ExpenseCategories!A:D');
+    } catch (e) {
+      console.log('ExpenseCategories sheet might not exist, will create it');
+      data = null;
+    }
+    
+    const needsInit = !data || data.length === 0 || (data.length === 1 && data[0][0] === 'id');
+    
+    if (needsInit) {
+      console.log('Initializing ExpenseCategories sheet with defaults...');
+      const headers = ['id', 'name', 'account', 'createdAt'];
+      const now = new Date().toISOString();
+      
+      // Default categories for GE (Quads)
+      const defaultGE = [
+        [uuidv4(), 'Gasolina', 'GE', now],
+        [uuidv4(), 'Alimentación', 'GE', now],
+        [uuidv4(), 'Guía', 'GE', now],
+        [uuidv4(), 'Mantenimiento', 'GE', now],
+        [uuidv4(), 'Otros', 'GE', now],
+      ];
+      
+      // Default categories for E&S (Buggies)
+      const defaultES = [
+        [uuidv4(), 'Gasolina', 'E&S', now],
+        [uuidv4(), 'Alimentación', 'E&S', now],
+        [uuidv4(), 'Guía', 'E&S', now],
+        [uuidv4(), 'Mantenimiento', 'E&S', now],
+        [uuidv4(), 'Otros', 'E&S', now],
+      ];
+      
+      try {
+        const { getSheetsClient } = require('@/lib/google-sheets');
+        const sheets = await getSheetsClient();
+        
+        try {
+          await sheets.spreadsheets.batchUpdate({
+            spreadsheetId: SPREADSHEET_ID,
+            requestBody: {
+              requests: [{
+                addSheet: {
+                  properties: { title: 'ExpenseCategories' }
+                }
+              }]
+            }
+          });
+        } catch (sheetErr) {
+          console.log('ExpenseCategories sheet might already exist:', sheetErr.message);
+        }
+        
+        await updateSheetData(SPREADSHEET_ID, 'ExpenseCategories!A1:D1', [headers]);
+        await appendSheetData(SPREADSHEET_ID, 'ExpenseCategories!A:D', [...defaultGE, ...defaultES]);
+      } catch (e) {
+        console.error('Error initializing ExpenseCategories sheet:', e);
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error('Error ensuring ExpenseCategories sheet:', error);
+    return false;
+  }
+}
+
 // ==================== AUTH HANDLERS ====================
 
 // Initialize Users sheet if it doesn't exist or has no users
@@ -486,6 +604,201 @@ async function handleCollectPayment(body) {
   }
 }
 
+// ==================== EXPENSE HANDLERS ====================
+
+// Get all expenses
+async function handleGetExpenses(searchParams) {
+  try {
+    await ensureExpensesSheet();
+    
+    const data = await getSheetData(SPREADSHEET_ID, 'Expenses!A:H');
+    let expenses = parseSheetToObjects(data);
+    
+    // Filter out empty rows
+    expenses = expenses.filter(e => e.id && e.id.trim() !== '');
+    
+    // Filter by account if specified
+    const account = searchParams.get('account');
+    if (account) {
+      expenses = expenses.filter(e => e.account === account);
+    }
+    
+    // Filter by date range if specified
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    if (startDate && endDate) {
+      expenses = expenses.filter(e => e.date >= startDate && e.date <= endDate);
+    }
+    
+    return NextResponse.json(expenses);
+  } catch (error) {
+    console.error('Get expenses error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// Create expense
+async function handleCreateExpense(body) {
+  try {
+    await ensureExpensesSheet();
+    
+    const { date, amount, concept, account, notes, userId = 'system' } = body;
+    
+    if (!date || !amount || !concept || !account) {
+      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    }
+    
+    if (account !== 'GE' && account !== 'E&S') {
+      return NextResponse.json({ success: false, error: 'Invalid account. Must be GE or E&S' }, { status: 400 });
+    }
+    
+    const id = uuidv4();
+    const now = new Date().toISOString();
+    
+    const expenseRow = [
+      id,
+      date,
+      parseFloat(amount).toFixed(2),
+      concept,
+      account,
+      notes || '',
+      now,
+      userId
+    ];
+    
+    await appendSheetData(SPREADSHEET_ID, 'Expenses!A:H', [expenseRow]);
+    
+    await addAuditLog('CREATE', 'Expense', id, { amount, concept, account }, userId, userId);
+    
+    return NextResponse.json({
+      success: true,
+      expense: {
+        id,
+        date,
+        amount: parseFloat(amount).toFixed(2),
+        concept,
+        account,
+        notes: notes || '',
+        createdAt: now
+      }
+    });
+  } catch (error) {
+    console.error('Create expense error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// Delete expense
+async function handleDeleteExpense(id) {
+  try {
+    const data = await getSheetData(SPREADSHEET_ID, 'Expenses!A:H');
+    const expenses = parseSheetToObjects(data);
+    const index = expenses.findIndex(e => e.id === id);
+    
+    if (index === -1) {
+      return NextResponse.json({ success: false, error: 'Expense not found' }, { status: 404 });
+    }
+    
+    const expense = expenses[index];
+    const headers = data[0];
+    const emptyRow = headers.map(() => '');
+    
+    await updateSheetData(SPREADSHEET_ID, `Expenses!A${index + 2}:H${index + 2}`, [emptyRow]);
+    
+    await addAuditLog('DELETE', 'Expense', id, { deleted: expense }, 'system', 'System');
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete expense error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// Get expense categories
+async function handleGetExpenseCategories() {
+  try {
+    await ensureExpenseCategoriesSheet();
+    
+    const data = await getSheetData(SPREADSHEET_ID, 'ExpenseCategories!A:D');
+    let categories = parseSheetToObjects(data);
+    
+    // Filter out empty rows
+    categories = categories.filter(c => c.id && c.id.trim() !== '');
+    
+    return NextResponse.json(categories);
+  } catch (error) {
+    console.error('Get expense categories error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// Create expense category
+async function handleCreateExpenseCategory(body) {
+  try {
+    await ensureExpenseCategoriesSheet();
+    
+    const { name, account } = body;
+    
+    if (!name || !account) {
+      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    }
+    
+    if (account !== 'GE' && account !== 'E&S') {
+      return NextResponse.json({ success: false, error: 'Invalid account. Must be GE or E&S' }, { status: 400 });
+    }
+    
+    // Check for duplicate name in same account
+    const data = await getSheetData(SPREADSHEET_ID, 'ExpenseCategories!A:D');
+    const categories = parseSheetToObjects(data);
+    if (categories.some(c => c.name.toLowerCase() === name.toLowerCase() && c.account === account)) {
+      return NextResponse.json({ success: false, error: 'Category already exists for this account' }, { status: 400 });
+    }
+    
+    const id = uuidv4();
+    const now = new Date().toISOString();
+    
+    const categoryRow = [id, name, account, now];
+    
+    await appendSheetData(SPREADSHEET_ID, 'ExpenseCategories!A:D', [categoryRow]);
+    
+    return NextResponse.json({
+      success: true,
+      category: {
+        id,
+        name,
+        account,
+        createdAt: now
+      }
+    });
+  } catch (error) {
+    console.error('Create expense category error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// Delete expense category
+async function handleDeleteExpenseCategory(id) {
+  try {
+    const data = await getSheetData(SPREADSHEET_ID, 'ExpenseCategories!A:D');
+    const categories = parseSheetToObjects(data);
+    const index = categories.findIndex(c => c.id === id);
+    
+    if (index === -1) {
+      return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });
+    }
+    
+    const headers = data[0];
+    const emptyRow = headers.map(() => '');
+    
+    await updateSheetData(SPREADSHEET_ID, `ExpenseCategories!A${index + 2}:D${index + 2}`, [emptyRow]);
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete expense category error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
 // ==================== EXISTING HANDLERS ====================
 
 // GET handlers
@@ -501,6 +814,16 @@ async function handleGet(request, path) {
   // Get all users (Admin)
   if (path === 'users') {
     return handleGetUsers();
+  }
+
+  // Get expenses
+  if (path === 'expenses') {
+    return handleGetExpenses(searchParams);
+  }
+
+  // Get expense categories
+  if (path === 'expense-categories') {
+    return handleGetExpenseCategories();
   }
 
   // Initialize sheet
@@ -828,6 +1151,16 @@ async function handlePost(request, path) {
   // Collect payment (mark GYG or Cruise payment as collected)
   if (path === 'collect-payment') {
     return handleCollectPayment(body);
+  }
+
+  // Create expense
+  if (path === 'expenses') {
+    return handleCreateExpense(body);
+  }
+
+  // Create expense category
+  if (path === 'expense-categories') {
+    return handleCreateExpenseCategory(body);
   }
 
   // Create single departure
@@ -1461,6 +1794,18 @@ async function handleDelete(request, path) {
     const username = path.split('/')[1];
     const adminUser = searchParams.get('adminUser') || 'admin';
     return handleDeleteUser(username, adminUser);
+  }
+
+  // Delete expense
+  if (path.startsWith('expenses/')) {
+    const id = path.split('/')[1];
+    return handleDeleteExpense(id);
+  }
+
+  // Delete expense category
+  if (path.startsWith('expense-categories/')) {
+    const id = path.split('/')[1];
+    return handleDeleteExpenseCategory(id);
   }
 
   // Delete departure
