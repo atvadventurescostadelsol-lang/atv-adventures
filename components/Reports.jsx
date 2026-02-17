@@ -51,7 +51,9 @@ export default function Reports() {
   // Expense-only report state
   const [expenseStartDate, setExpenseStartDate] = useState('');
   const [expenseEndDate, setExpenseEndDate] = useState('');
-  const [expenseReportAccount, setExpenseReportAccount] = useState('all');
+  // Default expense account based on permissions
+  const defaultExpenseAccount = !canViewGE && canViewES ? 'E&S' : (!canViewES && canViewGE ? 'GE' : 'all');
+  const [expenseReportAccount, setExpenseReportAccount] = useState(defaultExpenseAccount);
   const [expenseReportConcept, setExpenseReportConcept] = useState('all');
   const [expenseResults, setExpenseResults] = useState(null);
   const [expenseLoading, setExpenseLoading] = useState(false);
