@@ -845,7 +845,7 @@ async function handleCollectPayment(body) {
     }
     
     // Get current departure data
-    const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AT');
+    const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AV');
     const departures = parseSheetToObjects(data);
     const index = departures.findIndex(d => d.id === departureId);
     
@@ -1180,7 +1180,7 @@ async function handleGet(request, path) {
   // Get all departures
   if (path === 'departures') {
     try {
-      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AT');
+      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AV');
       const departures = parseSheetToObjects(data);
       
       // Apply filters
@@ -2170,7 +2170,7 @@ async function handleDelete(request, path) {
       const userName = searchParams.get('userName') || 'System';
 
       // Get current data
-      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AT');
+      const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AV');
       const departures = parseSheetToObjects(data);
       const departure = departures.find(d => d.id === id);
 
