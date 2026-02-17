@@ -436,6 +436,141 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Tour Dialog */}
+      <Dialog open={editDialog.open} onOpenChange={(open) => !open && setEditDialog({ open: false, departure: null })}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {language === 'es' ? 'Editar Tour' : 'Edit Tour'}
+            </DialogTitle>
+            <DialogDescription>
+              {editDialog.departure?.productName} - {editDialog.departure?.category}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Vehicles Count */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>{language === 'es' ? 'Vehículos' : 'Vehicles'}</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={editForm.vehiclesCount || 1}
+                  onChange={(e) => setEditForm({ ...editForm, vehiclesCount: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>{language === 'es' ? 'Notas' : 'Notes'}</Label>
+                <Input
+                  value={editForm.notes || ''}
+                  onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                  placeholder={language === 'es' ? 'Notas...' : 'Notes...'}
+                />
+              </div>
+            </div>
+
+            {/* Payment Split */}
+            <div>
+              <Label className="mb-2 block">{language === 'es' ? 'Desglose de Pago' : 'Payment Breakdown'}</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">💵 {language === 'es' ? 'Efectivo' : 'Cash'}</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editForm.paymentSplitCash || 0}
+                    onChange={(e) => setEditForm({ ...editForm, paymentSplitCash: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">🏦 {language === 'es' ? 'Banco' : 'Bank'}</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editForm.paymentSplitBank || 0}
+                    onChange={(e) => setEditForm({ ...editForm, paymentSplitBank: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">🌐 Web</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editForm.paymentSplitWeb || 0}
+                    onChange={(e) => setEditForm({ ...editForm, paymentSplitWeb: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">🎫 GYG</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editForm.paymentSplitGyg || 0}
+                    onChange={(e) => setEditForm({ ...editForm, paymentSplitGyg: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs">🚢 {language === 'es' ? 'Crucero' : 'Cruise'}</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editForm.paymentSplitCruise || 0}
+                    onChange={(e) => setEditForm({ ...editForm, paymentSplitCruise: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Commission */}
+            <div>
+              <Label className="mb-2 block">💰 {language === 'es' ? 'Comisión Colaborador' : 'Collaborator Commission'}</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editForm.commission || 0}
+                  onChange={(e) => setEditForm({ ...editForm, commission: parseFloat(e.target.value) || 0 })}
+                  className="flex-1"
+                />
+                <Select
+                  value={editForm.commissionMethod || 'cash'}
+                  onValueChange={(value) => setEditForm({ ...editForm, commissionMethod: value })}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">💵 {language === 'es' ? 'Efectivo' : 'Cash'}</SelectItem>
+                    <SelectItem value="bank">🏦 {language === 'es' ? 'Banco' : 'Bank'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialog({ open: false, departure: null })}>
+              {t('cancel')}
+            </Button>
+            <Button onClick={saveEdit} disabled={saving}>
+              {saving ? '...' : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  {language === 'es' ? 'Guardar' : 'Save'}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
