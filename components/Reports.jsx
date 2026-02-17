@@ -614,25 +614,32 @@ export default function Reports() {
     if (!results) return;
     
     try {
-      const jsPDF = (await import('jspdf')).default;
-      await import('jspdf-autotable');
-
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default;
+      const autoTableModule = await import('jspdf-autotable');
+      
       const doc = new jsPDF();
+      
+      // Register autoTable plugin
+      if (autoTableModule.default) {
+        autoTableModule.default(doc);
+      }
       
       // Title
       doc.setFontSize(18);
-      doc.text('ATV Operations Report', 14, 20);
+      doc.text(language === 'es' ? 'Informe de Tours/Ventas' : 'Tours/Sales Report', 14, 20);
       doc.setFontSize(12);
       doc.text(`${results.totals.label}`, 14, 30);
       
       // Summary stats
       doc.setFontSize(14);
-      doc.text('Summary', 14, 45);
+      doc.text(language === 'es' ? 'Resumen' : 'Summary', 14, 45);
       
       const summaryData = [
-        ['Total Gross', formatCurrency(results.totals.totalGross)],
-        ['Net Base', formatCurrency(results.totals.netBase)],
-        ['VAT', formatCurrency(results.totals.vatAmount)],
+        [language === 'es' ? 'Total Bruto' : 'Total Gross', formatCurrency(results.totals.totalGross)],
+        [language === 'es' ? 'Base Neta' : 'Net Base', formatCurrency(results.totals.netBase)],
+        ['IVA', formatCurrency(results.totals.vatAmount)],
+        ['IVA2 (' + (language === 'es' ? 'sin efectivo' : 'excl. cash') + ')', formatCurrency(results.totals.vatAmount2)],
         ['Tours', `${results.totals.count}`],
         ['Quads', `${results.totals.quadCount} (${formatCurrency(results.totals.quadGross)})`],
         ['Buggies', `${results.totals.buggyCount} (${formatCurrency(results.totals.buggyGross)})`],
@@ -640,26 +647,26 @@ export default function Reports() {
 
       doc.autoTable({
         startY: 50,
-        head: [['Metric', 'Value']],
+        head: [[language === 'es' ? 'Métrica' : 'Metric', language === 'es' ? 'Valor' : 'Value']],
         body: summaryData,
         theme: 'striped',
         headStyles: { fillColor: [234, 88, 12] },
       });
 
       // Payments breakdown
-      doc.text('Payments Breakdown', 14, doc.lastAutoTable.finalY + 15);
+      doc.text(language === 'es' ? 'Desglose de Pagos' : 'Payments Breakdown', 14, doc.lastAutoTable.finalY + 15);
       
       const paymentsData = [
-        ['Cash', formatCurrency(results.totals.cashTotal)],
-        ['Bank', formatCurrency(results.totals.bankTotal)],
+        [language === 'es' ? 'Efectivo' : 'Cash', formatCurrency(results.totals.cashTotal)],
+        [language === 'es' ? 'Banco' : 'Bank', formatCurrency(results.totals.bankTotal)],
         ['Web', formatCurrency(results.totals.webTotal)],
         ['GYG', formatCurrency(results.totals.gygTotal)],
-        ['Cruises', formatCurrency(results.totals.cruiseTotal)],
+        [language === 'es' ? 'Cruceros' : 'Cruises', formatCurrency(results.totals.cruiseTotal)],
       ];
 
       doc.autoTable({
         startY: doc.lastAutoTable.finalY + 20,
-        head: [['Method', 'Amount']],
+        head: [[language === 'es' ? 'Método' : 'Method', language === 'es' ? 'Cantidad' : 'Amount']],
         body: paymentsData,
         theme: 'striped',
         headStyles: { fillColor: [234, 88, 12] },
@@ -667,17 +674,17 @@ export default function Reports() {
 
       // Expenses
       if (results.totals.geExpenseTotal > 0 || results.totals.esExpenseTotal > 0) {
-        doc.text('Expenses', 14, doc.lastAutoTable.finalY + 15);
+        doc.text(language === 'es' ? 'Gastos' : 'Expenses', 14, doc.lastAutoTable.finalY + 15);
         
         const expensesData = [
           ['GE (Quads)', formatCurrency(results.totals.geExpenseTotal)],
           ['E&S (Buggies)', formatCurrency(results.totals.esExpenseTotal)],
-          ['Total Expenses', formatCurrency(results.totals.geExpenseTotal + results.totals.esExpenseTotal)],
+          [language === 'es' ? 'Total Gastos' : 'Total Expenses', formatCurrency(results.totals.geExpenseTotal + results.totals.esExpenseTotal)],
         ];
 
         doc.autoTable({
           startY: doc.lastAutoTable.finalY + 20,
-          head: [['Account', 'Amount']],
+          head: [[language === 'es' ? 'Cuenta' : 'Account', language === 'es' ? 'Cantidad' : 'Amount']],
           body: expensesData,
           theme: 'striped',
           headStyles: { fillColor: [239, 68, 68] },
@@ -685,17 +692,17 @@ export default function Reports() {
       }
 
       // Net Cash Summary
-      doc.text('Net Cash After Expenses', 14, doc.lastAutoTable.finalY + 15);
+      doc.text(language === 'es' ? 'Efectivo Neto' : 'Net Cash After Expenses', 14, doc.lastAutoTable.finalY + 15);
       
       const netCashData = [
-        ['Quad Cash Net (Cash - GE Expenses)', formatCurrency(results.totals.quadCashNet)],
-        ['Buggy Cash Net (Cash - E&S Expenses)', formatCurrency(results.totals.buggyCashNet)],
-        ['Total Net Cash', formatCurrency(results.totals.quadCashNet + results.totals.buggyCashNet)],
+        [language === 'es' ? 'Efectivo Neto Quads' : 'Quad Cash Net', formatCurrency(results.totals.quadCashNet)],
+        [language === 'es' ? 'Efectivo Neto Buggies' : 'Buggy Cash Net', formatCurrency(results.totals.buggyCashNet)],
+        [language === 'es' ? 'Total Efectivo Neto' : 'Total Net Cash', formatCurrency(results.totals.quadCashNet + results.totals.buggyCashNet)],
       ];
 
       doc.autoTable({
         startY: doc.lastAutoTable.finalY + 20,
-        head: [['Category', 'Amount']],
+        head: [[language === 'es' ? 'Categoría' : 'Category', language === 'es' ? 'Cantidad' : 'Amount']],
         body: netCashData,
         theme: 'striped',
         headStyles: { fillColor: [34, 197, 94] },
