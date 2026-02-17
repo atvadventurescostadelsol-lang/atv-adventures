@@ -99,6 +99,52 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
     }
   }
 
+  function openEditDialog(departure) {
+    setEditForm({
+      vehiclesCount: departure.vehiclesCount || 1,
+      notes: departure.notes || '',
+      paymentSplitCash: parseNumber(departure.paymentSplitCash),
+      paymentSplitBank: parseNumber(departure.paymentSplitBank),
+      paymentSplitWeb: parseNumber(departure.paymentSplitWeb),
+      paymentSplitGyg: parseNumber(departure.paymentSplitGyg),
+      paymentSplitCruise: parseNumber(departure.paymentSplitCruise),
+      commission: parseNumber(departure.commission),
+      commissionMethod: departure.commissionMethod || 'cash',
+    });
+    setEditDialog({ open: true, departure });
+  }
+
+  async function saveEdit() {
+    if (!editDialog.departure) return;
+    
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/departures/${editDialog.departure.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...editForm,
+          userId: 'user-1',
+          userName: 'Usuario',
+        }),
+      });
+
+      if (res.ok) {
+        toast.success(language === 'es' ? 'Tour actualizado' : 'Tour updated');
+        setEditDialog({ open: false, departure: null });
+        loadDashboard();
+      } else {
+        const error = await res.json();
+        toast.error(error.error || 'Error');
+      }
+    } catch (error) {
+      toast.error('Error');
+      console.error(error);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
