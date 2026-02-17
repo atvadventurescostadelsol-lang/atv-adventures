@@ -1220,7 +1220,7 @@ async function handleGet(request, path) {
       }
 
       // Get existing departures for this slot
-      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AT');
+      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AV');
       const departures = parseSheetToObjects(departuresData);
       
       const existingDepartures = departures.filter(d => 
@@ -1332,7 +1332,7 @@ async function handleGet(request, path) {
       const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
       
       // Read all columns including paymentSplitCruise, gygDiscount, isPendingCruise
-      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AT');
+      const departuresData = await getSheetData(SPREADSHEET_ID, 'Departures!A:AV');
       const departures = parseSheetToObjects(departuresData);
       
       const todayDepartures = departures.filter(d => d.date === date);
