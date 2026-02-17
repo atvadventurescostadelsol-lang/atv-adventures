@@ -822,8 +822,8 @@ export default function Reports() {
         });
       }
 
-      // Net Cash Summary
-      doc.text(language === 'es' ? 'Efectivo Neto' : 'Net Cash After Expenses', 14, doc.lastAutoTable.finalY + 15);
+      // Net Cash Summary (Cash - Expenses + Incomes)
+      doc.text(language === 'es' ? 'Efectivo Neto (Efectivo - Gastos + Ingresos)' : 'Net Cash (Cash - Expenses + Incomes)', 14, doc.lastAutoTable.finalY + 15);
       
       const netCashData = [
         [language === 'es' ? 'Efectivo Neto Quads' : 'Quad Cash Net', formatCurrency(results.totals.quadCashNet)],
