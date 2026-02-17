@@ -645,15 +645,31 @@ export default function BatchEntry() {
                         <Label className="flex items-center gap-1">
                           💰 {language === 'es' ? 'Comisión Colaborador' : 'Collaborator Commission'}
                         </Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={entry.commission || ''}
-                          onChange={(e) => handleCommissionChange(entry.id, e.target.value)}
-                          placeholder="0.00"
-                          className="mt-1"
-                        />
+                        <div className="flex gap-2 mt-1">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={entry.commission || ''}
+                            onChange={(e) => handleCommissionChange(entry.id, e.target.value)}
+                            placeholder="0.00"
+                            className="flex-1"
+                          />
+                          {parseFloat(entry.commission) > 0 && (
+                            <Select
+                              value={entry.commissionMethod || 'cash'}
+                              onValueChange={(value) => updateEntry(entry.id, 'commissionMethod', value)}
+                            >
+                              <SelectTrigger className="w-28">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="cash">💵 {language === 'es' ? 'Efectivo' : 'Cash'}</SelectItem>
+                                <SelectItem value="bank">🏦 {language === 'es' ? 'Banco' : 'Bank'}</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
                       </div>
 
                       <div className="md:col-span-2">
