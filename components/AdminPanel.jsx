@@ -1043,6 +1043,156 @@ export default function AdminPanel() {
               </Card>
             </TabsContent>
 
+            {/* Income Concepts Tab */}
+            <TabsContent value="income-concepts" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Wallet className="h-5 w-5" />
+                    {language === 'es' ? 'Conceptos de Ingresos' : 'Income Concepts'}
+                  </CardTitle>
+                  <CardDescription>
+                    {language === 'es' 
+                      ? 'Gestiona los conceptos (categorías) de ingresos para cada cuenta. GE = Quads, E&S = Buggies.'
+                      : 'Manage income concepts (categories) for each account. GE = Quads, E&S = Buggies.'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Add New Concept */}
+                  <Card className="bg-muted/50">
+                    <CardContent className="p-4">
+                      <div className="grid gap-4 md:grid-cols-4 items-end">
+                        <div>
+                          <Label>{language === 'es' ? 'Cuenta' : 'Account'}</Label>
+                          <Select 
+                            value={newIncomeCategory.account} 
+                            onValueChange={(value) => setNewIncomeCategory({...newIncomeCategory, account: value})}
+                          >
+                            <SelectTrigger className="mt-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="GE">
+                                <span className="flex items-center gap-2">
+                                  <Car className="h-4 w-4 text-blue-600" />
+                                  GE (Quads)
+                                </span>
+                              </SelectItem>
+                              <SelectItem value="E&S">
+                                <span className="flex items-center gap-2">
+                                  <Truck className="h-4 w-4 text-green-600" />
+                                  E&S (Buggies)
+                                </span>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="md:col-span-2">
+                          <Label>{language === 'es' ? 'Nombre del Concepto' : 'Concept Name'}</Label>
+                          <Input
+                            value={newIncomeCategory.name}
+                            onChange={(e) => setNewIncomeCategory({...newIncomeCategory, name: e.target.value})}
+                            placeholder={language === 'es' ? 'Ej: Cobro GYG' : 'E.g.: GYG Payment'}
+                            className="mt-1"
+                          />
+                        </div>
+                        <Button onClick={handleAddIncomeCategory} className="bg-green-600 hover:bg-green-700">
+                          <Plus className="h-4 w-4 mr-2" />
+                          {language === 'es' ? 'Añadir' : 'Add'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* GE Concepts */}
+                  <Card className="border-l-4 border-l-blue-500">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Car className="h-5 w-5 text-blue-600" />
+                        GE (Quads)
+                      </CardTitle>
+                      <CardDescription>
+                        {language === 'es' 
+                          ? 'Estos conceptos se usan para ingresos de la cuenta GE, que se suman al efectivo de Quads.'
+                          : 'These concepts are used for GE account incomes, added to Quad cash.'}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {incomeCategories.GE.length === 0 ? (
+                        <p className="text-muted-foreground text-sm">
+                          {language === 'es' ? 'No hay conceptos definidos' : 'No concepts defined'}
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {incomeCategories.GE.map(cat => (
+                            <Badge key={cat.id} variant="secondary" className="text-sm py-1.5 px-3 gap-2 bg-green-100 text-green-800">
+                              {cat.name}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 ml-1 hover:bg-red-100 hover:text-red-600"
+                                onClick={() => setDeleteDialog({
+                                  open: true,
+                                  type: language === 'es' ? 'concepto de ingreso' : 'income concept',
+                                  id: cat.id,
+                                  name: cat.name
+                                })}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* E&S Concepts */}
+                  <Card className="border-l-4 border-l-green-500">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Truck className="h-5 w-5 text-green-600" />
+                        E&S (Buggies)
+                      </CardTitle>
+                      <CardDescription>
+                        {language === 'es' 
+                          ? 'Estos conceptos se usan para ingresos de la cuenta E&S, que se suman al efectivo de Buggies.'
+                          : 'These concepts are used for E&S account incomes, added to Buggy cash.'}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {incomeCategories['E&S'].length === 0 ? (
+                        <p className="text-muted-foreground text-sm">
+                          {language === 'es' ? 'No hay conceptos definidos' : 'No concepts defined'}
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {incomeCategories['E&S'].map(cat => (
+                            <Badge key={cat.id} variant="secondary" className="text-sm py-1.5 px-3 gap-2 bg-green-100 text-green-800">
+                              {cat.name}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 ml-1 hover:bg-red-100 hover:text-red-600"
+                                onClick={() => setDeleteDialog({
+                                  open: true,
+                                  type: language === 'es' ? 'concepto de ingreso' : 'income concept',
+                                  id: cat.id,
+                                  name: cat.name
+                                })}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             {/* Users Tab */}
             <TabsContent value="users" className="space-y-4">
               <UserManagement />
