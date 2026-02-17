@@ -454,8 +454,10 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
             </div>
           </CardContent>
         </Card>
+        )}
 
-        {/* BUGGIES (E&S) */}
+        {/* BUGGIES (E&S) - Only show if user can access */}
+        {canViewBuggies && (
         <Card className="border-l-4 border-l-green-500">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
