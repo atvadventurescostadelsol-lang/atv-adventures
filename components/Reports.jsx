@@ -331,6 +331,25 @@ export default function Reports() {
     }
   }
 
+  // Helper functions to filter data based on user permissions
+  function filterDeparturesByPermissions(departures) {
+    if (!departures) return [];
+    return departures.filter(d => {
+      if (d.category === 'quad' && !canViewQuads) return false;
+      if (d.category === 'buggy' && !canViewBuggies) return false;
+      return true;
+    });
+  }
+
+  function filterExpensesByPermissions(expenses) {
+    if (!expenses) return [];
+    return expenses.filter(e => {
+      if (e.account === 'GE' && !canViewGE) return false;
+      if (e.account === 'E&S' && !canViewES) return false;
+      return true;
+    });
+  }
+
   async function loadPeriodStats() {
     try {
       const [depRes, expRes] = await Promise.all([
@@ -340,8 +359,12 @@ export default function Reports() {
       
       if (!depRes.ok) return;
       
-      const allDepartures = await depRes.json();
-      const allExpenses = expRes.ok ? await expRes.json() : [];
+      // Get raw data and filter by user permissions
+      const rawDepartures = await depRes.json();
+      const rawExpenses = expRes.ok ? await expRes.json() : [];
+      
+      const allDepartures = filterDeparturesByPermissions(rawDepartures);
+      const allExpenses = filterExpensesByPermissions(rawExpenses);
       setExpenses(allExpenses);
       
       const today = new Date();
