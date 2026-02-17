@@ -4,14 +4,28 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
-// User restrictions configuration
-// Charly can only access buggy category and E&S expenses
-const USER_RESTRICTIONS = {
-  'Charly': {
-    allowedCategories: ['buggy'], // Only buggy, not quad
-    allowedExpenseAccounts: ['E&S'], // Only E&S, not GE
+// Role-based restrictions configuration
+// admin: full access to everything
+// buggy: only buggy category and E&S account (like Charly)
+// quad: only quad category and GE account
+const ROLE_RESTRICTIONS = {
+  'admin': null, // No restrictions - full access
+  'buggy': {
+    allowedCategories: ['buggy'],
+    allowedExpenseAccounts: ['E&S'],
+    canAccessAdmin: false,
+  },
+  'quad': {
+    allowedCategories: ['quad'],
+    allowedExpenseAccounts: ['GE'],
     canAccessAdmin: false,
   }
+};
+
+// Legacy user-specific restrictions (for backwards compatibility)
+const USER_RESTRICTIONS = {
+  'Charly': ROLE_RESTRICTIONS['buggy'],
+  'charly': ROLE_RESTRICTIONS['buggy'],
 };
 
 export function AuthProvider({ children }) {
@@ -42,13 +56,19 @@ export function AuthProvider({ children }) {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        // Get user restrictions
-        const restrictions = USER_RESTRICTIONS[data.user.username] || null;
+        // Get restrictions: first check role-based, then user-specific
+        const role = data.user.role || 'admin';
+        let restrictions = ROLE_RESTRICTIONS[role] || null;
+        
+        // Override with user-specific restrictions if they exist
+        if (USER_RESTRICTIONS[data.user.username]) {
+          restrictions = USER_RESTRICTIONS[data.user.username];
+        }
         
         const userData = {
           id: data.user.id,
           username: data.user.username,
-          role: data.user.role,
+          role: role,
           restrictions: restrictions
         };
         setUser(userData);
