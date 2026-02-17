@@ -228,9 +228,15 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
   const geExpenseTotal = geExpenses.reduce((sum, e) => sum + parseNumber(e.amount), 0);
   const esExpenseTotal = esExpenses.reduce((sum, e) => sum + parseNumber(e.amount), 0);
 
-  // Net cash after expenses
-  const quadCashNet = quadStats.cashTotal - geExpenseTotal;
-  const buggyCashNet = buggyStats.cashTotal - esExpenseTotal;
+  // Calculate incomes by account for today (filtered by user access)
+  const geIncomes = canViewGE ? incomes.filter(i => i.account === 'GE') : [];
+  const esIncomes = canViewES ? incomes.filter(i => i.account === 'E&S') : [];
+  const geIncomeTotal = geIncomes.reduce((sum, i) => sum + parseNumber(i.amount), 0);
+  const esIncomeTotal = esIncomes.reduce((sum, i) => sum + parseNumber(i.amount), 0);
+
+  // Net cash after expenses and adding incomes
+  const quadCashNet = quadStats.cashTotal - geExpenseTotal + geIncomeTotal;
+  const buggyCashNet = buggyStats.cashTotal - esExpenseTotal + esIncomeTotal;
 
   // Calculate totals based on what user can see
   const visibleTotalGross = (canViewQuads ? quadStats.totalGross : 0) + (canViewBuggies ? buggyStats.totalGross : 0);
