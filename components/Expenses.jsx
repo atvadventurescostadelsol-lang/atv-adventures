@@ -227,8 +227,9 @@ export default function Expenses() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Summary Cards - Only show accessible accounts */}
+      <div className={`grid gap-4 ${canViewGE && canViewES ? 'md:grid-cols-2' : 'md:grid-cols-1'}`}>
+        {canViewGE && (
         <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
@@ -246,7 +247,9 @@ export default function Expenses() {
             </div>
           </CardContent>
         </Card>
+        )}
 
+        {canViewES && (
         <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
@@ -264,6 +267,7 @@ export default function Expenses() {
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
 
       <Card>
