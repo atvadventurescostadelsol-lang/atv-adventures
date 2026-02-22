@@ -8,10 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, Search, TrendingUp, TrendingDown, Car, Truck, RefreshCw, Wallet, Building2, Clock, CalendarDays, CalendarRange } from 'lucide-react';
+import { Download, Search, TrendingUp, TrendingDown, Car, Truck, RefreshCw, Wallet, Building2, Clock, CalendarDays, CalendarRange, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,7 +20,7 @@ import { applyPlugin } from 'jspdf-autotable';
 applyPlugin(jsPDF);
 
 export default function Reports() {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
   const { canAccessCategory, canAccessExpenseAccount } = useAuth();
   
   const canViewQuads = canAccessCategory('quad');
@@ -29,65 +28,44 @@ export default function Reports() {
   const canViewGE = canAccessExpenseAccount('GE');
   const canViewES = canAccessExpenseAccount('E&S');
   
+  // Main report states
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   
-  // Expense report states
-  const [expenseReportStartDate, setExpenseReportStartDate] = useState('');
-  const [expenseReportEndDate, setExpenseReportEndDate] = useState('');
-  const [expenseReportAccount, setExpenseReportAccount] = useState('all');
-  const [expenseReportConcept, setExpenseReportConcept] = useState('all');
-  const [expenseReportPaymentMethod, setExpenseReportPaymentMethod] = useState('all');
-  const [expenseReportResults, setExpenseReportResults] = useState(null);
-  const [expenseReportLoading, setExpenseReportLoading] = useState(false);
-  const [expenseCategories, setExpenseCategories] = useState([]);
+  // Unified detailed report states
+  const [detailedStartDate, setDetailedStartDate] = useState('');
+  const [detailedEndDate, setDetailedEndDate] = useState('');
+  const [detailedType, setDetailedType] = useState('both'); // 'expenses', 'incomes', 'both'
+  const [detailedAccount, setDetailedAccount] = useState('all');
+  const [detailedConcept, setDetailedConcept] = useState('all');
+  const [detailedPaymentMethod, setDetailedPaymentMethod] = useState('all');
+  const [detailedResults, setDetailedResults] = useState(null);
+  const [detailedLoading, setDetailedLoading] = useState(false);
   
-  // Income report states
-  const [incomeReportStartDate, setIncomeReportStartDate] = useState('');
-  const [incomeReportEndDate, setIncomeReportEndDate] = useState('');
-  const [incomeReportAccount, setIncomeReportAccount] = useState('all');
-  const [incomeReportConcept, setIncomeReportConcept] = useState('all');
-  const [incomeReportPaymentMethod, setIncomeReportPaymentMethod] = useState('all');
-  const [incomeReportResults, setIncomeReportResults] = useState(null);
-  const [incomeReportLoading, setIncomeReportLoading] = useState(false);
+  // Categories
+  const [expenseCategories, setExpenseCategories] = useState([]);
   const [incomeCategories, setIncomeCategories] = useState([]);
   
   const dateLocale = language === 'es' ? es : enUS;
   
-  const formatCurrency = (amount) => {
-    const num = parseFloat(amount) || 0;
-    return `€${num.toFixed(2)}`;
-  };
-  
-  const parseNumber = (value) => {
-    if (typeof value === 'number') return value;
-    if (typeof value === 'string') return parseFloat(value.replace(',', '.')) || 0;
-    return 0;
-  };
+  const formatCurrency = (amount) => `€${(parseFloat(amount) || 0).toFixed(2)}`;
+  const parseNumber = (v) => typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.')) || 0;
 
-  // Get date ranges based on selected period
+  // Get date ranges
   const getDateRanges = () => {
     const today = new Date();
-    const todayStr = format(today, 'yyyy-MM-dd');
-    
-    const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
-    const monthEnd = format(endOfMonth(today), 'yyyy-MM-dd');
-    
-    const yearStart = format(startOfYear(today), 'yyyy-MM-dd');
-    const yearEnd = format(endOfYear(today), 'yyyy-MM-dd');
-    
     return {
-      today: { start: todayStr, end: todayStr, label: language === 'es' ? 'Hoy' : 'Today' },
-      month: { start: monthStart, end: monthEnd, label: format(today, 'MMMM yyyy', { locale: dateLocale }) },
-      year: { start: yearStart, end: yearEnd, label: format(today, 'yyyy') },
-      custom: { start: customStartDate, end: customEndDate, label: language === 'es' ? 'Personalizado' : 'Custom' }
+      today: { start: format(today, 'yyyy-MM-dd'), end: format(today, 'yyyy-MM-dd'), label: language === 'es' ? 'Hoy' : 'Today' },
+      month: { start: format(startOfMonth(today), 'yyyy-MM-dd'), end: format(endOfMonth(today), 'yyyy-MM-dd'), label: format(today, 'MMMM yyyy', { locale: dateLocale }) },
+      year: { start: format(startOfYear(today), 'yyyy-MM-dd'), end: format(endOfYear(today), 'yyyy-MM-dd'), label: format(today, 'yyyy') },
+      custom: { start: customStartDate, end: customEndDate, label: customStartDate && customEndDate ? `${format(new Date(customStartDate), 'dd/MM/yyyy')} - ${format(new Date(customEndDate), 'dd/MM/yyyy')}` : 'Personalizado' }
     };
   };
 
-  // Load report data
+  // Load main report
   async function loadReport() {
     setLoading(true);
     try {
@@ -99,509 +77,496 @@ export default function Reports() {
         return;
       }
       
-      // Build fetch promises based on what we need
-      const fetchPromises = [
-        fetch(`/api/departures?startDate=${ranges.today.start}&endDate=${ranges.today.end}`).then(r => r.json()),
-        fetch(`/api/departures?startDate=${ranges.month.start}&endDate=${ranges.month.end}`).then(r => r.json()),
-        fetch(`/api/departures?startDate=${ranges.year.start}&endDate=${ranges.year.end}`).then(r => r.json()),
-        fetch(`/api/expenses?startDate=${ranges.year.start}&endDate=${ranges.year.end}`).then(r => r.json()),
-        fetch(`/api/incomes?startDate=${ranges.year.start}&endDate=${ranges.year.end}`).then(r => r.json()),
-      ];
+      const [todayDeps, monthDeps, yearDeps, expenses, incomes] = await Promise.all([
+        fetch(`/api/departures?startDate=${ranges.today.start}&endDate=${ranges.today.end}`).then(r => r.json()).catch(() => []),
+        fetch(`/api/departures?startDate=${ranges.month.start}&endDate=${ranges.month.end}`).then(r => r.json()).catch(() => []),
+        fetch(`/api/departures?startDate=${ranges.year.start}&endDate=${ranges.year.end}`).then(r => r.json()).catch(() => []),
+        fetch(`/api/expenses?startDate=${ranges.year.start}&endDate=${ranges.year.end}`).then(r => r.json()).catch(() => []),
+        fetch(`/api/incomes?startDate=${ranges.year.start}&endDate=${ranges.year.end}`).then(r => r.json()).catch(() => []),
+      ]);
       
-      // Add custom period fetch if needed
+      let customDeps = [], customExp = [], customInc = [];
       if (selectedPeriod === 'custom' && customStartDate && customEndDate) {
-        fetchPromises.push(fetch(`/api/departures?startDate=${customStartDate}&endDate=${customEndDate}`).then(r => r.json()));
-        fetchPromises.push(fetch(`/api/expenses?startDate=${customStartDate}&endDate=${customEndDate}`).then(r => r.json()));
-        fetchPromises.push(fetch(`/api/incomes?startDate=${customStartDate}&endDate=${customEndDate}`).then(r => r.json()));
+        [customDeps, customExp, customInc] = await Promise.all([
+          fetch(`/api/departures?startDate=${customStartDate}&endDate=${customEndDate}`).then(r => r.json()).catch(() => []),
+          fetch(`/api/expenses?startDate=${customStartDate}&endDate=${customEndDate}`).then(r => r.json()).catch(() => []),
+          fetch(`/api/incomes?startDate=${customStartDate}&endDate=${customEndDate}`).then(r => r.json()).catch(() => []),
+        ]);
       }
       
-      const results = await Promise.all(fetchPromises);
-      const [todayDeps, monthDeps, yearDeps, expenses, incomes] = results;
-      const customDeps = results[5] || [];
-      const customExpenses = results[6] || [];
-      const customIncomes = results[7] || [];
+      const filterDeps = (data) => (data || []).filter(d => (d.category === 'quad' && canViewQuads) || (d.category === 'buggy' && canViewBuggies));
+      const filterExp = (data) => (data || []).filter(e => (e.account === 'GE' && canViewGE) || (e.account === 'E&S' && canViewES));
       
-      // Filter by permissions
-      const filterByPermissions = (data) => {
-        if (!Array.isArray(data)) return [];
-        return data.filter(d => {
-          if (d.category === 'quad' && !canViewQuads) return false;
-          if (d.category === 'buggy' && !canViewBuggies) return false;
-          return true;
-        });
-      };
-      
-      const filterExpensesByPermissions = (data) => {
-        if (!Array.isArray(data)) return [];
-        return data.filter(e => {
-          if (e.account === 'GE' && !canViewGE) return false;
-          if (e.account === 'E&S' && !canViewES) return false;
-          return true;
-        });
-      };
-      
-      // Calculate stats for a period
-      const calcStats = (departures) => {
-        const filtered = filterByPermissions(departures);
-        
-        const quadDeps = filtered.filter(d => d.category === 'quad');
-        const buggyDeps = filtered.filter(d => d.category === 'buggy');
-        
+      const calcStats = (deps) => {
+        const f = filterDeps(deps);
+        const q = f.filter(d => d.category === 'quad');
+        const b = f.filter(d => d.category === 'buggy');
         return {
           quads: {
-            cash: quadDeps.reduce((sum, d) => sum + parseNumber(d.paymentSplitCash), 0),
-            bank: quadDeps.reduce((sum, d) => sum + parseNumber(d.paymentSplitBank) + parseNumber(d.paymentSplitWeb), 0),
-            gyg: quadDeps.reduce((sum, d) => sum + parseNumber(d.paymentSplitGyg), 0),
-            cruise: quadDeps.reduce((sum, d) => sum + parseNumber(d.paymentSplitCruise), 0),
-            total: quadDeps.reduce((sum, d) => sum + parseNumber(d.totalGross), 0),
-            count: quadDeps.length,
+            cash: q.reduce((s, d) => s + parseNumber(d.paymentSplitCash), 0),
+            bank: q.reduce((s, d) => s + parseNumber(d.paymentSplitBank) + parseNumber(d.paymentSplitWeb), 0),
+            gyg: q.reduce((s, d) => s + parseNumber(d.paymentSplitGyg), 0),
+            cruise: q.reduce((s, d) => s + parseNumber(d.paymentSplitCruise), 0),
+            total: q.reduce((s, d) => s + parseNumber(d.totalGross), 0),
+            count: q.length,
           },
           buggies: {
-            cash: buggyDeps.reduce((sum, d) => sum + parseNumber(d.paymentSplitCash), 0),
-            bank: buggyDeps.reduce((sum, d) => sum + parseNumber(d.paymentSplitBank) + parseNumber(d.paymentSplitWeb), 0),
-            gyg: buggyDeps.reduce((sum, d) => sum + parseNumber(d.paymentSplitGyg), 0),
-            cruise: buggyDeps.reduce((sum, d) => sum + parseNumber(d.paymentSplitCruise), 0),
-            total: buggyDeps.reduce((sum, d) => sum + parseNumber(d.totalGross), 0),
-            count: buggyDeps.length,
-          }
-        };
-      };
-      
-      // Calculate expense stats
-      const calcExpenseStats = (expenseData, period) => {
-        const ranges = getDateRanges();
-        const range = ranges[period];
-        const filtered = filterExpensesByPermissions(expenseData).filter(e => 
-          e.date >= range.start && e.date <= range.end
-        );
-        
-        return {
-          GE: {
-            cash: filtered.filter(e => e.account === 'GE' && e.paymentMethod !== 'banco').reduce((s, e) => s + parseNumber(e.amount), 0),
-            bank: filtered.filter(e => e.account === 'GE' && e.paymentMethod === 'banco').reduce((s, e) => s + parseNumber(e.amount), 0),
+            cash: b.reduce((s, d) => s + parseNumber(d.paymentSplitCash), 0),
+            bank: b.reduce((s, d) => s + parseNumber(d.paymentSplitBank) + parseNumber(d.paymentSplitWeb), 0),
+            gyg: b.reduce((s, d) => s + parseNumber(d.paymentSplitGyg), 0),
+            cruise: b.reduce((s, d) => s + parseNumber(d.paymentSplitCruise), 0),
+            total: b.reduce((s, d) => s + parseNumber(d.totalGross), 0),
+            count: b.length,
           },
-          'E&S': {
-            cash: filtered.filter(e => e.account === 'E&S' && e.paymentMethod !== 'banco').reduce((s, e) => s + parseNumber(e.amount), 0),
-            bank: filtered.filter(e => e.account === 'E&S' && e.paymentMethod === 'banco').reduce((s, e) => s + parseNumber(e.amount), 0),
-          }
+          departures: f,
         };
       };
       
-      // Calculate income stats
-      const calcIncomeStats = (incomeData, period) => {
-        const ranges = getDateRanges();
-        const range = ranges[period];
-        if (!range || !range.start || !range.end) {
-          return { GE: { cash: 0, bank: 0 }, 'E&S': { cash: 0, bank: 0 } };
-        }
-        const filtered = filterExpensesByPermissions(incomeData).filter(i => 
-          i.date >= range.start && i.date <= range.end
-        );
-        
+      const calcExpStats = (data, range) => {
+        const f = filterExp(data).filter(e => e.date >= range.start && e.date <= range.end);
         return {
-          GE: {
-            cash: filtered.filter(i => i.account === 'GE' && i.paymentMethod !== 'banco').reduce((s, i) => s + parseNumber(i.amount), 0),
-            bank: filtered.filter(i => i.account === 'GE' && i.paymentMethod === 'banco').reduce((s, i) => s + parseNumber(i.amount), 0),
-          },
-          'E&S': {
-            cash: filtered.filter(i => i.account === 'E&S' && i.paymentMethod !== 'banco').reduce((s, i) => s + parseNumber(i.amount), 0),
-            bank: filtered.filter(i => i.account === 'E&S' && i.paymentMethod === 'banco').reduce((s, i) => s + parseNumber(i.amount), 0),
-          }
+          GE: { cash: f.filter(e => e.account === 'GE' && e.paymentMethod !== 'banco').reduce((s, e) => s + parseNumber(e.amount), 0),
+                bank: f.filter(e => e.account === 'GE' && e.paymentMethod === 'banco').reduce((s, e) => s + parseNumber(e.amount), 0) },
+          'E&S': { cash: f.filter(e => e.account === 'E&S' && e.paymentMethod !== 'banco').reduce((s, e) => s + parseNumber(e.amount), 0),
+                   bank: f.filter(e => e.account === 'E&S' && e.paymentMethod === 'banco').reduce((s, e) => s + parseNumber(e.amount), 0) }
         };
       };
       
-      // Calculate custom period expense stats directly from fetched data
-      const calcCustomExpenseStats = (expenseData) => {
-        const filtered = filterExpensesByPermissions(expenseData);
+      const calcIncStats = (data, range) => {
+        const f = filterExp(data).filter(i => i.date >= range.start && i.date <= range.end);
         return {
-          GE: {
-            cash: filtered.filter(e => e.account === 'GE' && e.paymentMethod !== 'banco').reduce((s, e) => s + parseNumber(e.amount), 0),
-            bank: filtered.filter(e => e.account === 'GE' && e.paymentMethod === 'banco').reduce((s, e) => s + parseNumber(e.amount), 0),
-          },
-          'E&S': {
-            cash: filtered.filter(e => e.account === 'E&S' && e.paymentMethod !== 'banco').reduce((s, e) => s + parseNumber(e.amount), 0),
-            bank: filtered.filter(e => e.account === 'E&S' && e.paymentMethod === 'banco').reduce((s, e) => s + parseNumber(e.amount), 0),
-          }
+          GE: { cash: f.filter(i => i.account === 'GE' && i.paymentMethod !== 'banco').reduce((s, i) => s + parseNumber(i.amount), 0),
+                bank: f.filter(i => i.account === 'GE' && i.paymentMethod === 'banco').reduce((s, i) => s + parseNumber(i.amount), 0) },
+          'E&S': { cash: f.filter(i => i.account === 'E&S' && i.paymentMethod !== 'banco').reduce((s, i) => s + parseNumber(i.amount), 0),
+                   bank: f.filter(i => i.account === 'E&S' && i.paymentMethod === 'banco').reduce((s, i) => s + parseNumber(i.amount), 0) }
         };
       };
       
-      // Calculate custom period income stats directly from fetched data
-      const calcCustomIncomeStats = (incomeData) => {
-        const filtered = filterExpensesByPermissions(incomeData);
-        return {
-          GE: {
-            cash: filtered.filter(i => i.account === 'GE' && i.paymentMethod !== 'banco').reduce((s, i) => s + parseNumber(i.amount), 0),
-            bank: filtered.filter(i => i.account === 'GE' && i.paymentMethod === 'banco').reduce((s, i) => s + parseNumber(i.amount), 0),
-          },
-          'E&S': {
-            cash: filtered.filter(i => i.account === 'E&S' && i.paymentMethod !== 'banco').reduce((s, i) => s + parseNumber(i.amount), 0),
-            bank: filtered.filter(i => i.account === 'E&S' && i.paymentMethod === 'banco').reduce((s, i) => s + parseNumber(i.amount), 0),
-          }
-        };
+      const reportObj = {
+        periods: { today: calcStats(todayDeps), month: calcStats(monthDeps), year: calcStats(yearDeps) },
+        expenses: { today: calcExpStats(expenses, ranges.today), month: calcExpStats(expenses, ranges.month), year: calcExpStats(expenses, ranges.year) },
+        incomes: { today: calcIncStats(incomes, ranges.today), month: calcIncStats(incomes, ranges.month), year: calcIncStats(incomes, ranges.year) },
+        labels: ranges,
       };
       
-      // Build the report data object
-      const reportDataObj = {
-        periods: {
-          today: calcStats(todayDeps),
-          month: calcStats(monthDeps),
-          year: calcStats(yearDeps),
-        },
-        expenses: {
-          today: calcExpenseStats(expenses, 'today'),
-          month: calcExpenseStats(expenses, 'month'),
-          year: calcExpenseStats(expenses, 'year'),
-        },
-        incomes: {
-          today: calcIncomeStats(incomes, 'today'),
-          month: calcIncomeStats(incomes, 'month'),
-          year: calcIncomeStats(incomes, 'year'),
-        },
-        rawExpenses: filterExpensesByPermissions(expenses),
-        rawIncomes: filterExpensesByPermissions(incomes),
-        labels: getDateRanges(),
-      };
-      
-      // Add custom period data if applicable
       if (selectedPeriod === 'custom' && customStartDate && customEndDate) {
-        reportDataObj.periods.custom = calcStats(customDeps);
-        reportDataObj.expenses.custom = calcCustomExpenseStats(customExpenses);
-        reportDataObj.incomes.custom = calcCustomIncomeStats(customIncomes);
-        reportDataObj.labels.custom = { 
-          start: customStartDate, 
-          end: customEndDate, 
-          label: `${format(new Date(customStartDate), 'dd/MM/yyyy')} - ${format(new Date(customEndDate), 'dd/MM/yyyy')}` 
-        };
+        reportObj.periods.custom = calcStats(customDeps);
+        reportObj.expenses.custom = calcExpStats(customExp, { start: customStartDate, end: customEndDate });
+        reportObj.incomes.custom = calcIncStats(customInc, { start: customStartDate, end: customEndDate });
       }
       
-      setReportData(reportDataObj);
-      
+      setReportData(reportObj);
     } catch (error) {
-      console.error('Error loading report:', error);
-      toast.error(language === 'es' ? 'Error al cargar el informe' : 'Error loading report');
+      console.error(error);
+      toast.error('Error');
     } finally {
       setLoading(false);
     }
   }
   
-  // Load expense and income categories
+  // Load categories
   async function loadCategories() {
     try {
-      const [expCatRes, incCatRes] = await Promise.all([
-        fetch('/api/expense-categories'),
-        fetch('/api/income-categories')
+      const [expRes, incRes] = await Promise.all([
+        fetch('/api/expense-categories').then(r => r.json()).catch(() => []),
+        fetch('/api/income-categories').then(r => r.json()).catch(() => [])
       ]);
-      if (expCatRes.ok) {
-        const data = await expCatRes.json();
-        setExpenseCategories(data);
-      }
-      if (incCatRes.ok) {
-        const data = await incCatRes.json();
-        setIncomeCategories(data);
-      }
-    } catch (error) {
-      console.error('Error loading categories:', error);
-    }
+      setExpenseCategories(expRes || []);
+      setIncomeCategories(incRes || []);
+    } catch (e) { console.error(e); }
   }
   
-  // Generate expense-only report
-  async function generateExpenseReport() {
-    if (!expenseReportStartDate || !expenseReportEndDate) {
-      toast.error(language === 'es' ? 'Selecciona las fechas' : 'Select dates');
-      return;
-    }
-    
-    setExpenseReportLoading(true);
-    try {
-      const res = await fetch(`/api/expenses?startDate=${expenseReportStartDate}&endDate=${expenseReportEndDate}`);
-      if (res.ok) {
-        let data = await res.json();
-        
-        // Filter by permissions
-        data = data.filter(e => {
-          if (e.account === 'GE' && !canViewGE) return false;
-          if (e.account === 'E&S' && !canViewES) return false;
-          return true;
-        });
-        
-        // Apply filters
-        if (expenseReportAccount !== 'all') {
-          data = data.filter(e => e.account === expenseReportAccount);
-        }
-        if (expenseReportConcept !== 'all') {
-          data = data.filter(e => e.concept === expenseReportConcept);
-        }
-        if (expenseReportPaymentMethod !== 'all') {
-          data = data.filter(e => (e.paymentMethod || 'efectivo') === expenseReportPaymentMethod);
-        }
-        
-        // Calculate totals
-        const byAccount = { GE: { cash: 0, bank: 0 }, 'E&S': { cash: 0, bank: 0 } };
-        const byConcept = {};
-        
-        data.forEach(e => {
-          const amount = parseNumber(e.amount);
-          const method = e.paymentMethod || 'efectivo';
-          if (method === 'banco') {
-            byAccount[e.account].bank += amount;
-          } else {
-            byAccount[e.account].cash += amount;
-          }
-          if (!byConcept[e.concept]) byConcept[e.concept] = 0;
-          byConcept[e.concept] += amount;
-        });
-        
-        const total = Object.values(byAccount).reduce((sum, acc) => sum + acc.cash + acc.bank, 0);
-        
-        setExpenseReportResults({
-          data,
-          byAccount,
-          byConcept,
-          total,
-          filters: {
-            startDate: expenseReportStartDate,
-            endDate: expenseReportEndDate,
-            account: expenseReportAccount,
-            concept: expenseReportConcept,
-            paymentMethod: expenseReportPaymentMethod
-          }
-        });
-      }
-    } catch (error) {
-      toast.error('Error');
-    } finally {
-      setExpenseReportLoading(false);
-    }
-  }
+  useEffect(() => { loadReport(); loadCategories(); }, []);
   
-  // Generate income-only report
-  async function generateIncomeReport() {
-    if (!incomeReportStartDate || !incomeReportEndDate) {
-      toast.error(language === 'es' ? 'Selecciona las fechas' : 'Select dates');
-      return;
-    }
-    
-    setIncomeReportLoading(true);
-    try {
-      const res = await fetch(`/api/incomes?startDate=${incomeReportStartDate}&endDate=${incomeReportEndDate}`);
-      if (res.ok) {
-        let data = await res.json();
-        
-        // Filter by permissions
-        data = data.filter(i => {
-          if (i.account === 'GE' && !canViewGE) return false;
-          if (i.account === 'E&S' && !canViewES) return false;
-          return true;
-        });
-        
-        // Apply filters
-        if (incomeReportAccount !== 'all') {
-          data = data.filter(i => i.account === incomeReportAccount);
-        }
-        if (incomeReportConcept !== 'all') {
-          data = data.filter(i => i.concept === incomeReportConcept);
-        }
-        if (incomeReportPaymentMethod !== 'all') {
-          data = data.filter(i => (i.paymentMethod || 'efectivo') === incomeReportPaymentMethod);
-        }
-        
-        // Calculate totals
-        const byAccount = { GE: { cash: 0, bank: 0 }, 'E&S': { cash: 0, bank: 0 } };
-        const byConcept = {};
-        
-        data.forEach(i => {
-          const amount = parseNumber(i.amount);
-          const method = i.paymentMethod || 'efectivo';
-          if (method === 'banco') {
-            byAccount[i.account].bank += amount;
-          } else {
-            byAccount[i.account].cash += amount;
-          }
-          if (!byConcept[i.concept]) byConcept[i.concept] = 0;
-          byConcept[i.concept] += amount;
-        });
-        
-        const total = Object.values(byAccount).reduce((sum, acc) => sum + acc.cash + acc.bank, 0);
-        
-        setIncomeReportResults({
-          data,
-          byAccount,
-          byConcept,
-          total,
-          filters: {
-            startDate: incomeReportStartDate,
-            endDate: incomeReportEndDate,
-            account: incomeReportAccount,
-            concept: incomeReportConcept,
-            paymentMethod: incomeReportPaymentMethod
-          }
-        });
-      }
-    } catch (error) {
-      toast.error('Error');
-    } finally {
-      setIncomeReportLoading(false);
-    }
-  }
-  
-  useEffect(() => {
-    loadReport();
-    loadCategories();
-  }, []);
-  
-  // Get unique concepts for filters
-  const getExpenseConcepts = () => {
-    const concepts = new Set();
-    expenseCategories.forEach(c => concepts.add(c.name));
-    return Array.from(concepts);
-  };
-  
-  const getIncomeConcepts = () => {
-    const concepts = new Set();
-    incomeCategories.forEach(c => concepts.add(c.name));
-    return Array.from(concepts);
-  };
-  
-  // Calculate balance for each account
-  const calculateBalance = (period) => {
-    if (!reportData || !reportData.periods[period]) return null;
-    
-    const sales = reportData.periods[period];
-    const exp = reportData.expenses[period];
-    const inc = reportData.incomes[period];
-    
-    if (!sales || !exp || !inc) return null;
-    
+  // Calculate balance
+  const calcBalance = (period) => {
+    if (!reportData?.periods[period]) return null;
+    const s = reportData.periods[period], e = reportData.expenses[period], i = reportData.incomes[period];
     return {
       quads: {
-        cashIn: sales.quads.cash + inc.GE.cash,
-        cashOut: exp.GE.cash,
-        cashNet: sales.quads.cash + inc.GE.cash - exp.GE.cash,
-        bankIn: sales.quads.bank + inc.GE.bank,
-        bankOut: exp.GE.bank,
-        bankNet: sales.quads.bank + inc.GE.bank - exp.GE.bank,
+        cashNet: s.quads.cash + i.GE.cash - e.GE.cash,
+        bankNet: s.quads.bank + i.GE.bank - e.GE.bank,
       },
       buggies: {
-        cashIn: sales.buggies.cash + inc['E&S'].cash,
-        cashOut: exp['E&S'].cash,
-        cashNet: sales.buggies.cash + inc['E&S'].cash - exp['E&S'].cash,
-        bankIn: sales.buggies.bank + inc['E&S'].bank,
-        bankOut: exp['E&S'].bank,
-        bankNet: sales.buggies.bank + inc['E&S'].bank - exp['E&S'].bank,
+        cashNet: s.buggies.cash + i['E&S'].cash - e['E&S'].cash,
+        bankNet: s.buggies.bank + i['E&S'].bank - e['E&S'].bank,
       }
     };
   };
-
-  // Export to PDF
-  const exportPDF = () => {
+  
+  // Generate unified detailed report
+  async function generateDetailedReport() {
+    if (!detailedStartDate || !detailedEndDate) {
+      toast.error(language === 'es' ? 'Selecciona las fechas' : 'Select dates');
+      return;
+    }
+    
+    setDetailedLoading(true);
+    try {
+      const [expRes, incRes, depsRes] = await Promise.all([
+        fetch(`/api/expenses?startDate=${detailedStartDate}&endDate=${detailedEndDate}`).then(r => r.json()).catch(() => []),
+        fetch(`/api/incomes?startDate=${detailedStartDate}&endDate=${detailedEndDate}`).then(r => r.json()).catch(() => []),
+        fetch(`/api/departures?startDate=${detailedStartDate}&endDate=${detailedEndDate}`).then(r => r.json()).catch(() => []),
+      ]);
+      
+      // Filter by permissions
+      let expenses = (expRes || []).filter(e => (e.account === 'GE' && canViewGE) || (e.account === 'E&S' && canViewES));
+      let incomes = (incRes || []).filter(i => (i.account === 'GE' && canViewGE) || (i.account === 'E&S' && canViewES));
+      let departures = (depsRes || []).filter(d => (d.category === 'quad' && canViewQuads) || (d.category === 'buggy' && canViewBuggies));
+      
+      // Apply account filter
+      if (detailedAccount !== 'all') {
+        const accMap = { 'GE': 'quad', 'E&S': 'buggy' };
+        expenses = expenses.filter(e => e.account === detailedAccount);
+        incomes = incomes.filter(i => i.account === detailedAccount);
+        departures = departures.filter(d => d.category === accMap[detailedAccount]);
+      }
+      
+      // Apply concept filter
+      if (detailedConcept !== 'all') {
+        expenses = expenses.filter(e => e.concept === detailedConcept);
+        incomes = incomes.filter(i => i.concept === detailedConcept);
+      }
+      
+      // Apply payment method filter
+      if (detailedPaymentMethod !== 'all') {
+        expenses = expenses.filter(e => (e.paymentMethod || 'efectivo') === detailedPaymentMethod);
+        incomes = incomes.filter(i => (i.paymentMethod || 'efectivo') === detailedPaymentMethod);
+      }
+      
+      // Calculate totals
+      const expTotal = expenses.reduce((s, e) => s + parseNumber(e.amount), 0);
+      const incTotal = incomes.reduce((s, i) => s + parseNumber(i.amount), 0);
+      const expByCash = expenses.filter(e => e.paymentMethod !== 'banco').reduce((s, e) => s + parseNumber(e.amount), 0);
+      const expByBank = expenses.filter(e => e.paymentMethod === 'banco').reduce((s, e) => s + parseNumber(e.amount), 0);
+      const incByCash = incomes.filter(i => i.paymentMethod !== 'banco').reduce((s, i) => s + parseNumber(i.amount), 0);
+      const incByBank = incomes.filter(i => i.paymentMethod === 'banco').reduce((s, i) => s + parseNumber(i.amount), 0);
+      
+      // Departures totals
+      const depsCash = departures.reduce((s, d) => s + parseNumber(d.paymentSplitCash), 0);
+      const depsBank = departures.reduce((s, d) => s + parseNumber(d.paymentSplitBank) + parseNumber(d.paymentSplitWeb), 0);
+      const depsTotal = departures.reduce((s, d) => s + parseNumber(d.totalGross), 0);
+      
+      setDetailedResults({
+        expenses, incomes, departures,
+        expTotal, incTotal, expByCash, expByBank, incByCash, incByBank,
+        depsCash, depsBank, depsTotal,
+        balance: incTotal - expTotal,
+        filters: { startDate: detailedStartDate, endDate: detailedEndDate, type: detailedType, account: detailedAccount }
+      });
+    } catch (error) {
+      toast.error('Error');
+    } finally {
+      setDetailedLoading(false);
+    }
+  }
+  
+  // Export detailed PDF
+  function exportDetailedPDF() {
+    if (!detailedResults) return;
+    
+    const doc = new jsPDF();
+    const r = detailedResults;
+    let y = 20;
+    
+    doc.setFontSize(16);
+    doc.text(language === 'es' ? 'INFORME DETALLADO' : 'DETAILED REPORT', 14, y);
+    y += 10;
+    doc.setFontSize(10);
+    doc.text(`${language === 'es' ? 'Período' : 'Period'}: ${format(new Date(r.filters.startDate), 'dd/MM/yyyy')} - ${format(new Date(r.filters.endDate), 'dd/MM/yyyy')}`, 14, y);
+    y += 5;
+    doc.text(`${language === 'es' ? 'Generado' : 'Generated'}: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, y);
+    y += 10;
+    
+    // Tours Section
+    if (r.departures.length > 0) {
+      doc.setFontSize(12);
+      doc.setTextColor(0, 100, 0);
+      doc.text(language === 'es' ? 'TOURS' : 'TOURS', 14, y);
+      y += 5;
+      doc.setTextColor(0, 0, 0);
+      
+      doc.autoTable({
+        startY: y,
+        head: [[
+          language === 'es' ? 'Fecha' : 'Date',
+          language === 'es' ? 'Hora' : 'Time',
+          language === 'es' ? 'Tipo' : 'Type',
+          language === 'es' ? 'Vehículos' : 'Vehicles',
+          language === 'es' ? 'Efectivo' : 'Cash',
+          language === 'es' ? 'Banco' : 'Bank',
+          'Total'
+        ]],
+        body: r.departures.map(d => [
+          format(new Date(d.date), 'dd/MM/yyyy'),
+          d.timeSlot || '-',
+          d.category === 'quad' ? 'Quad' : 'Buggy',
+          d.vehiclesCount || 1,
+          formatCurrency(parseNumber(d.paymentSplitCash)),
+          formatCurrency(parseNumber(d.paymentSplitBank) + parseNumber(d.paymentSplitWeb)),
+          formatCurrency(parseNumber(d.totalGross))
+        ]),
+        foot: [[
+          { content: 'TOTAL', colSpan: 4, styles: { fontStyle: 'bold' } },
+          { content: formatCurrency(r.depsCash), styles: { fontStyle: 'bold' } },
+          { content: formatCurrency(r.depsBank), styles: { fontStyle: 'bold' } },
+          { content: formatCurrency(r.depsTotal), styles: { fontStyle: 'bold' } }
+        ]],
+        theme: 'grid',
+        headStyles: { fillColor: [34, 139, 34] },
+        footStyles: { fillColor: [220, 220, 220] },
+        styles: { fontSize: 8 }
+      });
+      
+      y = doc.lastAutoTable.finalY + 10;
+    }
+    
+    // Expenses Section
+    if ((detailedType === 'expenses' || detailedType === 'both') && r.expenses.length > 0) {
+      if (y > 250) { doc.addPage(); y = 20; }
+      
+      doc.setFontSize(12);
+      doc.setTextColor(200, 0, 0);
+      doc.text(language === 'es' ? 'GASTOS' : 'EXPENSES', 14, y);
+      y += 5;
+      doc.setTextColor(0, 0, 0);
+      
+      doc.autoTable({
+        startY: y,
+        head: [[
+          language === 'es' ? 'Fecha' : 'Date',
+          language === 'es' ? 'Cuenta' : 'Account',
+          language === 'es' ? 'Concepto' : 'Concept',
+          language === 'es' ? 'Método' : 'Method',
+          language === 'es' ? 'Cantidad' : 'Amount'
+        ]],
+        body: r.expenses.map(e => [
+          format(new Date(e.date), 'dd/MM/yyyy'),
+          e.account,
+          e.concept,
+          e.paymentMethod === 'banco' ? 'Banco' : 'Efectivo',
+          `-${formatCurrency(e.amount)}`
+        ]),
+        foot: [[
+          { content: 'TOTAL', colSpan: 4, styles: { fontStyle: 'bold' } },
+          { content: `-${formatCurrency(r.expTotal)}`, styles: { fontStyle: 'bold', textColor: [200, 0, 0] } }
+        ]],
+        theme: 'grid',
+        headStyles: { fillColor: [200, 50, 50] },
+        footStyles: { fillColor: [220, 220, 220] },
+        styles: { fontSize: 8 }
+      });
+      
+      y = doc.lastAutoTable.finalY + 10;
+    }
+    
+    // Incomes Section
+    if ((detailedType === 'incomes' || detailedType === 'both') && r.incomes.length > 0) {
+      if (y > 250) { doc.addPage(); y = 20; }
+      
+      doc.setFontSize(12);
+      doc.setTextColor(0, 150, 0);
+      doc.text(language === 'es' ? 'INGRESOS EXTRA' : 'EXTRA INCOME', 14, y);
+      y += 5;
+      doc.setTextColor(0, 0, 0);
+      
+      doc.autoTable({
+        startY: y,
+        head: [[
+          language === 'es' ? 'Fecha' : 'Date',
+          language === 'es' ? 'Cuenta' : 'Account',
+          language === 'es' ? 'Concepto' : 'Concept',
+          language === 'es' ? 'Método' : 'Method',
+          language === 'es' ? 'Cantidad' : 'Amount'
+        ]],
+        body: r.incomes.map(i => [
+          format(new Date(i.date), 'dd/MM/yyyy'),
+          i.account,
+          i.concept,
+          i.paymentMethod === 'banco' ? 'Banco' : 'Efectivo',
+          `+${formatCurrency(i.amount)}`
+        ]),
+        foot: [[
+          { content: 'TOTAL', colSpan: 4, styles: { fontStyle: 'bold' } },
+          { content: `+${formatCurrency(r.incTotal)}`, styles: { fontStyle: 'bold', textColor: [0, 150, 0] } }
+        ]],
+        theme: 'grid',
+        headStyles: { fillColor: [50, 150, 50] },
+        footStyles: { fillColor: [220, 220, 220] },
+        styles: { fontSize: 8 }
+      });
+      
+      y = doc.lastAutoTable.finalY + 10;
+    }
+    
+    // Balance Summary
+    if (detailedType === 'both') {
+      if (y > 250) { doc.addPage(); y = 20; }
+      
+      doc.setFontSize(12);
+      doc.text(language === 'es' ? 'RESUMEN' : 'SUMMARY', 14, y);
+      y += 5;
+      
+      doc.autoTable({
+        startY: y,
+        body: [
+          [language === 'es' ? 'Total Ingresos Extra' : 'Total Extra Income', `+${formatCurrency(r.incTotal)}`],
+          [language === 'es' ? 'Total Gastos' : 'Total Expenses', `-${formatCurrency(r.expTotal)}`],
+          [language === 'es' ? 'BALANCE' : 'BALANCE', formatCurrency(r.balance)],
+        ],
+        theme: 'grid',
+        styles: { fontSize: 10 },
+        columnStyles: { 1: { fontStyle: 'bold', halign: 'right' } }
+      });
+    }
+    
+    doc.save(`informe_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`);
+    toast.success(language === 'es' ? 'PDF descargado' : 'PDF downloaded');
+  }
+  
+  // Export main report PDF
+  function exportMainPDF() {
     if (!reportData) return;
     
     const doc = new jsPDF();
-    const balance = calculateBalance(selectedPeriod);
-    const label = reportData.labels[selectedPeriod].label;
+    const balance = calcBalance(selectedPeriod);
+    const period = reportData.periods[selectedPeriod];
+    const label = reportData.labels[selectedPeriod]?.label || selectedPeriod;
+    let y = 20;
     
-    doc.setFontSize(18);
-    doc.text(language === 'es' ? 'Informe Financiero' : 'Financial Report', 14, 20);
+    doc.setFontSize(16);
+    doc.text(language === 'es' ? 'INFORME FINANCIERO' : 'FINANCIAL REPORT', 14, y);
+    y += 8;
+    doc.setFontSize(10);
+    doc.text(`${language === 'es' ? 'Período' : 'Period'}: ${label}`, 14, y);
+    y += 5;
+    doc.text(`${language === 'es' ? 'Generado' : 'Generated'}: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, y);
+    y += 10;
+    
+    // Tours detail
+    if (period?.departures?.length > 0) {
+      doc.setFontSize(12);
+      doc.text(language === 'es' ? 'DESGLOSE DE TOURS' : 'TOUR BREAKDOWN', 14, y);
+      y += 5;
+      
+      doc.autoTable({
+        startY: y,
+        head: [[
+          language === 'es' ? 'Fecha' : 'Date',
+          language === 'es' ? 'Hora' : 'Time',
+          language === 'es' ? 'Tipo' : 'Type',
+          language === 'es' ? 'Vehículos' : 'Vehicles',
+          language === 'es' ? 'Efectivo' : 'Cash',
+          language === 'es' ? 'Banco' : 'Bank',
+          'Total'
+        ]],
+        body: period.departures.map(d => [
+          format(new Date(d.date), 'dd/MM/yyyy'),
+          d.timeSlot || '-',
+          d.category === 'quad' ? 'Quad' : 'Buggy',
+          d.vehiclesCount || 1,
+          formatCurrency(parseNumber(d.paymentSplitCash)),
+          formatCurrency(parseNumber(d.paymentSplitBank) + parseNumber(d.paymentSplitWeb)),
+          formatCurrency(parseNumber(d.totalGross))
+        ]),
+        foot: [[
+          { content: 'TOTALES', colSpan: 4, styles: { fontStyle: 'bold' } },
+          { content: formatCurrency(period.quads.cash + period.buggies.cash), styles: { fontStyle: 'bold' } },
+          { content: formatCurrency(period.quads.bank + period.buggies.bank), styles: { fontStyle: 'bold' } },
+          { content: formatCurrency(period.quads.total + period.buggies.total), styles: { fontStyle: 'bold' } }
+        ]],
+        theme: 'grid',
+        headStyles: { fillColor: [230, 126, 34] },
+        footStyles: { fillColor: [220, 220, 220] },
+        styles: { fontSize: 8 }
+      });
+      
+      y = doc.lastAutoTable.finalY + 10;
+    }
+    
+    // VAT Summary
+    const totalGross = (canViewQuads ? period.quads.total : 0) + (canViewBuggies ? period.buggies.total : 0);
+    const totalNet = totalGross / 1.21;
+    const totalVat = totalGross - totalNet;
+    const cashTotal = (canViewQuads ? period.quads.cash : 0) + (canViewBuggies ? period.buggies.cash : 0);
+    const vatNoCash = totalVat - (cashTotal - cashTotal / 1.21);
+    
     doc.setFontSize(12);
-    doc.text(`${language === 'es' ? 'Período' : 'Period'}: ${label}`, 14, 30);
-    doc.text(`${language === 'es' ? 'Generado' : 'Generated'}: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 37);
+    doc.text(language === 'es' ? 'DESGLOSE FISCAL' : 'TAX BREAKDOWN', 14, y);
+    y += 5;
     
-    let y = 50;
+    doc.autoTable({
+      startY: y,
+      body: [
+        [language === 'es' ? 'Bruto (con IVA)' : 'Gross (with VAT)', formatCurrency(totalGross)],
+        [language === 'es' ? 'Neto (sin IVA)' : 'Net (without VAT)', formatCurrency(totalNet)],
+        [language === 'es' ? 'IVA Total (21%)' : 'Total VAT (21%)', formatCurrency(totalVat)],
+        [language === 'es' ? 'IVA a Declarar (sin efectivo)' : 'VAT to Declare', formatCurrency(vatNoCash)],
+      ],
+      theme: 'grid',
+      columnStyles: { 1: { fontStyle: 'bold', halign: 'right' } },
+      styles: { fontSize: 9 }
+    });
     
-    // Quads Section
-    if (canViewQuads) {
-      doc.setFontSize(14);
-      doc.text('QUADS (GE)', 14, y);
-      y += 10;
+    y = doc.lastAutoTable.finalY + 10;
+    
+    // Balance
+    if (balance) {
+      doc.setFontSize(12);
+      doc.text(language === 'es' ? 'BALANCE' : 'BALANCE', 14, y);
+      y += 5;
+      
+      const balanceData = [];
+      if (canViewQuads) {
+        balanceData.push(['Quads - Efectivo', formatCurrency(balance.quads.cashNet)]);
+        balanceData.push(['Quads - Banco', formatCurrency(balance.quads.bankNet)]);
+      }
+      if (canViewBuggies) {
+        balanceData.push(['Buggies - Efectivo', formatCurrency(balance.buggies.cashNet)]);
+        balanceData.push(['Buggies - Banco', formatCurrency(balance.buggies.bankNet)]);
+      }
       
       doc.autoTable({
         startY: y,
-        head: [[language === 'es' ? 'Concepto' : 'Concept', language === 'es' ? 'Efectivo' : 'Cash', language === 'es' ? 'Banco' : 'Bank']],
-        body: [
-          [language === 'es' ? 'Ventas Tours' : 'Tour Sales', formatCurrency(reportData.periods[selectedPeriod].quads.cash), formatCurrency(reportData.periods[selectedPeriod].quads.bank)],
-          [language === 'es' ? 'Ingresos Extra' : 'Extra Income', formatCurrency(reportData.incomes[selectedPeriod].GE.cash), formatCurrency(reportData.incomes[selectedPeriod].GE.bank)],
-          [language === 'es' ? 'Gastos' : 'Expenses', `-${formatCurrency(reportData.expenses[selectedPeriod].GE.cash)}`, `-${formatCurrency(reportData.expenses[selectedPeriod].GE.bank)}`],
-          [language === 'es' ? 'BALANCE' : 'BALANCE', formatCurrency(balance.quads.cashNet), formatCurrency(balance.quads.bankNet)],
-        ],
+        body: balanceData,
         theme: 'grid',
-        headStyles: { fillColor: [59, 130, 246] },
-      });
-      
-      y = doc.lastAutoTable.finalY + 15;
-    }
-    
-    // Buggies Section
-    if (canViewBuggies) {
-      doc.setFontSize(14);
-      doc.text('BUGGIES (E&S)', 14, y);
-      y += 10;
-      
-      doc.autoTable({
-        startY: y,
-        head: [[language === 'es' ? 'Concepto' : 'Concept', language === 'es' ? 'Efectivo' : 'Cash', language === 'es' ? 'Banco' : 'Bank']],
-        body: [
-          [language === 'es' ? 'Ventas Tours' : 'Tour Sales', formatCurrency(reportData.periods[selectedPeriod].buggies.cash), formatCurrency(reportData.periods[selectedPeriod].buggies.bank)],
-          [language === 'es' ? 'Ingresos Extra' : 'Extra Income', formatCurrency(reportData.incomes[selectedPeriod]['E&S'].cash), formatCurrency(reportData.incomes[selectedPeriod]['E&S'].bank)],
-          [language === 'es' ? 'Gastos' : 'Expenses', `-${formatCurrency(reportData.expenses[selectedPeriod]['E&S'].cash)}`, `-${formatCurrency(reportData.expenses[selectedPeriod]['E&S'].bank)}`],
-          [language === 'es' ? 'BALANCE' : 'BALANCE', formatCurrency(balance.buggies.cashNet), formatCurrency(balance.buggies.bankNet)],
-        ],
-        theme: 'grid',
-        headStyles: { fillColor: [34, 197, 94] },
-      });
-      
-      y = doc.lastAutoTable.finalY + 15;
-    }
-    
-    // Pending payments
-    const pendingQuads = reportData.periods[selectedPeriod].quads;
-    const pendingBuggies = reportData.periods[selectedPeriod].buggies;
-    
-    if (pendingQuads.gyg + pendingQuads.cruise + pendingBuggies.gyg + pendingBuggies.cruise > 0) {
-      doc.setFontSize(14);
-      doc.text(language === 'es' ? 'PENDIENTES DE COBRO' : 'PENDING PAYMENTS', 14, y);
-      y += 10;
-      
-      doc.autoTable({
-        startY: y,
-        head: [[language === 'es' ? 'Concepto' : 'Concept', 'Quads (GE)', 'Buggies (E&S)', 'Total']],
-        body: [
-          ['GYG', formatCurrency(pendingQuads.gyg), formatCurrency(pendingBuggies.gyg), formatCurrency(pendingQuads.gyg + pendingBuggies.gyg)],
-          [language === 'es' ? 'Cruceros' : 'Cruises', formatCurrency(pendingQuads.cruise), formatCurrency(pendingBuggies.cruise), formatCurrency(pendingQuads.cruise + pendingBuggies.cruise)],
-        ],
-        theme: 'grid',
-        headStyles: { fillColor: [234, 179, 8] },
+        columnStyles: { 1: { fontStyle: 'bold', halign: 'right' } },
+        styles: { fontSize: 9 }
       });
     }
     
-    doc.save(`informe_${selectedPeriod}_${format(new Date(), 'yyyyMMdd')}.pdf`);
+    doc.save(`informe_principal_${format(new Date(), 'yyyyMMdd')}.pdf`);
     toast.success(language === 'es' ? 'PDF descargado' : 'PDF downloaded');
+  }
+  
+  // Get concepts for filters
+  const getConcepts = () => {
+    const concepts = new Set();
+    expenseCategories.forEach(c => concepts.add(c.name));
+    incomeCategories.forEach(c => concepts.add(c.name));
+    return Array.from(concepts);
   };
 
   if (loading && !reportData) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <RefreshCw className="h-8 w-8 animate-spin text-orange-600" />
-      </div>
-    );
+    return <div className="flex justify-center p-12"><RefreshCw className="h-8 w-8 animate-spin text-orange-600" /></div>;
   }
 
-  const balance = calculateBalance(selectedPeriod);
+  const balance = calcBalance(selectedPeriod);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">{language === 'es' ? '📊 Informes Financieros' : '📊 Financial Reports'}</h2>
-          <p className="text-muted-foreground">{language === 'es' ? 'Resumen completo de ventas, gastos e ingresos' : 'Complete summary of sales, expenses and incomes'}</p>
+          <h2 className="text-2xl font-bold">📊 {language === 'es' ? 'Informes Financieros' : 'Financial Reports'}</h2>
+          <p className="text-muted-foreground">{language === 'es' ? 'Resumen completo de ventas, gastos e ingresos' : 'Complete summary'}</p>
         </div>
-        
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2">
           <Button onClick={loadReport} variant="outline" disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             {language === 'es' ? 'Actualizar' : 'Refresh'}
           </Button>
-          <Button onClick={exportPDF} disabled={!reportData}>
+          <Button onClick={exportMainPDF} disabled={!reportData}>
             <Download className="h-4 w-4 mr-2" />
             PDF
           </Button>
@@ -614,77 +579,21 @@ export default function Reports() {
           <div className="flex flex-wrap items-center gap-4">
             <Label className="font-semibold">{language === 'es' ? 'Período:' : 'Period:'}</Label>
             <div className="flex flex-wrap gap-2">
-              <Button 
-                variant={selectedPeriod === 'today' ? 'default' : 'outline'} 
-                size="sm"
-                onClick={() => { setSelectedPeriod('today'); }}
-              >
-                <Clock className="h-4 w-4 mr-2" />
-                {language === 'es' ? 'Hoy' : 'Today'}
-              </Button>
-              <Button 
-                variant={selectedPeriod === 'month' ? 'default' : 'outline'} 
-                size="sm"
-                onClick={() => { setSelectedPeriod('month'); }}
-              >
-                <CalendarDays className="h-4 w-4 mr-2" />
-                {language === 'es' ? 'Este Mes' : 'This Month'}
-              </Button>
-              <Button 
-                variant={selectedPeriod === 'year' ? 'default' : 'outline'} 
-                size="sm"
-                onClick={() => { setSelectedPeriod('year'); }}
-              >
-                <CalendarRange className="h-4 w-4 mr-2" />
-                {language === 'es' ? 'Este Año' : 'This Year'}
-              </Button>
-              <Button 
-                variant={selectedPeriod === 'custom' ? 'default' : 'outline'} 
-                size="sm"
-                onClick={() => { setSelectedPeriod('custom'); }}
-              >
-                <Search className="h-4 w-4 mr-2" />
-                {language === 'es' ? 'Personalizado' : 'Custom'}
-              </Button>
+              {['today', 'month', 'year', 'custom'].map(p => (
+                <Button key={p} variant={selectedPeriod === p ? 'default' : 'outline'} size="sm" onClick={() => setSelectedPeriod(p)}>
+                  {p === 'today' && <><Clock className="h-4 w-4 mr-1" />{language === 'es' ? 'Hoy' : 'Today'}</>}
+                  {p === 'month' && <><CalendarDays className="h-4 w-4 mr-1" />{language === 'es' ? 'Mes' : 'Month'}</>}
+                  {p === 'year' && <><CalendarRange className="h-4 w-4 mr-1" />{language === 'es' ? 'Año' : 'Year'}</>}
+                  {p === 'custom' && <><Search className="h-4 w-4 mr-1" />{language === 'es' ? 'Personalizado' : 'Custom'}</>}
+                </Button>
+              ))}
             </div>
           </div>
-          
-          {/* Custom Date Range */}
           {selectedPeriod === 'custom' && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
-              <div className="flex flex-wrap items-end gap-4">
-                <div>
-                  <Label className="text-sm">{language === 'es' ? 'Desde' : 'From'}</Label>
-                  <Input
-                    type="date"
-                    value={customStartDate}
-                    onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="mt-1 w-40"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm">{language === 'es' ? 'Hasta' : 'To'}</Label>
-                  <Input
-                    type="date"
-                    value={customEndDate}
-                    onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="mt-1 w-40"
-                  />
-                </div>
-                <Button 
-                  onClick={loadReport} 
-                  disabled={!customStartDate || !customEndDate || loading}
-                  className="bg-orange-600 hover:bg-orange-700"
-                >
-                  {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
-                  {language === 'es' ? 'Generar Informe' : 'Generate Report'}
-                </Button>
-              </div>
-              {customStartDate && customEndDate && (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {language === 'es' ? 'Período seleccionado:' : 'Selected period:'} {format(new Date(customStartDate), 'dd/MM/yyyy')} - {format(new Date(customEndDate), 'dd/MM/yyyy')}
-                </p>
-              )}
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg flex flex-wrap items-end gap-4">
+              <div><Label>Desde</Label><Input type="date" value={customStartDate} onChange={e => setCustomStartDate(e.target.value)} className="mt-1 w-40" /></div>
+              <div><Label>Hasta</Label><Input type="date" value={customEndDate} onChange={e => setCustomEndDate(e.target.value)} className="mt-1 w-40" /></div>
+              <Button onClick={loadReport} disabled={!customStartDate || !customEndDate}><Search className="h-4 w-4 mr-2" />{language === 'es' ? 'Generar' : 'Generate'}</Button>
             </div>
           )}
         </CardContent>
@@ -692,227 +601,103 @@ export default function Reports() {
 
       {reportData && (
         <>
-          {/* Sales Summary - 3 Periods */}
+          {/* Sales Table */}
           <Card>
-            <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 border-b">
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-orange-600" />
-                {language === 'es' ? '💰 Ventas por Tours' : '💰 Tour Sales'}
-              </CardTitle>
-              <CardDescription>{language === 'es' ? 'Ingresos de tours por efectivo y banco' : 'Tour income by cash and bank'}</CardDescription>
+            <CardHeader className="bg-orange-50 border-b">
+              <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-orange-600" />💰 {language === 'es' ? 'Ventas Tours' : 'Tour Sales'}</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="font-bold">{language === 'es' ? 'Período' : 'Period'}</TableHead>
-                      {canViewQuads && (
-                        <>
-                          <TableHead className="text-center text-blue-700">
-                            <div className="flex items-center justify-center gap-1">
-                              <Car className="h-4 w-4" />
-                              Quads 💵
-                            </div>
-                          </TableHead>
-                          <TableHead className="text-center text-blue-700">
-                            <div className="flex items-center justify-center gap-1">
-                              <Car className="h-4 w-4" />
-                              Quads 🏦
-                            </div>
-                          </TableHead>
-                        </>
-                      )}
-                      {canViewBuggies && (
-                        <>
-                          <TableHead className="text-center text-green-700">
-                            <div className="flex items-center justify-center gap-1">
-                              <Truck className="h-4 w-4" />
-                              Buggies 💵
-                            </div>
-                          </TableHead>
-                          <TableHead className="text-center text-green-700">
-                            <div className="flex items-center justify-center gap-1">
-                              <Truck className="h-4 w-4" />
-                              Buggies 🏦
-                            </div>
-                          </TableHead>
-                        </>
-                      )}
+            <CardContent className="pt-4">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>{language === 'es' ? 'Período' : 'Period'}</TableHead>
+                    {canViewQuads && <><TableHead className="text-center text-blue-700">Quads 💵</TableHead><TableHead className="text-center text-blue-700">Quads 🏦</TableHead></>}
+                    {canViewBuggies && <><TableHead className="text-center text-green-700">Buggies 💵</TableHead><TableHead className="text-center text-green-700">Buggies 🏦</TableHead></>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {['today', 'month', 'year', ...(selectedPeriod === 'custom' ? ['custom'] : [])].map(p => reportData.periods[p] && (
+                    <TableRow key={p} className={selectedPeriod === p ? 'bg-orange-50' : ''}>
+                      <TableCell><Badge variant={selectedPeriod === p ? 'default' : 'outline'}>{reportData.labels[p]?.label}</Badge></TableCell>
+                      {canViewQuads && <><TableCell className="text-center font-semibold text-blue-600">{formatCurrency(reportData.periods[p].quads.cash)}</TableCell><TableCell className="text-center font-semibold text-blue-600">{formatCurrency(reportData.periods[p].quads.bank)}</TableCell></>}
+                      {canViewBuggies && <><TableCell className="text-center font-semibold text-green-600">{formatCurrency(reportData.periods[p].buggies.cash)}</TableCell><TableCell className="text-center font-semibold text-green-600">{formatCurrency(reportData.periods[p].buggies.bank)}</TableCell></>}
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {['today', 'month', 'year'].map((period) => (
-                      <TableRow key={period} className={selectedPeriod === period ? 'bg-orange-50' : ''}>
-                        <TableCell className="font-medium">
-                          <Badge variant={selectedPeriod === period ? 'default' : 'outline'}>
-                            {reportData.labels[period].label}
-                          </Badge>
-                        </TableCell>
-                        {canViewQuads && (
-                          <>
-                            <TableCell className="text-center font-semibold text-blue-600">
-                              {formatCurrency(reportData.periods[period].quads.cash)}
-                            </TableCell>
-                            <TableCell className="text-center font-semibold text-blue-600">
-                              {formatCurrency(reportData.periods[period].quads.bank)}
-                            </TableCell>
-                          </>
-                        )}
-                        {canViewBuggies && (
-                          <>
-                            <TableCell className="text-center font-semibold text-green-600">
-                              {formatCurrency(reportData.periods[period].buggies.cash)}
-                            </TableCell>
-                            <TableCell className="text-center font-semibold text-green-600">
-                              {formatCurrency(reportData.periods[period].buggies.bank)}
-                            </TableCell>
-                          </>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
 
-          {/* VAT Breakdown Section */}
+          {/* VAT Breakdown */}
           <Card className="border-2 border-purple-200">
-            <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-200">
-              <CardTitle className="flex items-center gap-2 text-purple-700">
-                <Building2 className="h-5 w-5" />
-                {language === 'es' ? '🧾 Desglose Fiscal (IVA 21%)' : '🧾 Tax Breakdown (VAT 21%)'}
-              </CardTitle>
-              <CardDescription>{language === 'es' ? `Período: ${reportData.labels[selectedPeriod].label}` : `Period: ${reportData.labels[selectedPeriod].label}`}</CardDescription>
+            <CardHeader className="bg-purple-50 border-b">
+              <CardTitle className="flex items-center gap-2 text-purple-700"><Building2 className="h-5 w-5" />🧾 {language === 'es' ? 'Desglose Fiscal (IVA 21%)' : 'Tax Breakdown'}</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4">
               {(() => {
-                const quadsTotal = reportData.periods[selectedPeriod].quads.total;
-                const quadsNet = quadsTotal / 1.21;
-                const quadsVat = quadsTotal - quadsNet;
-                const quadsCash = reportData.periods[selectedPeriod].quads.cash;
-                const quadsCashVat = quadsCash - (quadsCash / 1.21);
-                const quadsVatNoCash = quadsVat - quadsCashVat;
-                
-                const buggiesTotal = reportData.periods[selectedPeriod].buggies.total;
-                const buggiesNet = buggiesTotal / 1.21;
-                const buggiesVat = buggiesTotal - buggiesNet;
-                const buggiesCash = reportData.periods[selectedPeriod].buggies.cash;
-                const buggiesCashVat = buggiesCash - (buggiesCash / 1.21);
-                const buggiesVatNoCash = buggiesVat - buggiesCashVat;
-                
-                const totalGross = quadsTotal + buggiesTotal;
-                const totalNet = quadsNet + buggiesNet;
-                const totalVat = quadsVat + buggiesVat;
-                const totalVatNoCash = quadsVatNoCash + buggiesVatNoCash;
-                
+                const p = reportData.periods[selectedPeriod];
+                if (!p) return null;
+                const qT = p.quads.total, bT = p.buggies.total;
+                const qN = qT / 1.21, bN = bT / 1.21;
+                const qV = qT - qN, bV = bT - bN;
+                const qC = p.quads.cash, bC = p.buggies.cash;
+                const qVnC = qV - (qC - qC / 1.21), bVnC = bV - (bC - bC / 1.21);
                 return (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-purple-50">
-                          <TableHead className="font-bold">{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
-                          {canViewQuads && <TableHead className="text-center text-blue-700">Quads (GE)</TableHead>}
-                          {canViewBuggies && <TableHead className="text-center text-green-700">Buggies (E&S)</TableHead>}
-                          {canViewQuads && canViewBuggies && <TableHead className="text-center font-bold">TOTAL</TableHead>}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        <TableRow>
-                          <TableCell className="font-medium">{language === 'es' ? '💰 Bruto (con IVA)' : '💰 Gross (with VAT)'}</TableCell>
-                          {canViewQuads && <TableCell className="text-center font-semibold">{formatCurrency(quadsTotal)}</TableCell>}
-                          {canViewBuggies && <TableCell className="text-center font-semibold">{formatCurrency(buggiesTotal)}</TableCell>}
-                          {canViewQuads && canViewBuggies && <TableCell className="text-center font-bold text-purple-700">{formatCurrency(totalGross)}</TableCell>}
-                        </TableRow>
-                        <TableRow className="bg-gray-50">
-                          <TableCell className="font-medium">{language === 'es' ? '📊 Neto (sin IVA)' : '📊 Net (without VAT)'}</TableCell>
-                          {canViewQuads && <TableCell className="text-center">{formatCurrency(quadsNet)}</TableCell>}
-                          {canViewBuggies && <TableCell className="text-center">{formatCurrency(buggiesNet)}</TableCell>}
-                          {canViewQuads && canViewBuggies && <TableCell className="text-center font-bold">{formatCurrency(totalNet)}</TableCell>}
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className="font-medium">{language === 'es' ? '🏛️ IVA Total (21%)' : '🏛️ Total VAT (21%)'}</TableCell>
-                          {canViewQuads && <TableCell className="text-center text-purple-600">{formatCurrency(quadsVat)}</TableCell>}
-                          {canViewBuggies && <TableCell className="text-center text-purple-600">{formatCurrency(buggiesVat)}</TableCell>}
-                          {canViewQuads && canViewBuggies && <TableCell className="text-center font-bold text-purple-700">{formatCurrency(totalVat)}</TableCell>}
-                        </TableRow>
-                        <TableRow className="bg-amber-50 border-t-2 border-amber-300">
-                          <TableCell className="font-medium">
-                            <div>{language === 'es' ? '⚡ IVA sin Efectivo' : '⚡ VAT without Cash'}</div>
-                            <div className="text-xs text-muted-foreground">{language === 'es' ? '(IVA a declarar)' : '(VAT to declare)'}</div>
-                          </TableCell>
-                          {canViewQuads && <TableCell className="text-center font-bold text-amber-700">{formatCurrency(quadsVatNoCash)}</TableCell>}
-                          {canViewBuggies && <TableCell className="text-center font-bold text-amber-700">{formatCurrency(buggiesVatNoCash)}</TableCell>}
-                          {canViewQuads && canViewBuggies && <TableCell className="text-center font-bold text-amber-800 text-lg">{formatCurrency(totalVatNoCash)}</TableCell>}
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                    
-                    {/* Summary cards */}
-                    <div className="grid md:grid-cols-3 gap-4 mt-6">
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 border border-purple-300">
-                        <div className="text-sm text-purple-600">{language === 'es' ? 'IVA Total' : 'Total VAT'}</div>
-                        <div className="text-2xl font-bold text-purple-800">{formatCurrency((canViewQuads ? quadsVat : 0) + (canViewBuggies ? buggiesVat : 0))}</div>
-                      </div>
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-green-100 to-green-200 border border-green-300">
-                        <div className="text-sm text-green-600">{language === 'es' ? 'IVA del Efectivo' : 'Cash VAT'}</div>
-                        <div className="text-2xl font-bold text-green-800">{formatCurrency((canViewQuads ? quadsCashVat : 0) + (canViewBuggies ? buggiesCashVat : 0))}</div>
-                      </div>
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 border border-amber-300">
-                        <div className="text-sm text-amber-600">{language === 'es' ? 'IVA a Declarar' : 'VAT to Declare'}</div>
-                        <div className="text-2xl font-bold text-amber-800">{formatCurrency((canViewQuads ? quadsVatNoCash : 0) + (canViewBuggies ? buggiesVatNoCash : 0))}</div>
-                      </div>
-                    </div>
-                  </div>
+                  <Table>
+                    <TableHeader><TableRow className="bg-purple-50">
+                      <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
+                      {canViewQuads && <TableHead className="text-center">Quads</TableHead>}
+                      {canViewBuggies && <TableHead className="text-center">Buggies</TableHead>}
+                      <TableHead className="text-center font-bold">TOTAL</TableHead>
+                    </TableRow></TableHeader>
+                    <TableBody>
+                      <TableRow><TableCell>💰 Bruto</TableCell>{canViewQuads && <TableCell className="text-center">{formatCurrency(qT)}</TableCell>}{canViewBuggies && <TableCell className="text-center">{formatCurrency(bT)}</TableCell>}<TableCell className="text-center font-bold">{formatCurrency((canViewQuads ? qT : 0) + (canViewBuggies ? bT : 0))}</TableCell></TableRow>
+                      <TableRow className="bg-gray-50"><TableCell>📊 Neto</TableCell>{canViewQuads && <TableCell className="text-center">{formatCurrency(qN)}</TableCell>}{canViewBuggies && <TableCell className="text-center">{formatCurrency(bN)}</TableCell>}<TableCell className="text-center font-bold">{formatCurrency((canViewQuads ? qN : 0) + (canViewBuggies ? bN : 0))}</TableCell></TableRow>
+                      <TableRow><TableCell>🏛️ IVA Total</TableCell>{canViewQuads && <TableCell className="text-center text-purple-600">{formatCurrency(qV)}</TableCell>}{canViewBuggies && <TableCell className="text-center text-purple-600">{formatCurrency(bV)}</TableCell>}<TableCell className="text-center font-bold text-purple-700">{formatCurrency((canViewQuads ? qV : 0) + (canViewBuggies ? bV : 0))}</TableCell></TableRow>
+                      <TableRow className="bg-amber-50"><TableCell>⚡ IVA sin Efectivo</TableCell>{canViewQuads && <TableCell className="text-center font-bold text-amber-700">{formatCurrency(qVnC)}</TableCell>}{canViewBuggies && <TableCell className="text-center font-bold text-amber-700">{formatCurrency(bVnC)}</TableCell>}<TableCell className="text-center font-bold text-amber-800 text-lg">{formatCurrency((canViewQuads ? qVnC : 0) + (canViewBuggies ? bVnC : 0))}</TableCell></TableRow>
+                    </TableBody>
+                  </Table>
                 );
               })()}
             </CardContent>
           </Card>
 
-          {/* Pending Payments */}
-          {(reportData.periods[selectedPeriod].quads.gyg + reportData.periods[selectedPeriod].quads.cruise + 
-            reportData.periods[selectedPeriod].buggies.gyg + reportData.periods[selectedPeriod].buggies.cruise) > 0 && (
-            <Card className="border-2 border-yellow-200">
-              <CardHeader className="bg-yellow-50 border-b border-yellow-200">
-                <CardTitle className="flex items-center gap-2 text-yellow-700">
-                  <Clock className="h-5 w-5" />
-                  {language === 'es' ? '⏳ Pendientes de Cobro' : '⏳ Pending Payments'}
-                </CardTitle>
-                <CardDescription>{language === 'es' ? 'Pagos pendientes de GYG y Cruceros' : 'Pending payments from GYG and Cruises'}</CardDescription>
+          {/* Balance */}
+          {balance && (
+            <Card className="border-4 border-orange-400">
+              <CardHeader className="bg-gradient-to-r from-orange-500 to-amber-500 text-white">
+                <CardTitle className="text-xl flex items-center gap-2"><Wallet className="h-6 w-6" />💰 {language === 'es' ? 'BALANCE REAL' : 'REAL BALANCE'}</CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {canViewQuads && reportData.periods[selectedPeriod].quads.gyg > 0 && (
-                    <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
-                      <div className="text-sm text-blue-600 flex items-center gap-1">
-                        <Car className="h-4 w-4" /> Quads - GYG
+                <div className="grid md:grid-cols-2 gap-6">
+                  {canViewQuads && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-bold text-blue-700 flex items-center gap-2"><Car className="h-5 w-5" />QUADS (GE)</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-green-50 rounded-xl border-2 border-green-300 text-center">
+                          <div className="text-sm text-green-600">💵 Efectivo</div>
+                          <div className={`text-2xl font-bold ${balance.quads.cashNet >= 0 ? 'text-green-700' : 'text-red-600'}`}>{formatCurrency(balance.quads.cashNet)}</div>
+                        </div>
+                        <div className="p-4 bg-blue-50 rounded-xl border-2 border-blue-300 text-center">
+                          <div className="text-sm text-blue-600">🏦 Banco</div>
+                          <div className={`text-2xl font-bold ${balance.quads.bankNet >= 0 ? 'text-blue-700' : 'text-red-600'}`}>{formatCurrency(balance.quads.bankNet)}</div>
+                        </div>
                       </div>
-                      <div className="text-2xl font-bold text-blue-700">{formatCurrency(reportData.periods[selectedPeriod].quads.gyg)}</div>
                     </div>
                   )}
-                  {canViewQuads && reportData.periods[selectedPeriod].quads.cruise > 0 && (
-                    <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
-                      <div className="text-sm text-blue-600 flex items-center gap-1">
-                        <Car className="h-4 w-4" /> Quads - {language === 'es' ? 'Cruceros' : 'Cruises'}
+                  {canViewBuggies && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-bold text-green-700 flex items-center gap-2"><Truck className="h-5 w-5" />BUGGIES (E&S)</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-green-50 rounded-xl border-2 border-green-300 text-center">
+                          <div className="text-sm text-green-600">💵 Efectivo</div>
+                          <div className={`text-2xl font-bold ${balance.buggies.cashNet >= 0 ? 'text-green-700' : 'text-red-600'}`}>{formatCurrency(balance.buggies.cashNet)}</div>
+                        </div>
+                        <div className="p-4 bg-blue-50 rounded-xl border-2 border-blue-300 text-center">
+                          <div className="text-sm text-blue-600">🏦 Banco</div>
+                          <div className={`text-2xl font-bold ${balance.buggies.bankNet >= 0 ? 'text-blue-700' : 'text-red-600'}`}>{formatCurrency(balance.buggies.bankNet)}</div>
+                        </div>
                       </div>
-                      <div className="text-2xl font-bold text-blue-700">{formatCurrency(reportData.periods[selectedPeriod].quads.cruise)}</div>
-                    </div>
-                  )}
-                  {canViewBuggies && reportData.periods[selectedPeriod].buggies.gyg > 0 && (
-                    <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-                      <div className="text-sm text-green-600 flex items-center gap-1">
-                        <Truck className="h-4 w-4" /> Buggies - GYG
-                      </div>
-                      <div className="text-2xl font-bold text-green-700">{formatCurrency(reportData.periods[selectedPeriod].buggies.gyg)}</div>
-                    </div>
-                  )}
-                  {canViewBuggies && reportData.periods[selectedPeriod].buggies.cruise > 0 && (
-                    <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-                      <div className="text-sm text-green-600 flex items-center gap-1">
-                        <Truck className="h-4 w-4" /> Buggies - {language === 'es' ? 'Cruceros' : 'Cruises'}
-                      </div>
-                      <div className="text-2xl font-bold text-green-700">{formatCurrency(reportData.periods[selectedPeriod].buggies.cruise)}</div>
                     </div>
                   )}
                 </div>
@@ -920,253 +705,30 @@ export default function Reports() {
             </Card>
           )}
 
-          {/* Expenses Summary */}
-          <Card className="border-2 border-red-200">
-            <CardHeader className="bg-red-50 border-b border-red-200">
-              <CardTitle className="flex items-center gap-2 text-red-700">
-                <TrendingDown className="h-5 w-5" />
-                {language === 'es' ? '💸 Gastos' : '💸 Expenses'}
-              </CardTitle>
-              <CardDescription>{language === 'es' ? `Período: ${reportData.labels[selectedPeriod].label}` : `Period: ${reportData.labels[selectedPeriod].label}`}</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                {canViewGE && (
-                  <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
-                    <h4 className="font-bold text-blue-800 flex items-center gap-2 mb-4">
-                      <Car className="h-5 w-5" /> GE (Quads)
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="flex items-center gap-2">💵 {language === 'es' ? 'Efectivo' : 'Cash'}</span>
-                        <span className="font-bold text-red-600">-{formatCurrency(reportData.expenses[selectedPeriod].GE.cash)}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="flex items-center gap-2">🏦 {language === 'es' ? 'Banco' : 'Bank'}</span>
-                        <span className="font-bold text-red-600">-{formatCurrency(reportData.expenses[selectedPeriod].GE.bank)}</span>
-                      </div>
-                      <div className="border-t pt-2 flex justify-between items-center">
-                        <span className="font-semibold">Total</span>
-                        <span className="font-bold text-red-700 text-lg">
-                          -{formatCurrency(reportData.expenses[selectedPeriod].GE.cash + reportData.expenses[selectedPeriod].GE.bank)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {canViewES && (
-                  <div className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
-                    <h4 className="font-bold text-green-800 flex items-center gap-2 mb-4">
-                      <Truck className="h-5 w-5" /> E&S (Buggies)
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="flex items-center gap-2">💵 {language === 'es' ? 'Efectivo' : 'Cash'}</span>
-                        <span className="font-bold text-red-600">-{formatCurrency(reportData.expenses[selectedPeriod]['E&S'].cash)}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="flex items-center gap-2">🏦 {language === 'es' ? 'Banco' : 'Bank'}</span>
-                        <span className="font-bold text-red-600">-{formatCurrency(reportData.expenses[selectedPeriod]['E&S'].bank)}</span>
-                      </div>
-                      <div className="border-t pt-2 flex justify-between items-center">
-                        <span className="font-semibold">Total</span>
-                        <span className="font-bold text-red-700 text-lg">
-                          -{formatCurrency(reportData.expenses[selectedPeriod]['E&S'].cash + reportData.expenses[selectedPeriod]['E&S'].bank)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* BALANCE - Most Important Section */}
-          <Card className="border-4 border-orange-400 shadow-xl">
-            <CardHeader className="bg-gradient-to-r from-orange-500 to-amber-500 text-white">
-              <CardTitle className="text-2xl flex items-center gap-2">
-                <Wallet className="h-6 w-6" />
-                {language === 'es' ? '💰 BALANCE REAL - CAJA Y BANCO' : '💰 REAL BALANCE - CASH & BANK'}
-              </CardTitle>
-              <CardDescription className="text-orange-100">
-                {language === 'es' ? `Período: ${reportData.labels[selectedPeriod].label}` : `Period: ${reportData.labels[selectedPeriod].label}`}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              {balance && (
-                <div className="grid md:grid-cols-2 gap-8">
-                  {/* Quads Balance */}
-                  {canViewQuads && (
-                    <div className="space-y-4">
-                      <h3 className="text-xl font-bold text-blue-700 flex items-center gap-2 border-b pb-2">
-                        <Car className="h-6 w-6" /> QUADS (GE)
-                      </h3>
-                      
-                      {/* Cash Box */}
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border-2 border-green-300">
-                        <h4 className="font-bold text-green-800 mb-3 flex items-center gap-2">
-                          💵 {language === 'es' ? 'CAJA EFECTIVO' : 'CASH BOX'}
-                        </h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-green-700">(+) {language === 'es' ? 'Ventas Tours' : 'Tour Sales'}</span>
-                            <span className="font-medium text-green-600">{formatCurrency(reportData.periods[selectedPeriod].quads.cash)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-green-700">(+) {language === 'es' ? 'Ingresos Extra' : 'Extra Income'}</span>
-                            <span className="font-medium text-green-600">{formatCurrency(reportData.incomes[selectedPeriod].GE.cash)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-red-700">(-) {language === 'es' ? 'Gastos' : 'Expenses'}</span>
-                            <span className="font-medium text-red-600">-{formatCurrency(reportData.expenses[selectedPeriod].GE.cash)}</span>
-                          </div>
-                          <div className="border-t-2 border-green-400 pt-2 mt-2 flex justify-between">
-                            <span className="font-bold text-lg">=</span>
-                            <span className={`font-bold text-2xl ${balance.quads.cashNet >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                              {formatCurrency(balance.quads.cashNet)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Bank */}
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border-2 border-blue-300">
-                        <h4 className="font-bold text-blue-800 mb-3 flex items-center gap-2">
-                          🏦 {language === 'es' ? 'BANCO' : 'BANK'}
-                        </h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-blue-700">(+) {language === 'es' ? 'Ventas Tours' : 'Tour Sales'}</span>
-                            <span className="font-medium text-blue-600">{formatCurrency(reportData.periods[selectedPeriod].quads.bank)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-blue-700">(+) {language === 'es' ? 'Ingresos Extra' : 'Extra Income'}</span>
-                            <span className="font-medium text-blue-600">{formatCurrency(reportData.incomes[selectedPeriod].GE.bank)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-red-700">(-) {language === 'es' ? 'Gastos' : 'Expenses'}</span>
-                            <span className="font-medium text-red-600">-{formatCurrency(reportData.expenses[selectedPeriod].GE.bank)}</span>
-                          </div>
-                          <div className="border-t-2 border-blue-400 pt-2 mt-2 flex justify-between">
-                            <span className="font-bold text-lg">=</span>
-                            <span className={`font-bold text-2xl ${balance.quads.bankNet >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-                              {formatCurrency(balance.quads.bankNet)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Buggies Balance */}
-                  {canViewBuggies && (
-                    <div className="space-y-4">
-                      <h3 className="text-xl font-bold text-green-700 flex items-center gap-2 border-b pb-2">
-                        <Truck className="h-6 w-6" /> BUGGIES (E&S)
-                      </h3>
-                      
-                      {/* Cash Box */}
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border-2 border-green-300">
-                        <h4 className="font-bold text-green-800 mb-3 flex items-center gap-2">
-                          💵 {language === 'es' ? 'CAJA EFECTIVO' : 'CASH BOX'}
-                        </h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-green-700">(+) {language === 'es' ? 'Ventas Tours' : 'Tour Sales'}</span>
-                            <span className="font-medium text-green-600">{formatCurrency(reportData.periods[selectedPeriod].buggies.cash)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-green-700">(+) {language === 'es' ? 'Ingresos Extra' : 'Extra Income'}</span>
-                            <span className="font-medium text-green-600">{formatCurrency(reportData.incomes[selectedPeriod]['E&S'].cash)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-red-700">(-) {language === 'es' ? 'Gastos' : 'Expenses'}</span>
-                            <span className="font-medium text-red-600">-{formatCurrency(reportData.expenses[selectedPeriod]['E&S'].cash)}</span>
-                          </div>
-                          <div className="border-t-2 border-green-400 pt-2 mt-2 flex justify-between">
-                            <span className="font-bold text-lg">=</span>
-                            <span className={`font-bold text-2xl ${balance.buggies.cashNet >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                              {formatCurrency(balance.buggies.cashNet)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Bank */}
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border-2 border-blue-300">
-                        <h4 className="font-bold text-blue-800 mb-3 flex items-center gap-2">
-                          🏦 {language === 'es' ? 'BANCO' : 'BANK'}
-                        </h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-blue-700">(+) {language === 'es' ? 'Ventas Tours' : 'Tour Sales'}</span>
-                            <span className="font-medium text-blue-600">{formatCurrency(reportData.periods[selectedPeriod].buggies.bank)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-blue-700">(+) {language === 'es' ? 'Ingresos Extra' : 'Extra Income'}</span>
-                            <span className="font-medium text-blue-600">{formatCurrency(reportData.incomes[selectedPeriod]['E&S'].bank)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-red-700">(-) {language === 'es' ? 'Gastos' : 'Expenses'}</span>
-                            <span className="font-medium text-red-600">-{formatCurrency(reportData.expenses[selectedPeriod]['E&S'].bank)}</span>
-                          </div>
-                          <div className="border-t-2 border-blue-400 pt-2 mt-2 flex justify-between">
-                            <span className="font-bold text-lg">=</span>
-                            <span className={`font-bold text-2xl ${balance.buggies.bankNet >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-                              {formatCurrency(balance.buggies.bankNet)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {/* Grand Total */}
-              {balance && (
-                <div className="mt-8 p-6 bg-gradient-to-r from-gray-800 to-gray-900 rounded-2xl text-white">
-                  <h3 className="text-xl font-bold mb-4 text-center">{language === 'es' ? '🏆 RESUMEN TOTAL' : '🏆 TOTAL SUMMARY'}</h3>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="text-center p-4 bg-white/10 rounded-xl">
-                      <div className="text-green-300 text-sm mb-1">💵 {language === 'es' ? 'TOTAL EFECTIVO' : 'TOTAL CASH'}</div>
-                      <div className={`text-3xl font-bold ${(balance.quads.cashNet + balance.buggies.cashNet) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {formatCurrency((canViewQuads ? balance.quads.cashNet : 0) + (canViewBuggies ? balance.buggies.cashNet : 0))}
-                      </div>
-                    </div>
-                    <div className="text-center p-4 bg-white/10 rounded-xl">
-                      <div className="text-blue-300 text-sm mb-1">🏦 {language === 'es' ? 'TOTAL BANCO' : 'TOTAL BANK'}</div>
-                      <div className={`text-3xl font-bold ${(balance.quads.bankNet + balance.buggies.bankNet) >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
-                        {formatCurrency((canViewQuads ? balance.quads.bankNet : 0) + (canViewBuggies ? balance.buggies.bankNet : 0))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* EXPENSE DETAILED REPORT */}
-          <Card className="border-2 border-red-300">
-            <CardHeader className="bg-red-50">
-              <CardTitle className="text-red-700 flex items-center gap-2">
-                <TrendingDown className="h-5 w-5" />
-                {language === 'es' ? '📋 Informe Detallado de Gastos' : '📋 Detailed Expense Report'}
-              </CardTitle>
+          {/* Unified Detailed Report */}
+          <Card className="border-2 border-indigo-300">
+            <CardHeader className="bg-indigo-50">
+              <CardTitle className="text-indigo-700 flex items-center gap-2"><FileText className="h-5 w-5" />📋 {language === 'es' ? 'Informe Detallado Personalizado' : 'Custom Detailed Report'}</CardTitle>
+              <CardDescription>{language === 'es' ? 'Genera un informe con filtros específicos y descárgalo en PDF' : 'Generate a report with specific filters'}</CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
-              <div className="grid gap-4 md:grid-cols-6 mb-4">
+              <div className="grid gap-4 md:grid-cols-7 mb-4">
+                <div><Label>Desde</Label><Input type="date" value={detailedStartDate} onChange={e => setDetailedStartDate(e.target.value)} className="mt-1" /></div>
+                <div><Label>Hasta</Label><Input type="date" value={detailedEndDate} onChange={e => setDetailedEndDate(e.target.value)} className="mt-1" /></div>
                 <div>
-                  <Label>{language === 'es' ? 'Desde' : 'From'}</Label>
-                  <Input type="date" value={expenseReportStartDate} onChange={(e) => setExpenseReportStartDate(e.target.value)} className="mt-1" />
-                </div>
-                <div>
-                  <Label>{language === 'es' ? 'Hasta' : 'To'}</Label>
-                  <Input type="date" value={expenseReportEndDate} onChange={(e) => setExpenseReportEndDate(e.target.value)} className="mt-1" />
+                  <Label>{language === 'es' ? 'Tipo' : 'Type'}</Label>
+                  <Select value={detailedType} onValueChange={setDetailedType}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="both">{language === 'es' ? '📊 Ambos + Balance' : '📊 Both + Balance'}</SelectItem>
+                      <SelectItem value="expenses">{language === 'es' ? '💸 Solo Gastos' : '💸 Expenses Only'}</SelectItem>
+                      <SelectItem value="incomes">{language === 'es' ? '💰 Solo Ingresos' : '💰 Income Only'}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label>{language === 'es' ? 'Cuenta' : 'Account'}</Label>
-                  <Select value={expenseReportAccount} onValueChange={setExpenseReportAccount}>
+                  <Select value={detailedAccount} onValueChange={setDetailedAccount}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{language === 'es' ? 'Todas' : 'All'}</SelectItem>
@@ -1177,186 +739,156 @@ export default function Reports() {
                 </div>
                 <div>
                   <Label>{language === 'es' ? 'Método' : 'Method'}</Label>
-                  <Select value={expenseReportPaymentMethod} onValueChange={setExpenseReportPaymentMethod}>
+                  <Select value={detailedPaymentMethod} onValueChange={setDetailedPaymentMethod}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
-                      <SelectItem value="efectivo">💵 {language === 'es' ? 'Efectivo' : 'Cash'}</SelectItem>
-                      <SelectItem value="banco">🏦 {language === 'es' ? 'Banco' : 'Bank'}</SelectItem>
+                      <SelectItem value="efectivo">💵 Efectivo</SelectItem>
+                      <SelectItem value="banco">🏦 Banco</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
                   <Label>{language === 'es' ? 'Concepto' : 'Concept'}</Label>
-                  <Select value={expenseReportConcept} onValueChange={setExpenseReportConcept}>
+                  <Select value={detailedConcept} onValueChange={setDetailedConcept}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
-                      {getExpenseConcepts().map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      {getConcepts().map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-end">
-                  <Button onClick={generateExpenseReport} className="w-full bg-red-600 hover:bg-red-700" disabled={expenseReportLoading}>
-                    {expenseReportLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
+                <div className="flex items-end gap-2">
+                  <Button onClick={generateDetailedReport} className="bg-indigo-600 hover:bg-indigo-700" disabled={detailedLoading}>
+                    {detailedLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4 mr-1" />}
                     {language === 'es' ? 'Generar' : 'Generate'}
                   </Button>
                 </div>
               </div>
               
-              {expenseReportResults && (
-                <div className="space-y-4">
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-red-100 rounded-lg">
-                      <div className="text-sm text-red-600">{language === 'es' ? 'Total Gastos' : 'Total Expenses'}</div>
-                      <div className="text-2xl font-bold text-red-700">-{formatCurrency(expenseReportResults.total)}</div>
+              {detailedResults && (
+                <div className="space-y-4 mt-6">
+                  {/* Summary Cards */}
+                  <div className="grid md:grid-cols-4 gap-4">
+                    <div className="p-4 bg-orange-100 rounded-lg">
+                      <div className="text-sm text-orange-600">{language === 'es' ? 'Tours' : 'Tours'}</div>
+                      <div className="text-xl font-bold">{formatCurrency(detailedResults.depsTotal)}</div>
+                      <div className="text-xs text-muted-foreground">💵 {formatCurrency(detailedResults.depsCash)} | 🏦 {formatCurrency(detailedResults.depsBank)}</div>
                     </div>
-                    {canViewGE && (
-                      <div className="p-4 bg-blue-50 rounded-lg">
-                        <div className="text-sm text-blue-600">GE (Quads)</div>
-                        <div className="text-lg font-bold">💵 {formatCurrency(expenseReportResults.byAccount.GE.cash)} | 🏦 {formatCurrency(expenseReportResults.byAccount.GE.bank)}</div>
+                    {(detailedType === 'incomes' || detailedType === 'both') && (
+                      <div className="p-4 bg-green-100 rounded-lg">
+                        <div className="text-sm text-green-600">{language === 'es' ? 'Ingresos Extra' : 'Extra Income'}</div>
+                        <div className="text-xl font-bold text-green-700">+{formatCurrency(detailedResults.incTotal)}</div>
+                        <div className="text-xs text-muted-foreground">💵 {formatCurrency(detailedResults.incByCash)} | 🏦 {formatCurrency(detailedResults.incByBank)}</div>
                       </div>
                     )}
-                    {canViewES && (
-                      <div className="p-4 bg-green-50 rounded-lg">
-                        <div className="text-sm text-green-600">E&S (Buggies)</div>
-                        <div className="text-lg font-bold">💵 {formatCurrency(expenseReportResults.byAccount['E&S'].cash)} | 🏦 {formatCurrency(expenseReportResults.byAccount['E&S'].bank)}</div>
+                    {(detailedType === 'expenses' || detailedType === 'both') && (
+                      <div className="p-4 bg-red-100 rounded-lg">
+                        <div className="text-sm text-red-600">{language === 'es' ? 'Gastos' : 'Expenses'}</div>
+                        <div className="text-xl font-bold text-red-700">-{formatCurrency(detailedResults.expTotal)}</div>
+                        <div className="text-xs text-muted-foreground">💵 {formatCurrency(detailedResults.expByCash)} | 🏦 {formatCurrency(detailedResults.expByBank)}</div>
+                      </div>
+                    )}
+                    {detailedType === 'both' && (
+                      <div className="p-4 bg-indigo-100 rounded-lg">
+                        <div className="text-sm text-indigo-600">{language === 'es' ? 'Balance' : 'Balance'}</div>
+                        <div className={`text-xl font-bold ${detailedResults.balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(detailedResults.balance)}</div>
                       </div>
                     )}
                   </div>
                   
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{language === 'es' ? 'Fecha' : 'Date'}</TableHead>
-                        <TableHead>{language === 'es' ? 'Cuenta' : 'Account'}</TableHead>
-                        <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
-                        <TableHead>{language === 'es' ? 'Método' : 'Method'}</TableHead>
-                        <TableHead>{language === 'es' ? 'Notas' : 'Notes'}</TableHead>
-                        <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {expenseReportResults.data.map((exp, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell>{format(new Date(exp.date), 'dd/MM/yyyy')}</TableCell>
-                          <TableCell><Badge className={exp.account === 'GE' ? 'bg-blue-600' : 'bg-green-600'}>{exp.account}</Badge></TableCell>
-                          <TableCell>{exp.concept}</TableCell>
-                          <TableCell><Badge variant="outline">{exp.paymentMethod === 'banco' ? '🏦 Banco' : '💵 Efectivo'}</Badge></TableCell>
-                          <TableCell className="text-muted-foreground">{exp.notes || '-'}</TableCell>
-                          <TableCell className="text-right font-bold text-red-600">-{formatCurrency(exp.amount)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* INCOME DETAILED REPORT */}
-          <Card className="border-2 border-green-300">
-            <CardHeader className="bg-green-50">
-              <CardTitle className="text-green-700 flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                {language === 'es' ? '📋 Informe Detallado de Ingresos' : '📋 Detailed Income Report'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="grid gap-4 md:grid-cols-6 mb-4">
-                <div>
-                  <Label>{language === 'es' ? 'Desde' : 'From'}</Label>
-                  <Input type="date" value={incomeReportStartDate} onChange={(e) => setIncomeReportStartDate(e.target.value)} className="mt-1" />
-                </div>
-                <div>
-                  <Label>{language === 'es' ? 'Hasta' : 'To'}</Label>
-                  <Input type="date" value={incomeReportEndDate} onChange={(e) => setIncomeReportEndDate(e.target.value)} className="mt-1" />
-                </div>
-                <div>
-                  <Label>{language === 'es' ? 'Cuenta' : 'Account'}</Label>
-                  <Select value={incomeReportAccount} onValueChange={setIncomeReportAccount}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{language === 'es' ? 'Todas' : 'All'}</SelectItem>
-                      {canViewGE && <SelectItem value="GE">GE (Quads)</SelectItem>}
-                      {canViewES && <SelectItem value="E&S">E&S (Buggies)</SelectItem>}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>{language === 'es' ? 'Método' : 'Method'}</Label>
-                  <Select value={incomeReportPaymentMethod} onValueChange={setIncomeReportPaymentMethod}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
-                      <SelectItem value="efectivo">💵 {language === 'es' ? 'Efectivo' : 'Cash'}</SelectItem>
-                      <SelectItem value="banco">🏦 {language === 'es' ? 'Banco' : 'Bank'}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>{language === 'es' ? 'Concepto' : 'Concept'}</Label>
-                  <Select value={incomeReportConcept} onValueChange={setIncomeReportConcept}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
-                      {getIncomeConcepts().map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={generateIncomeReport} className="w-full bg-green-600 hover:bg-green-700" disabled={incomeReportLoading}>
-                    {incomeReportLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
-                    {language === 'es' ? 'Generar' : 'Generate'}
-                  </Button>
-                </div>
-              </div>
-              
-              {incomeReportResults && (
-                <div className="space-y-4">
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-green-100 rounded-lg">
-                      <div className="text-sm text-green-600">{language === 'es' ? 'Total Ingresos' : 'Total Income'}</div>
-                      <div className="text-2xl font-bold text-green-700">+{formatCurrency(incomeReportResults.total)}</div>
-                    </div>
-                    {canViewGE && (
-                      <div className="p-4 bg-blue-50 rounded-lg">
-                        <div className="text-sm text-blue-600">GE (Quads)</div>
-                        <div className="text-lg font-bold">💵 {formatCurrency(incomeReportResults.byAccount.GE.cash)} | 🏦 {formatCurrency(incomeReportResults.byAccount.GE.bank)}</div>
-                      </div>
-                    )}
-                    {canViewES && (
-                      <div className="p-4 bg-green-50 rounded-lg">
-                        <div className="text-sm text-green-600">E&S (Buggies)</div>
-                        <div className="text-lg font-bold">💵 {formatCurrency(incomeReportResults.byAccount['E&S'].cash)} | 🏦 {formatCurrency(incomeReportResults.byAccount['E&S'].bank)}</div>
-                      </div>
-                    )}
+                  {/* Download PDF Button */}
+                  <div className="flex justify-end">
+                    <Button onClick={exportDetailedPDF} className="bg-indigo-600 hover:bg-indigo-700">
+                      <Download className="h-4 w-4 mr-2" />
+                      {language === 'es' ? 'Descargar PDF' : 'Download PDF'}
+                    </Button>
                   </div>
                   
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{language === 'es' ? 'Fecha' : 'Date'}</TableHead>
-                        <TableHead>{language === 'es' ? 'Cuenta' : 'Account'}</TableHead>
-                        <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
-                        <TableHead>{language === 'es' ? 'Método' : 'Method'}</TableHead>
-                        <TableHead>{language === 'es' ? 'Notas' : 'Notes'}</TableHead>
-                        <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {incomeReportResults.data.map((inc, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell>{format(new Date(inc.date), 'dd/MM/yyyy')}</TableCell>
-                          <TableCell><Badge className={inc.account === 'GE' ? 'bg-blue-600' : 'bg-green-600'}>{inc.account}</Badge></TableCell>
-                          <TableCell>{inc.concept}</TableCell>
-                          <TableCell><Badge variant="outline">{inc.paymentMethod === 'banco' ? '🏦 Banco' : '💵 Efectivo'}</Badge></TableCell>
-                          <TableCell className="text-muted-foreground">{inc.notes || '-'}</TableCell>
-                          <TableCell className="text-right font-bold text-green-600">+{formatCurrency(inc.amount)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  {/* Tours Table */}
+                  {detailedResults.departures.length > 0 && (
+                    <div>
+                      <h4 className="font-bold mb-2 flex items-center gap-2"><Car className="h-4 w-4" /> Tours ({detailedResults.departures.length})</h4>
+                      <Table>
+                        <TableHeader><TableRow>
+                          <TableHead>{language === 'es' ? 'Fecha' : 'Date'}</TableHead>
+                          <TableHead>{language === 'es' ? 'Hora' : 'Time'}</TableHead>
+                          <TableHead>{language === 'es' ? 'Tipo' : 'Type'}</TableHead>
+                          <TableHead>{language === 'es' ? 'Vehículos' : 'Vehicles'}</TableHead>
+                          <TableHead>💵</TableHead>
+                          <TableHead>🏦</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
+                        </TableRow></TableHeader>
+                        <TableBody>
+                          {detailedResults.departures.map((d, i) => (
+                            <TableRow key={i}>
+                              <TableCell>{format(new Date(d.date), 'dd/MM/yyyy')}</TableCell>
+                              <TableCell>{d.timeSlot || '-'}</TableCell>
+                              <TableCell><Badge className={d.category === 'quad' ? 'bg-blue-600' : 'bg-green-600'}>{d.category === 'quad' ? 'Quad' : 'Buggy'}</Badge></TableCell>
+                              <TableCell>{d.vehiclesCount || 1}</TableCell>
+                              <TableCell>{formatCurrency(parseNumber(d.paymentSplitCash))}</TableCell>
+                              <TableCell>{formatCurrency(parseNumber(d.paymentSplitBank) + parseNumber(d.paymentSplitWeb))}</TableCell>
+                              <TableCell className="text-right font-bold">{formatCurrency(parseNumber(d.totalGross))}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                  
+                  {/* Expenses Table */}
+                  {(detailedType === 'expenses' || detailedType === 'both') && detailedResults.expenses.length > 0 && (
+                    <div>
+                      <h4 className="font-bold mb-2 text-red-700 flex items-center gap-2"><TrendingDown className="h-4 w-4" /> {language === 'es' ? 'Gastos' : 'Expenses'} ({detailedResults.expenses.length})</h4>
+                      <Table>
+                        <TableHeader><TableRow>
+                          <TableHead>{language === 'es' ? 'Fecha' : 'Date'}</TableHead>
+                          <TableHead>{language === 'es' ? 'Cuenta' : 'Account'}</TableHead>
+                          <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
+                          <TableHead>{language === 'es' ? 'Método' : 'Method'}</TableHead>
+                          <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
+                        </TableRow></TableHeader>
+                        <TableBody>
+                          {detailedResults.expenses.map((e, i) => (
+                            <TableRow key={i}>
+                              <TableCell>{format(new Date(e.date), 'dd/MM/yyyy')}</TableCell>
+                              <TableCell><Badge className={e.account === 'GE' ? 'bg-blue-600' : 'bg-green-600'}>{e.account}</Badge></TableCell>
+                              <TableCell>{e.concept}</TableCell>
+                              <TableCell><Badge variant="outline">{e.paymentMethod === 'banco' ? '🏦' : '💵'}</Badge></TableCell>
+                              <TableCell className="text-right font-bold text-red-600">-{formatCurrency(e.amount)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                  
+                  {/* Incomes Table */}
+                  {(detailedType === 'incomes' || detailedType === 'both') && detailedResults.incomes.length > 0 && (
+                    <div>
+                      <h4 className="font-bold mb-2 text-green-700 flex items-center gap-2"><TrendingUp className="h-4 w-4" /> {language === 'es' ? 'Ingresos Extra' : 'Extra Income'} ({detailedResults.incomes.length})</h4>
+                      <Table>
+                        <TableHeader><TableRow>
+                          <TableHead>{language === 'es' ? 'Fecha' : 'Date'}</TableHead>
+                          <TableHead>{language === 'es' ? 'Cuenta' : 'Account'}</TableHead>
+                          <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
+                          <TableHead>{language === 'es' ? 'Método' : 'Method'}</TableHead>
+                          <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
+                        </TableRow></TableHeader>
+                        <TableBody>
+                          {detailedResults.incomes.map((inc, i) => (
+                            <TableRow key={i}>
+                              <TableCell>{format(new Date(inc.date), 'dd/MM/yyyy')}</TableCell>
+                              <TableCell><Badge className={inc.account === 'GE' ? 'bg-blue-600' : 'bg-green-600'}>{inc.account}</Badge></TableCell>
+                              <TableCell>{inc.concept}</TableCell>
+                              <TableCell><Badge variant="outline">{inc.paymentMethod === 'banco' ? '🏦' : '💵'}</Badge></TableCell>
+                              <TableCell className="text-right font-bold text-green-600">+{formatCurrency(inc.amount)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
