@@ -72,7 +72,6 @@ export default function Reports() {
     setLoading(true);
     try {
       const ranges = getDateRanges();
-      const currentRange = ranges[selectedPeriod];
       
       if (selectedPeriod === 'custom' && (!customStartDate || !customEndDate)) {
         toast.error(language === 'es' ? 'Selecciona las fechas' : 'Select dates');
@@ -80,17 +79,31 @@ export default function Reports() {
         return;
       }
       
-      // Fetch all data for all periods
-      const [todayDeps, monthDeps, yearDeps, expenses, incomes] = await Promise.all([
+      // Build fetch promises based on what we need
+      const fetchPromises = [
         fetch(`/api/departures?startDate=${ranges.today.start}&endDate=${ranges.today.end}`).then(r => r.json()),
         fetch(`/api/departures?startDate=${ranges.month.start}&endDate=${ranges.month.end}`).then(r => r.json()),
         fetch(`/api/departures?startDate=${ranges.year.start}&endDate=${ranges.year.end}`).then(r => r.json()),
         fetch(`/api/expenses?startDate=${ranges.year.start}&endDate=${ranges.year.end}`).then(r => r.json()),
         fetch(`/api/incomes?startDate=${ranges.year.start}&endDate=${ranges.year.end}`).then(r => r.json()),
-      ]);
+      ];
+      
+      // Add custom period fetch if needed
+      if (selectedPeriod === 'custom' && customStartDate && customEndDate) {
+        fetchPromises.push(fetch(`/api/departures?startDate=${customStartDate}&endDate=${customEndDate}`).then(r => r.json()));
+        fetchPromises.push(fetch(`/api/expenses?startDate=${customStartDate}&endDate=${customEndDate}`).then(r => r.json()));
+        fetchPromises.push(fetch(`/api/incomes?startDate=${customStartDate}&endDate=${customEndDate}`).then(r => r.json()));
+      }
+      
+      const results = await Promise.all(fetchPromises);
+      const [todayDeps, monthDeps, yearDeps, expenses, incomes] = results;
+      const customDeps = results[5] || [];
+      const customExpenses = results[6] || [];
+      const customIncomes = results[7] || [];
       
       // Filter by permissions
       const filterByPermissions = (data) => {
+        if (!Array.isArray(data)) return [];
         return data.filter(d => {
           if (d.category === 'quad' && !canViewQuads) return false;
           if (d.category === 'buggy' && !canViewBuggies) return false;
@@ -99,6 +112,7 @@ export default function Reports() {
       };
       
       const filterExpensesByPermissions = (data) => {
+        if (!Array.isArray(data)) return [];
         return data.filter(e => {
           if (e.account === 'GE' && !canViewGE) return false;
           if (e.account === 'E&S' && !canViewES) return false;
