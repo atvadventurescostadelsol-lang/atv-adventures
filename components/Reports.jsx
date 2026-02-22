@@ -796,6 +796,16 @@ export default function Reports() {
           filteredExpenses = filteredExpenses.filter(e => e.concept === expenseConcept);
         }
         
+        // Apply expense payment method filter
+        if (expensePaymentMethod !== 'all') {
+          filteredExpenses = filteredExpenses.filter(e => (e.paymentMethod || 'efectivo') === expensePaymentMethod);
+        }
+        
+        // Apply income payment method filter
+        if (incomePaymentMethod !== 'all') {
+          filteredIncomes = filteredIncomes.filter(i => (i.paymentMethod || 'efectivo') === incomePaymentMethod);
+        }
+        
         const totals = calculateStats(data, filteredExpenses, `${startDate} - ${endDate}`, filteredIncomes);
         
         // Calculate expense totals by concept and payment method for detailed breakdown
