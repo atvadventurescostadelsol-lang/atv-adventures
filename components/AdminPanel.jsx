@@ -498,6 +498,10 @@ export default function AdminPanel() {
                 <Users className="h-4 w-4" />
                 {t('users')}
               </TabsTrigger>
+              <TabsTrigger value="backup" className="gap-2">
+                <HardDrive className="h-4 w-4" />
+                {language === 'es' ? 'Backups' : 'Backups'}
+              </TabsTrigger>
             </TabsList>
 
             {/* Products Tab */}
