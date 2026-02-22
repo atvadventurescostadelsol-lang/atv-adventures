@@ -1326,6 +1326,29 @@ async function handleDeleteExpenseCategory(id) {
 async function handleGet(request, path) {
   const { searchParams } = new URL(request.url);
 
+  // ==================== BACKUP ENDPOINTS ====================
+  
+  // List all backups
+  if (path === 'backups') {
+    try {
+      const backups = await listBackups();
+      return NextResponse.json(backups);
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+  
+  // Get backup content (for download)
+  if (path.startsWith('backups/') && path.split('/').length === 2) {
+    try {
+      const fileId = path.split('/')[1];
+      const content = await getBackupContent(fileId);
+      return NextResponse.json(content);
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   // Initialize users (force)
   if (path === 'init-users') {
     const result = await forceInitUsers();
