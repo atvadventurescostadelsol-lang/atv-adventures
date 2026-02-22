@@ -455,6 +455,7 @@ export default function Incomes() {
                               <TableHeader>
                                 <TableRow>
                                   <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
+                                  <TableHead>{language === 'es' ? 'Método' : 'Method'}</TableHead>
                                   <TableHead>{language === 'es' ? 'Notas' : 'Notes'}</TableHead>
                                   <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
                                   <TableHead className="w-10"></TableHead>
@@ -464,6 +465,11 @@ export default function Incomes() {
                                 {dateIncomes.map(inc => (
                                   <TableRow key={inc.id}>
                                     <TableCell className="font-medium">{inc.concept}</TableCell>
+                                    <TableCell>
+                                      <Badge variant={inc.paymentMethod === 'banco' ? 'outline' : 'default'} className={inc.paymentMethod === 'banco' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}>
+                                        {inc.paymentMethod === 'banco' ? '🏦 Banco' : '💵 Efectivo'}
+                                      </Badge>
+                                    </TableCell>
                                     <TableCell className="text-muted-foreground text-sm">{inc.notes || '-'}</TableCell>
                                     <TableCell className="text-right font-bold text-green-600">
                                       +{formatCurrency(inc.amount)}
