@@ -101,6 +101,20 @@ export default function Reports() {
         const f = filterDeps(deps);
         const q = f.filter(d => d.category === 'quad');
         const b = f.filter(d => d.category === 'buggy');
+        
+        // Calculate vehicle counts by product
+        const vehiclesByProduct = {};
+        f.forEach(d => {
+          const productName = d.productName || 'Sin producto';
+          const category = d.category;
+          const count = parseInt(d.vehiclesCount) || 1;
+          
+          if (!vehiclesByProduct[productName]) {
+            vehiclesByProduct[productName] = { quad: 0, buggy: 0 };
+          }
+          vehiclesByProduct[productName][category] += count;
+        });
+        
         return {
           quads: {
             cash: q.reduce((s, d) => s + parseNumber(d.paymentSplitCash), 0),
@@ -109,6 +123,7 @@ export default function Reports() {
             cruise: q.reduce((s, d) => s + parseNumber(d.paymentSplitCruise), 0),
             total: q.reduce((s, d) => s + parseNumber(d.totalGross), 0),
             count: q.length,
+            vehicles: q.reduce((s, d) => s + (parseInt(d.vehiclesCount) || 1), 0),
           },
           buggies: {
             cash: b.reduce((s, d) => s + parseNumber(d.paymentSplitCash), 0),
@@ -117,7 +132,9 @@ export default function Reports() {
             cruise: b.reduce((s, d) => s + parseNumber(d.paymentSplitCruise), 0),
             total: b.reduce((s, d) => s + parseNumber(d.totalGross), 0),
             count: b.length,
+            vehicles: b.reduce((s, d) => s + (parseInt(d.vehiclesCount) || 1), 0),
           },
+          vehiclesByProduct,
           departures: f,
         };
       };
