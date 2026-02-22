@@ -380,8 +380,55 @@ export default function Reports() {
                 <CalendarRange className="h-4 w-4 mr-2" />
                 {language === 'es' ? 'Este Año' : 'This Year'}
               </Button>
+              <Button 
+                variant={selectedPeriod === 'custom' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => { setSelectedPeriod('custom'); }}
+              >
+                <Search className="h-4 w-4 mr-2" />
+                {language === 'es' ? 'Personalizado' : 'Custom'}
+              </Button>
             </div>
           </div>
+          
+          {/* Custom Date Range */}
+          {selectedPeriod === 'custom' && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+              <div className="flex flex-wrap items-end gap-4">
+                <div>
+                  <Label className="text-sm">{language === 'es' ? 'Desde' : 'From'}</Label>
+                  <Input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="mt-1 w-40"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm">{language === 'es' ? 'Hasta' : 'To'}</Label>
+                  <Input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="mt-1 w-40"
+                  />
+                </div>
+                <Button 
+                  onClick={loadReport} 
+                  disabled={!customStartDate || !customEndDate || loading}
+                  className="bg-orange-600 hover:bg-orange-700"
+                >
+                  {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
+                  {language === 'es' ? 'Generar Informe' : 'Generate Report'}
+                </Button>
+              </div>
+              {customStartDate && customEndDate && (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {language === 'es' ? 'Período seleccionado:' : 'Selected period:'} {format(new Date(customStartDate), 'dd/MM/yyyy')} - {format(new Date(customEndDate), 'dd/MM/yyyy')}
+                </p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
