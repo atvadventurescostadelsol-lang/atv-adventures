@@ -48,40 +48,9 @@ async function addAuditLog(action, entityType, entityId, changes, userId = 'syst
 
 // ==================== BACKUP HELPERS ====================
 
-// Get or create backup folder in Google Drive
-async function getOrCreateBackupFolder() {
-  const drive = await getDriveClient();
-  
-  // Search for existing folder
-  const searchResponse = await drive.files.list({
-    q: `name='${BACKUP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-    fields: 'files(id, name)',
-  });
-  
-  if (searchResponse.data.files && searchResponse.data.files.length > 0) {
-    return searchResponse.data.files[0].id;
-  }
-  
-  // Create new folder
-  const folderMetadata = {
-    name: BACKUP_FOLDER_NAME,
-    mimeType: 'application/vnd.google-apps.folder',
-  };
-  
-  const folder = await drive.files.create({
-    requestBody: folderMetadata,
-    fields: 'id',
-  });
-  
-  return folder.data.id;
-}
-
-// Create backup of all sheets
-async function createBackup(userName = 'System') {
+// Create backup of all sheets (returns data for download)
+async function createBackupData(userName = 'System') {
   try {
-    const folderId = await getOrCreateBackupFolder();
-    const drive = await getDriveClient();
-    
     // Sheets to backup
     const sheetsToBackup = [
       'Departures',
@@ -115,89 +84,18 @@ async function createBackup(userName = 'System') {
       }
     }
     
-    // Create filename with date
-    const now = new Date();
-    const dateStr = now.toISOString().split('T')[0];
-    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-    const fileName = `backup_${dateStr}_${timeStr}.json`;
+    await addAuditLog('BACKUP_CREATED', 'System', 'download', { sheets: Object.keys(backupData.sheets).length }, 'system', userName);
     
-    // Upload to Google Drive
-    const fileMetadata = {
-      name: fileName,
-      parents: [folderId],
-    };
-    
-    const media = {
-      mimeType: 'application/json',
-      body: JSON.stringify(backupData, null, 2),
-    };
-    
-    const file = await drive.files.create({
-      requestBody: fileMetadata,
-      media: media,
-      fields: 'id, name, createdTime, size',
-    });
-    
-    await addAuditLog('BACKUP_CREATED', 'System', file.data.id, { fileName, sheets: sheetsToBackup.length }, 'system', userName);
-    
-    return {
-      success: true,
-      backup: {
-        id: file.data.id,
-        name: file.data.name,
-        createdAt: file.data.createdTime,
-        size: file.data.size,
-      }
-    };
+    return backupData;
   } catch (error) {
     console.error('Create backup error:', error);
     throw error;
   }
 }
 
-// List all backups
-async function listBackups() {
+// Restore from backup data
+async function restoreFromBackupData(backupData, userName = 'System') {
   try {
-    const folderId = await getOrCreateBackupFolder();
-    const drive = await getDriveClient();
-    
-    const response = await drive.files.list({
-      q: `'${folderId}' in parents and trashed=false and name contains 'backup_'`,
-      fields: 'files(id, name, createdTime, size)',
-      orderBy: 'createdTime desc',
-      pageSize: 50,
-    });
-    
-    return response.data.files || [];
-  } catch (error) {
-    console.error('List backups error:', error);
-    throw error;
-  }
-}
-
-// Get backup content by ID
-async function getBackupContent(fileId) {
-  try {
-    const drive = await getDriveClient();
-    
-    const response = await drive.files.get({
-      fileId: fileId,
-      alt: 'media',
-    });
-    
-    return response.data;
-  } catch (error) {
-    console.error('Get backup content error:', error);
-    throw error;
-  }
-}
-
-// Restore from backup
-async function restoreFromBackup(fileId, userName = 'System') {
-  try {
-    const backupData = await getBackupContent(fileId);
-    const sheets = await getSheetsClient();
-    
     if (!backupData || !backupData.sheets) {
       throw new Error('Invalid backup format');
     }
@@ -219,7 +117,7 @@ async function restoreFromBackup(fileId, userName = 'System') {
       }
     }
     
-    await addAuditLog('BACKUP_RESTORED', 'System', fileId, { 
+    await addAuditLog('BACKUP_RESTORED', 'System', 'upload', { 
       backupDate: backupData.createdAt, 
       restoredSheets 
     }, 'system', userName);
@@ -231,18 +129,6 @@ async function restoreFromBackup(fileId, userName = 'System') {
     };
   } catch (error) {
     console.error('Restore backup error:', error);
-    throw error;
-  }
-}
-
-// Delete a backup
-async function deleteBackup(fileId) {
-  try {
-    const drive = await getDriveClient();
-    await drive.files.delete({ fileId });
-    return { success: true };
-  } catch (error) {
-    console.error('Delete backup error:', error);
     throw error;
   }
 }
