@@ -1671,24 +1671,24 @@ async function handlePost(request, path) {
 
   // ==================== BACKUP ENDPOINTS ====================
   
-  // Create backup
+  // Create backup (returns data for download)
   if (path === 'backups') {
     try {
-      const result = await createBackup(body.userName || 'System');
-      return NextResponse.json(result);
+      const backupData = await createBackupData(body.userName || 'System');
+      return NextResponse.json(backupData);
     } catch (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
   }
   
-  // Restore from backup
+  // Restore from backup data (uploaded JSON)
   if (path === 'backups/restore') {
     try {
-      const { fileId, userName } = body;
-      if (!fileId) {
-        return NextResponse.json({ error: 'fileId is required' }, { status: 400 });
+      const { backupData, userName } = body;
+      if (!backupData) {
+        return NextResponse.json({ error: 'backupData is required' }, { status: 400 });
       }
-      const result = await restoreFromBackup(fileId, userName || 'System');
+      const result = await restoreFromBackupData(backupData, userName || 'System');
       return NextResponse.json(result);
     } catch (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
