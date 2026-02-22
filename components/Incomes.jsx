@@ -109,7 +109,8 @@ export default function Incomes() {
           ...newIncome,
           account: activeAccount,
           amount: parseFloat(newIncome.amount),
-          paymentMethod: newIncome.paymentMethod
+          paymentMethod: newIncome.paymentMethod,
+          createdBy: user?.username || 'Sistema'
         })
       });
 
