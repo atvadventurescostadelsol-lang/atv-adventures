@@ -342,23 +342,27 @@ export default function Reports() {
           language === 'es' ? 'Cuenta' : 'Account',
           language === 'es' ? 'Concepto' : 'Concept',
           language === 'es' ? 'Método' : 'Method',
-          language === 'es' ? 'Cantidad' : 'Amount'
+          language === 'es' ? 'Cantidad' : 'Amount',
+          language === 'es' ? 'Notas' : 'Notes'
         ]],
         body: r.expenses.map(e => [
           format(new Date(e.date), 'dd/MM/yyyy'),
           e.account,
           e.concept,
           e.paymentMethod === 'banco' ? 'Banco' : 'Efectivo',
-          `-${formatCurrency(e.amount)}`
+          `-${formatCurrency(e.amount)}`,
+          e.notes || '-'
         ]),
         foot: [[
           { content: 'TOTAL', colSpan: 4, styles: { fontStyle: 'bold' } },
-          { content: `-${formatCurrency(r.expTotal)}`, styles: { fontStyle: 'bold', textColor: [200, 0, 0] } }
+          { content: `-${formatCurrency(r.expTotal)}`, styles: { fontStyle: 'bold', textColor: [200, 0, 0] } },
+          ''
         ]],
         theme: 'grid',
         headStyles: { fillColor: [200, 50, 50] },
         footStyles: { fillColor: [220, 220, 220] },
-        styles: { fontSize: 8 }
+        styles: { fontSize: 7 },
+        columnStyles: { 5: { cellWidth: 40 } }
       });
       
       y = doc.lastAutoTable.finalY + 10;
