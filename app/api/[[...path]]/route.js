@@ -46,6 +46,207 @@ async function addAuditLog(action, entityType, entityId, changes, userId = 'syst
   }
 }
 
+// ==================== BACKUP HELPERS ====================
+
+// Get or create backup folder in Google Drive
+async function getOrCreateBackupFolder() {
+  const drive = await getDriveClient();
+  
+  // Search for existing folder
+  const searchResponse = await drive.files.list({
+    q: `name='${BACKUP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    fields: 'files(id, name)',
+  });
+  
+  if (searchResponse.data.files && searchResponse.data.files.length > 0) {
+    return searchResponse.data.files[0].id;
+  }
+  
+  // Create new folder
+  const folderMetadata = {
+    name: BACKUP_FOLDER_NAME,
+    mimeType: 'application/vnd.google-apps.folder',
+  };
+  
+  const folder = await drive.files.create({
+    requestBody: folderMetadata,
+    fields: 'id',
+  });
+  
+  return folder.data.id;
+}
+
+// Create backup of all sheets
+async function createBackup(userName = 'System') {
+  try {
+    const folderId = await getOrCreateBackupFolder();
+    const drive = await getDriveClient();
+    
+    // Sheets to backup
+    const sheetsToBackup = [
+      'Departures',
+      'Expenses',
+      'Incomes',
+      'Products',
+      'TimeSlots',
+      'Capacity',
+      'Users',
+      'ExpenseCategories',
+      'IncomeCategories',
+      'PricingRules',
+    ];
+    
+    const backupData = {
+      version: '1.0',
+      createdAt: new Date().toISOString(),
+      createdBy: userName,
+      spreadsheetId: SPREADSHEET_ID,
+      sheets: {}
+    };
+    
+    // Get data from each sheet
+    for (const sheetName of sheetsToBackup) {
+      try {
+        const data = await getSheetData(SPREADSHEET_ID, `${sheetName}!A:ZZ`);
+        backupData.sheets[sheetName] = data || [];
+      } catch (e) {
+        console.log(`Sheet ${sheetName} not found or empty, skipping...`);
+        backupData.sheets[sheetName] = [];
+      }
+    }
+    
+    // Create filename with date
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+    const fileName = `backup_${dateStr}_${timeStr}.json`;
+    
+    // Upload to Google Drive
+    const fileMetadata = {
+      name: fileName,
+      parents: [folderId],
+    };
+    
+    const media = {
+      mimeType: 'application/json',
+      body: JSON.stringify(backupData, null, 2),
+    };
+    
+    const file = await drive.files.create({
+      requestBody: fileMetadata,
+      media: media,
+      fields: 'id, name, createdTime, size',
+    });
+    
+    await addAuditLog('BACKUP_CREATED', 'System', file.data.id, { fileName, sheets: sheetsToBackup.length }, 'system', userName);
+    
+    return {
+      success: true,
+      backup: {
+        id: file.data.id,
+        name: file.data.name,
+        createdAt: file.data.createdTime,
+        size: file.data.size,
+      }
+    };
+  } catch (error) {
+    console.error('Create backup error:', error);
+    throw error;
+  }
+}
+
+// List all backups
+async function listBackups() {
+  try {
+    const folderId = await getOrCreateBackupFolder();
+    const drive = await getDriveClient();
+    
+    const response = await drive.files.list({
+      q: `'${folderId}' in parents and trashed=false and name contains 'backup_'`,
+      fields: 'files(id, name, createdTime, size)',
+      orderBy: 'createdTime desc',
+      pageSize: 50,
+    });
+    
+    return response.data.files || [];
+  } catch (error) {
+    console.error('List backups error:', error);
+    throw error;
+  }
+}
+
+// Get backup content by ID
+async function getBackupContent(fileId) {
+  try {
+    const drive = await getDriveClient();
+    
+    const response = await drive.files.get({
+      fileId: fileId,
+      alt: 'media',
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Get backup content error:', error);
+    throw error;
+  }
+}
+
+// Restore from backup
+async function restoreFromBackup(fileId, userName = 'System') {
+  try {
+    const backupData = await getBackupContent(fileId);
+    const sheets = await getSheetsClient();
+    
+    if (!backupData || !backupData.sheets) {
+      throw new Error('Invalid backup format');
+    }
+    
+    const restoredSheets = [];
+    
+    for (const [sheetName, data] of Object.entries(backupData.sheets)) {
+      if (!data || data.length === 0) continue;
+      
+      try {
+        // Clear existing data
+        await clearSheetData(SPREADSHEET_ID, `${sheetName}!A:ZZ`);
+        
+        // Write backup data
+        await updateSheetData(SPREADSHEET_ID, `${sheetName}!A1`, data);
+        restoredSheets.push(sheetName);
+      } catch (e) {
+        console.log(`Error restoring sheet ${sheetName}:`, e.message);
+      }
+    }
+    
+    await addAuditLog('BACKUP_RESTORED', 'System', fileId, { 
+      backupDate: backupData.createdAt, 
+      restoredSheets 
+    }, 'system', userName);
+    
+    return {
+      success: true,
+      restoredSheets,
+      backupDate: backupData.createdAt,
+    };
+  } catch (error) {
+    console.error('Restore backup error:', error);
+    throw error;
+  }
+}
+
+// Delete a backup
+async function deleteBackup(fileId) {
+  try {
+    const drive = await getDriveClient();
+    await drive.files.delete({ fileId });
+    return { success: true };
+  } catch (error) {
+    console.error('Delete backup error:', error);
+    throw error;
+  }
+}
+
 // Calculate financial values with proper decimal precision
 function calculateFinancials(vehiclesCount, pricePerVehicle, depositPercent = 0.20) {
   const totalGross = vehiclesCount * pricePerVehicle;
