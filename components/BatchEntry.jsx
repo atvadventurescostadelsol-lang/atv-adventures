@@ -882,7 +882,6 @@ export default function BatchEntry() {
                                   <SelectContent>
                                     <SelectItem value="cash">💵 {t('cash')}</SelectItem>
                                     <SelectItem value="bank">🏦 {t('bank')}</SelectItem>
-                                    <SelectItem value="web">🌐 {t('web')}</SelectItem>
                                     <SelectItem value="gyg">🎫 {t('gygDiscount')}</SelectItem>
                                     <SelectItem value="cruceros">🚢 {t('cruisesPending')}</SelectItem>
                                   </SelectContent>
