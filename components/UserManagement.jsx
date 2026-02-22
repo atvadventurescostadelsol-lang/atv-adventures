@@ -349,6 +349,8 @@ export default function UserManagement() {
                     <div className="flex items-center gap-2">
                       {user.role === 'admin' ? (
                         <Shield className="h-4 w-4 text-orange-600" />
+                      ) : user.role === 'readonly' ? (
+                        <Eye className="h-4 w-4 text-gray-500" />
                       ) : (
                         <User className="h-4 w-4 text-gray-500" />
                       )}
@@ -359,8 +361,20 @@ export default function UserManagement() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                      {user.role === 'admin' ? t('admin') : t('user')}
+                    <Badge 
+                      variant={user.role === 'admin' ? 'default' : 'secondary'}
+                      className={
+                        user.role === 'quad' ? 'bg-orange-100 text-orange-700' :
+                        user.role === 'buggy' ? 'bg-blue-100 text-blue-700' :
+                        user.role === 'readonly' ? 'bg-gray-100 text-gray-700' :
+                        ''
+                      }
+                    >
+                      {user.role === 'admin' ? t('admin') : 
+                       user.role === 'quad' ? 'Quad' :
+                       user.role === 'buggy' ? 'Buggy' :
+                       user.role === 'readonly' ? 'Solo Lectura' :
+                       t('user')}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
