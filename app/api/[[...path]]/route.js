@@ -2049,9 +2049,9 @@ async function handlePost(request, path) {
             gygDiscount.toFixed(2), // gygDiscount
             isPendingCruise ? 'true' : 'false', // isPendingCruise flag
             now,
-            userId,
+            userName,
             now,
-            userId,
+            userName,
             commission.toFixed(2), // collaborator commission
             commissionMethod, // 'cash' or 'bank'
             manualDiscount.toFixed(2), // discount amount
