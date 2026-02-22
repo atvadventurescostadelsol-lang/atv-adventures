@@ -266,15 +266,23 @@ export default function Reports() {
           data = data.filter(e => e.concept === expenseReportConcept);
         }
         
-        // Calculate totals by account and concept
+        // Filter by payment method
+        if (expenseReportPaymentMethod !== 'all') {
+          data = data.filter(e => (e.paymentMethod || 'efectivo') === expenseReportPaymentMethod);
+        }
+        
+        // Calculate totals by account, concept, and payment method
         const byAccount = { GE: 0, 'E&S': 0 };
         const byConcept = {};
         const byAccountAndConcept = { GE: {}, 'E&S': {} };
+        const byPaymentMethod = { efectivo: 0, banco: 0 };
         const byDate = {};
         
         data.forEach(e => {
           const amount = parseNumber(e.amount);
+          const method = e.paymentMethod || 'efectivo';
           byAccount[e.account] += amount;
+          byPaymentMethod[method] += amount;
           
           if (!byConcept[e.concept]) byConcept[e.concept] = 0;
           byConcept[e.concept] += amount;
@@ -295,11 +303,13 @@ export default function Reports() {
           byAccount,
           byConcept,
           byAccountAndConcept,
+          byPaymentMethod,
           byDate,
           totalExpenses,
           filters: {
             account: expenseReportAccount,
             concept: expenseReportConcept,
+            paymentMethod: expenseReportPaymentMethod,
             startDate: expenseStartDate,
             endDate: expenseEndDate,
           }
