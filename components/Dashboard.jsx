@@ -380,21 +380,17 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>{t('paymentsReceived')}</CardDescription>
-            <CardTitle className="text-3xl">€{(visibleCashTotal + visibleBankTotal + visibleWebTotal).toFixed(2)}</CardTitle>
+            <CardTitle className="text-3xl">€{(visibleCashTotal + visibleBankTotal).toFixed(2)}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <span className="font-medium">€{(stats.cashTotal || 0).toFixed(2)}</span>
+                <span className="font-medium">€{visibleCashTotal.toFixed(2)}</span>
                 <span className="text-muted-foreground"> 💵 {t('cash')}</span>
               </div>
               <div>
                 <span className="font-medium">€{visibleBankTotal.toFixed(2)}</span>
                 <span className="text-muted-foreground"> 🏦 {t('bank')}</span>
-              </div>
-              <div>
-                <span className="font-medium">€{visibleWebTotal.toFixed(2)}</span>
-                <span className="text-muted-foreground"> 🌐 {t('web')}</span>
               </div>
             </div>
           </CardContent>
