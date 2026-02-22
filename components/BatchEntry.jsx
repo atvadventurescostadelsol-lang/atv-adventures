@@ -463,11 +463,11 @@ export default function BatchEntry() {
           commissionMethod: e.commissionMethod || 'cash',
           discount: parseFloat(e.discount) || 0,
           manualTotal: e.manualTotal !== '' && e.manualTotal !== null ? parseFloat(e.manualTotal) : null,
-          userId: 'user-1',
-          userName: 'Usuario Demo',
+          userId: user?.id || 'user-1',
+          userName: user?.username || 'Sistema',
         })),
-        userId: 'user-1',
-        userName: 'Usuario Demo',
+        userId: user?.id || 'user-1',
+        userName: user?.username || 'Sistema',
       };
 
       const res = await fetch('/api/departures/batch', {
