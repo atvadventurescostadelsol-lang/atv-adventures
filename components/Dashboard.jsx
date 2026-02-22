@@ -225,18 +225,46 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
   // Calculate expenses by account for today (filtered by user access)
   const geExpenses = canViewGE ? expenses.filter(e => e.account === 'GE') : [];
   const esExpenses = canViewES ? expenses.filter(e => e.account === 'E&S') : [];
-  const geExpenseTotal = geExpenses.reduce((sum, e) => sum + parseNumber(e.amount), 0);
-  const esExpenseTotal = esExpenses.reduce((sum, e) => sum + parseNumber(e.amount), 0);
+  
+  // Separate expenses by payment method
+  const geExpensesCash = geExpenses.filter(e => e.paymentMethod !== 'banco');
+  const geExpensesBank = geExpenses.filter(e => e.paymentMethod === 'banco');
+  const esExpensesCash = esExpenses.filter(e => e.paymentMethod !== 'banco');
+  const esExpensesBank = esExpenses.filter(e => e.paymentMethod === 'banco');
+  
+  const geExpenseCashTotal = geExpensesCash.reduce((sum, e) => sum + parseNumber(e.amount), 0);
+  const geExpenseBankTotal = geExpensesBank.reduce((sum, e) => sum + parseNumber(e.amount), 0);
+  const esExpenseCashTotal = esExpensesCash.reduce((sum, e) => sum + parseNumber(e.amount), 0);
+  const esExpenseBankTotal = esExpensesBank.reduce((sum, e) => sum + parseNumber(e.amount), 0);
+  
+  const geExpenseTotal = geExpenseCashTotal + geExpenseBankTotal;
+  const esExpenseTotal = esExpenseCashTotal + esExpenseBankTotal;
 
   // Calculate incomes by account for today (filtered by user access)
   const geIncomes = canViewGE ? incomes.filter(i => i.account === 'GE') : [];
   const esIncomes = canViewES ? incomes.filter(i => i.account === 'E&S') : [];
-  const geIncomeTotal = geIncomes.reduce((sum, i) => sum + parseNumber(i.amount), 0);
-  const esIncomeTotal = esIncomes.reduce((sum, i) => sum + parseNumber(i.amount), 0);
+  
+  // Separate incomes by payment method
+  const geIncomesCash = geIncomes.filter(i => i.paymentMethod !== 'banco');
+  const geIncomesBank = geIncomes.filter(i => i.paymentMethod === 'banco');
+  const esIncomesCash = esIncomes.filter(i => i.paymentMethod !== 'banco');
+  const esIncomesBank = esIncomes.filter(i => i.paymentMethod === 'banco');
+  
+  const geIncomeCashTotal = geIncomesCash.reduce((sum, i) => sum + parseNumber(i.amount), 0);
+  const geIncomeBankTotal = geIncomesBank.reduce((sum, i) => sum + parseNumber(i.amount), 0);
+  const esIncomeCashTotal = esIncomesCash.reduce((sum, i) => sum + parseNumber(i.amount), 0);
+  const esIncomeBankTotal = esIncomesBank.reduce((sum, i) => sum + parseNumber(i.amount), 0);
+  
+  const geIncomeTotal = geIncomeCashTotal + geIncomeBankTotal;
+  const esIncomeTotal = esIncomeCashTotal + esIncomeBankTotal;
 
-  // Net cash after expenses and adding incomes
-  const quadCashNet = quadStats.cashTotal - geExpenseTotal + geIncomeTotal;
-  const buggyCashNet = buggyStats.cashTotal - esExpenseTotal + esIncomeTotal;
+  // Net cash after expenses and adding incomes (only cash transactions)
+  const quadCashNet = quadStats.cashTotal - geExpenseCashTotal + geIncomeCashTotal;
+  const buggyCashNet = buggyStats.cashTotal - esExpenseCashTotal + esIncomeCashTotal;
+  
+  // Net bank after expenses and adding incomes (only bank transactions)
+  const quadBankNet = quadStats.bankTotal - geExpenseBankTotal + geIncomeBankTotal;
+  const buggyBankNet = buggyStats.bankTotal - esExpenseBankTotal + esIncomeBankTotal;
 
   // Calculate totals based on what user can see
   const visibleTotalGross = (canViewQuads ? quadStats.totalGross : 0) + (canViewBuggies ? buggyStats.totalGross : 0);
