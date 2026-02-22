@@ -35,6 +35,26 @@ export default function Reports() {
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   
+  // Expense report states
+  const [expenseReportStartDate, setExpenseReportStartDate] = useState('');
+  const [expenseReportEndDate, setExpenseReportEndDate] = useState('');
+  const [expenseReportAccount, setExpenseReportAccount] = useState('all');
+  const [expenseReportConcept, setExpenseReportConcept] = useState('all');
+  const [expenseReportPaymentMethod, setExpenseReportPaymentMethod] = useState('all');
+  const [expenseReportResults, setExpenseReportResults] = useState(null);
+  const [expenseReportLoading, setExpenseReportLoading] = useState(false);
+  const [expenseCategories, setExpenseCategories] = useState([]);
+  
+  // Income report states
+  const [incomeReportStartDate, setIncomeReportStartDate] = useState('');
+  const [incomeReportEndDate, setIncomeReportEndDate] = useState('');
+  const [incomeReportAccount, setIncomeReportAccount] = useState('all');
+  const [incomeReportConcept, setIncomeReportConcept] = useState('all');
+  const [incomeReportPaymentMethod, setIncomeReportPaymentMethod] = useState('all');
+  const [incomeReportResults, setIncomeReportResults] = useState(null);
+  const [incomeReportLoading, setIncomeReportLoading] = useState(false);
+  const [incomeCategories, setIncomeCategories] = useState([]);
+  
   const dateLocale = language === 'es' ? es : enUS;
   
   const formatCurrency = (amount) => {
