@@ -2363,17 +2363,6 @@ async function handlePut(request, path) {
 async function handleDelete(request, path) {
   const { searchParams } = new URL(request.url);
 
-  // Delete backup
-  if (path.startsWith('backups/')) {
-    try {
-      const fileId = path.split('/')[1];
-      const result = await deleteBackup(fileId);
-      return NextResponse.json(result);
-    } catch (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-  }
-
   // Delete user (Admin)
   if (path.startsWith('users/')) {
     const username = path.split('/')[1];
