@@ -2368,6 +2368,17 @@ export default function Reports() {
                                   </div>
                                 ))
                               }
+                              {/* Payment method breakdown */}
+                              <div className="border-t pt-2 mt-2 space-y-1">
+                                <div className="flex justify-between items-center text-sm">
+                                  <span>💵 {language === 'es' ? 'Efectivo' : 'Cash'}</span>
+                                  <span className="text-green-600">+{formatCurrency(results.incomeTotalsByMethod?.GE?.efectivo || 0)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                  <span>🏦 {language === 'es' ? 'Banco' : 'Bank'}</span>
+                                  <span className="text-green-600">+{formatCurrency(results.incomeTotalsByMethod?.GE?.banco || 0)}</span>
+                                </div>
+                              </div>
                               <div className="flex justify-between items-center p-2 bg-blue-100 rounded font-bold border-t-2 border-blue-300">
                                 <span>{t('total')} GE</span>
                                 <span className="text-green-600">+{formatCurrency(results.incomeTotalsByAccount?.GE || 0)}</span>
@@ -2396,6 +2407,17 @@ export default function Reports() {
                                   </div>
                                 ))
                               }
+                              {/* Payment method breakdown */}
+                              <div className="border-t pt-2 mt-2 space-y-1">
+                                <div className="flex justify-between items-center text-sm">
+                                  <span>💵 {language === 'es' ? 'Efectivo' : 'Cash'}</span>
+                                  <span className="text-green-600">+{formatCurrency(results.incomeTotalsByMethod?.['E&S']?.efectivo || 0)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                  <span>🏦 {language === 'es' ? 'Banco' : 'Bank'}</span>
+                                  <span className="text-green-600">+{formatCurrency(results.incomeTotalsByMethod?.['E&S']?.banco || 0)}</span>
+                                </div>
+                              </div>
                               <div className="flex justify-between items-center p-2 bg-green-100 rounded font-bold border-t-2 border-green-300">
                                 <span>{t('total')} E&S</span>
                                 <span className="text-green-600">+{formatCurrency(results.incomeTotalsByAccount?.['E&S'] || 0)}</span>
