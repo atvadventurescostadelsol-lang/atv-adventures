@@ -472,6 +472,99 @@ export default function Reports() {
             </CardContent>
           </Card>
 
+          {/* VAT Breakdown Section */}
+          <Card className="border-2 border-purple-200">
+            <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-200">
+              <CardTitle className="flex items-center gap-2 text-purple-700">
+                <Building2 className="h-5 w-5" />
+                {language === 'es' ? '🧾 Desglose Fiscal (IVA 21%)' : '🧾 Tax Breakdown (VAT 21%)'}
+              </CardTitle>
+              <CardDescription>{language === 'es' ? `Período: ${reportData.labels[selectedPeriod].label}` : `Period: ${reportData.labels[selectedPeriod].label}`}</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              {(() => {
+                const quadsTotal = reportData.periods[selectedPeriod].quads.total;
+                const quadsNet = quadsTotal / 1.21;
+                const quadsVat = quadsTotal - quadsNet;
+                const quadsCash = reportData.periods[selectedPeriod].quads.cash;
+                const quadsCashVat = quadsCash - (quadsCash / 1.21);
+                const quadsVatNoCash = quadsVat - quadsCashVat;
+                
+                const buggiesTotal = reportData.periods[selectedPeriod].buggies.total;
+                const buggiesNet = buggiesTotal / 1.21;
+                const buggiesVat = buggiesTotal - buggiesNet;
+                const buggiesCash = reportData.periods[selectedPeriod].buggies.cash;
+                const buggiesCashVat = buggiesCash - (buggiesCash / 1.21);
+                const buggiesVatNoCash = buggiesVat - buggiesCashVat;
+                
+                const totalGross = quadsTotal + buggiesTotal;
+                const totalNet = quadsNet + buggiesNet;
+                const totalVat = quadsVat + buggiesVat;
+                const totalVatNoCash = quadsVatNoCash + buggiesVatNoCash;
+                
+                return (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-purple-50">
+                          <TableHead className="font-bold">{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
+                          {canViewQuads && <TableHead className="text-center text-blue-700">Quads (GE)</TableHead>}
+                          {canViewBuggies && <TableHead className="text-center text-green-700">Buggies (E&S)</TableHead>}
+                          {canViewQuads && canViewBuggies && <TableHead className="text-center font-bold">TOTAL</TableHead>}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell className="font-medium">{language === 'es' ? '💰 Bruto (con IVA)' : '💰 Gross (with VAT)'}</TableCell>
+                          {canViewQuads && <TableCell className="text-center font-semibold">{formatCurrency(quadsTotal)}</TableCell>}
+                          {canViewBuggies && <TableCell className="text-center font-semibold">{formatCurrency(buggiesTotal)}</TableCell>}
+                          {canViewQuads && canViewBuggies && <TableCell className="text-center font-bold text-purple-700">{formatCurrency(totalGross)}</TableCell>}
+                        </TableRow>
+                        <TableRow className="bg-gray-50">
+                          <TableCell className="font-medium">{language === 'es' ? '📊 Neto (sin IVA)' : '📊 Net (without VAT)'}</TableCell>
+                          {canViewQuads && <TableCell className="text-center">{formatCurrency(quadsNet)}</TableCell>}
+                          {canViewBuggies && <TableCell className="text-center">{formatCurrency(buggiesNet)}</TableCell>}
+                          {canViewQuads && canViewBuggies && <TableCell className="text-center font-bold">{formatCurrency(totalNet)}</TableCell>}
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">{language === 'es' ? '🏛️ IVA Total (21%)' : '🏛️ Total VAT (21%)'}</TableCell>
+                          {canViewQuads && <TableCell className="text-center text-purple-600">{formatCurrency(quadsVat)}</TableCell>}
+                          {canViewBuggies && <TableCell className="text-center text-purple-600">{formatCurrency(buggiesVat)}</TableCell>}
+                          {canViewQuads && canViewBuggies && <TableCell className="text-center font-bold text-purple-700">{formatCurrency(totalVat)}</TableCell>}
+                        </TableRow>
+                        <TableRow className="bg-amber-50 border-t-2 border-amber-300">
+                          <TableCell className="font-medium">
+                            <div>{language === 'es' ? '⚡ IVA sin Efectivo' : '⚡ VAT without Cash'}</div>
+                            <div className="text-xs text-muted-foreground">{language === 'es' ? '(IVA a declarar)' : '(VAT to declare)'}</div>
+                          </TableCell>
+                          {canViewQuads && <TableCell className="text-center font-bold text-amber-700">{formatCurrency(quadsVatNoCash)}</TableCell>}
+                          {canViewBuggies && <TableCell className="text-center font-bold text-amber-700">{formatCurrency(buggiesVatNoCash)}</TableCell>}
+                          {canViewQuads && canViewBuggies && <TableCell className="text-center font-bold text-amber-800 text-lg">{formatCurrency(totalVatNoCash)}</TableCell>}
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                    
+                    {/* Summary cards */}
+                    <div className="grid md:grid-cols-3 gap-4 mt-6">
+                      <div className="p-4 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 border border-purple-300">
+                        <div className="text-sm text-purple-600">{language === 'es' ? 'IVA Total' : 'Total VAT'}</div>
+                        <div className="text-2xl font-bold text-purple-800">{formatCurrency((canViewQuads ? quadsVat : 0) + (canViewBuggies ? buggiesVat : 0))}</div>
+                      </div>
+                      <div className="p-4 rounded-xl bg-gradient-to-br from-green-100 to-green-200 border border-green-300">
+                        <div className="text-sm text-green-600">{language === 'es' ? 'IVA del Efectivo' : 'Cash VAT'}</div>
+                        <div className="text-2xl font-bold text-green-800">{formatCurrency((canViewQuads ? quadsCashVat : 0) + (canViewBuggies ? buggiesCashVat : 0))}</div>
+                      </div>
+                      <div className="p-4 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 border border-amber-300">
+                        <div className="text-sm text-amber-600">{language === 'es' ? 'IVA a Declarar' : 'VAT to Declare'}</div>
+                        <div className="text-2xl font-bold text-amber-800">{formatCurrency((canViewQuads ? quadsVatNoCash : 0) + (canViewBuggies ? buggiesVatNoCash : 0))}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+
           {/* Pending Payments */}
           {(reportData.periods[selectedPeriod].quads.gyg + reportData.periods[selectedPeriod].quads.cruise + 
             reportData.periods[selectedPeriod].buggies.gyg + reportData.periods[selectedPeriod].buggies.cruise) > 0 && (
