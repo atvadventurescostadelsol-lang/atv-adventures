@@ -1145,6 +1145,222 @@ export default function Reports() {
               )}
             </CardContent>
           </Card>
+
+          {/* EXPENSE DETAILED REPORT */}
+          <Card className="border-2 border-red-300">
+            <CardHeader className="bg-red-50">
+              <CardTitle className="text-red-700 flex items-center gap-2">
+                <TrendingDown className="h-5 w-5" />
+                {language === 'es' ? '📋 Informe Detallado de Gastos' : '📋 Detailed Expense Report'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="grid gap-4 md:grid-cols-6 mb-4">
+                <div>
+                  <Label>{language === 'es' ? 'Desde' : 'From'}</Label>
+                  <Input type="date" value={expenseReportStartDate} onChange={(e) => setExpenseReportStartDate(e.target.value)} className="mt-1" />
+                </div>
+                <div>
+                  <Label>{language === 'es' ? 'Hasta' : 'To'}</Label>
+                  <Input type="date" value={expenseReportEndDate} onChange={(e) => setExpenseReportEndDate(e.target.value)} className="mt-1" />
+                </div>
+                <div>
+                  <Label>{language === 'es' ? 'Cuenta' : 'Account'}</Label>
+                  <Select value={expenseReportAccount} onValueChange={setExpenseReportAccount}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{language === 'es' ? 'Todas' : 'All'}</SelectItem>
+                      {canViewGE && <SelectItem value="GE">GE (Quads)</SelectItem>}
+                      {canViewES && <SelectItem value="E&S">E&S (Buggies)</SelectItem>}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>{language === 'es' ? 'Método' : 'Method'}</Label>
+                  <Select value={expenseReportPaymentMethod} onValueChange={setExpenseReportPaymentMethod}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
+                      <SelectItem value="efectivo">💵 {language === 'es' ? 'Efectivo' : 'Cash'}</SelectItem>
+                      <SelectItem value="banco">🏦 {language === 'es' ? 'Banco' : 'Bank'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>{language === 'es' ? 'Concepto' : 'Concept'}</Label>
+                  <Select value={expenseReportConcept} onValueChange={setExpenseReportConcept}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
+                      {getExpenseConcepts().map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={generateExpenseReport} className="w-full bg-red-600 hover:bg-red-700" disabled={expenseReportLoading}>
+                    {expenseReportLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
+                    {language === 'es' ? 'Generar' : 'Generate'}
+                  </Button>
+                </div>
+              </div>
+              
+              {expenseReportResults && (
+                <div className="space-y-4">
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="p-4 bg-red-100 rounded-lg">
+                      <div className="text-sm text-red-600">{language === 'es' ? 'Total Gastos' : 'Total Expenses'}</div>
+                      <div className="text-2xl font-bold text-red-700">-{formatCurrency(expenseReportResults.total)}</div>
+                    </div>
+                    {canViewGE && (
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <div className="text-sm text-blue-600">GE (Quads)</div>
+                        <div className="text-lg font-bold">💵 {formatCurrency(expenseReportResults.byAccount.GE.cash)} | 🏦 {formatCurrency(expenseReportResults.byAccount.GE.bank)}</div>
+                      </div>
+                    )}
+                    {canViewES && (
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <div className="text-sm text-green-600">E&S (Buggies)</div>
+                        <div className="text-lg font-bold">💵 {formatCurrency(expenseReportResults.byAccount['E&S'].cash)} | 🏦 {formatCurrency(expenseReportResults.byAccount['E&S'].bank)}</div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{language === 'es' ? 'Fecha' : 'Date'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Cuenta' : 'Account'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Método' : 'Method'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Notas' : 'Notes'}</TableHead>
+                        <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {expenseReportResults.data.map((exp, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>{format(new Date(exp.date), 'dd/MM/yyyy')}</TableCell>
+                          <TableCell><Badge className={exp.account === 'GE' ? 'bg-blue-600' : 'bg-green-600'}>{exp.account}</Badge></TableCell>
+                          <TableCell>{exp.concept}</TableCell>
+                          <TableCell><Badge variant="outline">{exp.paymentMethod === 'banco' ? '🏦 Banco' : '💵 Efectivo'}</Badge></TableCell>
+                          <TableCell className="text-muted-foreground">{exp.notes || '-'}</TableCell>
+                          <TableCell className="text-right font-bold text-red-600">-{formatCurrency(exp.amount)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* INCOME DETAILED REPORT */}
+          <Card className="border-2 border-green-300">
+            <CardHeader className="bg-green-50">
+              <CardTitle className="text-green-700 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                {language === 'es' ? '📋 Informe Detallado de Ingresos' : '📋 Detailed Income Report'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="grid gap-4 md:grid-cols-6 mb-4">
+                <div>
+                  <Label>{language === 'es' ? 'Desde' : 'From'}</Label>
+                  <Input type="date" value={incomeReportStartDate} onChange={(e) => setIncomeReportStartDate(e.target.value)} className="mt-1" />
+                </div>
+                <div>
+                  <Label>{language === 'es' ? 'Hasta' : 'To'}</Label>
+                  <Input type="date" value={incomeReportEndDate} onChange={(e) => setIncomeReportEndDate(e.target.value)} className="mt-1" />
+                </div>
+                <div>
+                  <Label>{language === 'es' ? 'Cuenta' : 'Account'}</Label>
+                  <Select value={incomeReportAccount} onValueChange={setIncomeReportAccount}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{language === 'es' ? 'Todas' : 'All'}</SelectItem>
+                      {canViewGE && <SelectItem value="GE">GE (Quads)</SelectItem>}
+                      {canViewES && <SelectItem value="E&S">E&S (Buggies)</SelectItem>}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>{language === 'es' ? 'Método' : 'Method'}</Label>
+                  <Select value={incomeReportPaymentMethod} onValueChange={setIncomeReportPaymentMethod}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
+                      <SelectItem value="efectivo">💵 {language === 'es' ? 'Efectivo' : 'Cash'}</SelectItem>
+                      <SelectItem value="banco">🏦 {language === 'es' ? 'Banco' : 'Bank'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>{language === 'es' ? 'Concepto' : 'Concept'}</Label>
+                  <Select value={incomeReportConcept} onValueChange={setIncomeReportConcept}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
+                      {getIncomeConcepts().map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={generateIncomeReport} className="w-full bg-green-600 hover:bg-green-700" disabled={incomeReportLoading}>
+                    {incomeReportLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
+                    {language === 'es' ? 'Generar' : 'Generate'}
+                  </Button>
+                </div>
+              </div>
+              
+              {incomeReportResults && (
+                <div className="space-y-4">
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="p-4 bg-green-100 rounded-lg">
+                      <div className="text-sm text-green-600">{language === 'es' ? 'Total Ingresos' : 'Total Income'}</div>
+                      <div className="text-2xl font-bold text-green-700">+{formatCurrency(incomeReportResults.total)}</div>
+                    </div>
+                    {canViewGE && (
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <div className="text-sm text-blue-600">GE (Quads)</div>
+                        <div className="text-lg font-bold">💵 {formatCurrency(incomeReportResults.byAccount.GE.cash)} | 🏦 {formatCurrency(incomeReportResults.byAccount.GE.bank)}</div>
+                      </div>
+                    )}
+                    {canViewES && (
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <div className="text-sm text-green-600">E&S (Buggies)</div>
+                        <div className="text-lg font-bold">💵 {formatCurrency(incomeReportResults.byAccount['E&S'].cash)} | 🏦 {formatCurrency(incomeReportResults.byAccount['E&S'].bank)}</div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{language === 'es' ? 'Fecha' : 'Date'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Cuenta' : 'Account'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Método' : 'Method'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Notas' : 'Notes'}</TableHead>
+                        <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {incomeReportResults.data.map((inc, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>{format(new Date(inc.date), 'dd/MM/yyyy')}</TableCell>
+                          <TableCell><Badge className={inc.account === 'GE' ? 'bg-blue-600' : 'bg-green-600'}>{inc.account}</Badge></TableCell>
+                          <TableCell>{inc.concept}</TableCell>
+                          <TableCell><Badge variant="outline">{inc.paymentMethod === 'banco' ? '🏦 Banco' : '💵 Efectivo'}</Badge></TableCell>
+                          <TableCell className="text-muted-foreground">{inc.notes || '-'}</TableCell>
+                          <TableCell className="text-right font-bold text-green-600">+{formatCurrency(inc.amount)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </>
       )}
     </div>
