@@ -171,6 +171,9 @@ export default function Reports() {
       const calcIncomeStats = (incomeData, period) => {
         const ranges = getDateRanges();
         const range = ranges[period];
+        if (!range || !range.start || !range.end) {
+          return { GE: { cash: 0, bank: 0 }, 'E&S': { cash: 0, bank: 0 } };
+        }
         const filtered = filterExpensesByPermissions(incomeData).filter(i => 
           i.date >= range.start && i.date <= range.end
         );
@@ -187,7 +190,38 @@ export default function Reports() {
         };
       };
       
-      setReportData({
+      // Calculate custom period expense stats directly from fetched data
+      const calcCustomExpenseStats = (expenseData) => {
+        const filtered = filterExpensesByPermissions(expenseData);
+        return {
+          GE: {
+            cash: filtered.filter(e => e.account === 'GE' && e.paymentMethod !== 'banco').reduce((s, e) => s + parseNumber(e.amount), 0),
+            bank: filtered.filter(e => e.account === 'GE' && e.paymentMethod === 'banco').reduce((s, e) => s + parseNumber(e.amount), 0),
+          },
+          'E&S': {
+            cash: filtered.filter(e => e.account === 'E&S' && e.paymentMethod !== 'banco').reduce((s, e) => s + parseNumber(e.amount), 0),
+            bank: filtered.filter(e => e.account === 'E&S' && e.paymentMethod === 'banco').reduce((s, e) => s + parseNumber(e.amount), 0),
+          }
+        };
+      };
+      
+      // Calculate custom period income stats directly from fetched data
+      const calcCustomIncomeStats = (incomeData) => {
+        const filtered = filterExpensesByPermissions(incomeData);
+        return {
+          GE: {
+            cash: filtered.filter(i => i.account === 'GE' && i.paymentMethod !== 'banco').reduce((s, i) => s + parseNumber(i.amount), 0),
+            bank: filtered.filter(i => i.account === 'GE' && i.paymentMethod === 'banco').reduce((s, i) => s + parseNumber(i.amount), 0),
+          },
+          'E&S': {
+            cash: filtered.filter(i => i.account === 'E&S' && i.paymentMethod !== 'banco').reduce((s, i) => s + parseNumber(i.amount), 0),
+            bank: filtered.filter(i => i.account === 'E&S' && i.paymentMethod === 'banco').reduce((s, i) => s + parseNumber(i.amount), 0),
+          }
+        };
+      };
+      
+      // Build the report data object
+      const reportDataObj = {
         periods: {
           today: calcStats(todayDeps),
           month: calcStats(monthDeps),
@@ -206,7 +240,21 @@ export default function Reports() {
         rawExpenses: filterExpensesByPermissions(expenses),
         rawIncomes: filterExpensesByPermissions(incomes),
         labels: getDateRanges(),
-      });
+      };
+      
+      // Add custom period data if applicable
+      if (selectedPeriod === 'custom' && customStartDate && customEndDate) {
+        reportDataObj.periods.custom = calcStats(customDeps);
+        reportDataObj.expenses.custom = calcCustomExpenseStats(customExpenses);
+        reportDataObj.incomes.custom = calcCustomIncomeStats(customIncomes);
+        reportDataObj.labels.custom = { 
+          start: customStartDate, 
+          end: customEndDate, 
+          label: `${format(new Date(customStartDate), 'dd/MM/yyyy')} - ${format(new Date(customEndDate), 'dd/MM/yyyy')}` 
+        };
+      }
+      
+      setReportData(reportDataObj);
       
     } catch (error) {
       console.error('Error loading report:', error);
