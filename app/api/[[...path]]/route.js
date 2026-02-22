@@ -1043,7 +1043,7 @@ async function handleCreateExpense(body) {
   try {
     await ensureExpensesSheet();
     
-    const { date, amount, concept, account, notes, userId = 'system', paymentMethod = 'efectivo' } = body;
+    const { date, amount, concept, account, notes, createdBy = 'Sistema', paymentMethod = 'efectivo' } = body;
     
     if (!date || !amount || !concept || !account) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
@@ -1068,13 +1068,13 @@ async function handleCreateExpense(body) {
       account,
       notes || '',
       now,
-      userId,
+      createdBy,
       paymentMethod
     ];
     
     await appendSheetData(SPREADSHEET_ID, 'Expenses!A:I', [expenseRow]);
     
-    await addAuditLog('CREATE', 'Expense', id, { amount, concept, account, paymentMethod }, userId, userId);
+    await addAuditLog('CREATE', 'Expense', id, { amount, concept, account, paymentMethod }, createdBy, createdBy);
     
     return NextResponse.json({
       success: true,
@@ -1086,6 +1086,7 @@ async function handleCreateExpense(body) {
         account,
         notes: notes || '',
         createdAt: now,
+        createdBy,
         paymentMethod
       }
     });
