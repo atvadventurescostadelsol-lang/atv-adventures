@@ -657,6 +657,100 @@ export default function Reports() {
             </CardContent>
           </Card>
 
+          {/* Vehicles Breakdown */}
+          <Card className="border-2 border-teal-200">
+            <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50 border-b border-teal-200">
+              <CardTitle className="flex items-center gap-2 text-teal-700">
+                <Car className="h-5 w-5" />
+                🚗 {language === 'es' ? 'Vehículos Facturados' : 'Vehicles Invoiced'}
+                <Badge variant="outline" className="ml-2 bg-white">
+                  {reportData.labels[selectedPeriod]?.label}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              {(() => {
+                const p = reportData.periods[selectedPeriod];
+                if (!p) return null;
+                const totalQuads = p.quads.vehicles || 0;
+                const totalBuggies = p.buggies.vehicles || 0;
+                const vehiclesByProduct = p.vehiclesByProduct || {};
+                const productNames = Object.keys(vehiclesByProduct).sort();
+                
+                return (
+                  <div className="space-y-4">
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-3 gap-4">
+                      {canViewQuads && (
+                        <div className="p-4 bg-blue-50 rounded-xl border-2 border-blue-200 text-center">
+                          <div className="flex items-center justify-center gap-2 text-blue-600 font-medium mb-1">
+                            <Car className="h-4 w-4" /> Quads
+                          </div>
+                          <div className="text-3xl font-bold text-blue-700">{totalQuads}</div>
+                          <div className="text-xs text-blue-500">{language === 'es' ? 'vehículos' : 'vehicles'}</div>
+                        </div>
+                      )}
+                      {canViewBuggies && (
+                        <div className="p-4 bg-green-50 rounded-xl border-2 border-green-200 text-center">
+                          <div className="flex items-center justify-center gap-2 text-green-600 font-medium mb-1">
+                            <Truck className="h-4 w-4" /> Buggies
+                          </div>
+                          <div className="text-3xl font-bold text-green-700">{totalBuggies}</div>
+                          <div className="text-xs text-green-500">{language === 'es' ? 'vehículos' : 'vehicles'}</div>
+                        </div>
+                      )}
+                      <div className="p-4 bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl border-2 border-teal-300 text-center">
+                        <div className="text-teal-600 font-medium mb-1">📊 Total</div>
+                        <div className="text-3xl font-bold text-teal-700">{(canViewQuads ? totalQuads : 0) + (canViewBuggies ? totalBuggies : 0)}</div>
+                        <div className="text-xs text-teal-500">{language === 'es' ? 'vehículos' : 'vehicles'}</div>
+                      </div>
+                    </div>
+                    
+                    {/* Breakdown by Product */}
+                    {productNames.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-1">
+                          📦 {language === 'es' ? 'Desglose por Producto' : 'Breakdown by Product'}
+                        </h4>
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-teal-50">
+                              <TableHead>{language === 'es' ? 'Producto' : 'Product'}</TableHead>
+                              {canViewQuads && <TableHead className="text-center text-blue-700">🏍️ Quads</TableHead>}
+                              {canViewBuggies && <TableHead className="text-center text-green-700">🚙 Buggies</TableHead>}
+                              <TableHead className="text-center font-bold">Total</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {productNames.map(product => {
+                              const data = vehiclesByProduct[product];
+                              const qCount = data.quad || 0;
+                              const bCount = data.buggy || 0;
+                              return (
+                                <TableRow key={product}>
+                                  <TableCell className="font-medium">{product}</TableCell>
+                                  {canViewQuads && <TableCell className="text-center text-blue-600">{qCount > 0 ? qCount : '-'}</TableCell>}
+                                  {canViewBuggies && <TableCell className="text-center text-green-600">{bCount > 0 ? bCount : '-'}</TableCell>}
+                                  <TableCell className="text-center font-bold">{(canViewQuads ? qCount : 0) + (canViewBuggies ? bCount : 0)}</TableCell>
+                                </TableRow>
+                              );
+                            })}
+                            <TableRow className="bg-teal-100 font-bold">
+                              <TableCell>TOTAL</TableCell>
+                              {canViewQuads && <TableCell className="text-center text-blue-700">{totalQuads}</TableCell>}
+                              {canViewBuggies && <TableCell className="text-center text-green-700">{totalBuggies}</TableCell>}
+                              <TableCell className="text-center text-teal-800 text-lg">{(canViewQuads ? totalQuads : 0) + (canViewBuggies ? totalBuggies : 0)}</TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+
           {/* VAT Breakdown */}
           <Card className="border-2 border-purple-200">
             <CardHeader className="bg-purple-50 border-b">
