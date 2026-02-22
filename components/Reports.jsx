@@ -1615,7 +1615,7 @@ export default function Reports() {
             </div>
 
             {/* Filters */}
-            <div className="grid gap-4 md:grid-cols-5">
+            <div className="grid gap-4 md:grid-cols-6">
               <div>
                 <Label>{language === 'es' ? 'Desde' : 'From'}</Label>
                 <Input
@@ -1646,6 +1646,19 @@ export default function Reports() {
                     )}
                     {canViewGE && <SelectItem value="GE">GE (Quads)</SelectItem>}
                     {canViewES && <SelectItem value="E&S">E&S (Buggies)</SelectItem>}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>{language === 'es' ? 'Método de Pago' : 'Payment Method'}</Label>
+                <Select value={incomeReportPaymentMethod} onValueChange={setIncomeReportPaymentMethod}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
+                    <SelectItem value="efectivo">💵 {language === 'es' ? 'Efectivo' : 'Cash'}</SelectItem>
+                    <SelectItem value="banco">🏦 {language === 'es' ? 'Banco' : 'Bank'}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
