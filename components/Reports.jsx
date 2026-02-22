@@ -513,6 +513,87 @@ export default function Reports() {
       y = doc.lastAutoTable.finalY + 10;
     }
     
+    // Vehicles Breakdown
+    if (period?.vehiclesByProduct && Object.keys(period.vehiclesByProduct).length > 0) {
+      doc.setFontSize(12);
+      doc.setTextColor(0, 128, 128);
+      doc.text(language === 'es' ? 'VEHICULOS FACTURADOS' : 'VEHICLES INVOICED', 14, y);
+      doc.setTextColor(0, 0, 0);
+      y += 5;
+      
+      const vehiclesBody = [];
+      const productNames = Object.keys(period.vehiclesByProduct).sort();
+      
+      productNames.forEach(product => {
+        const data = period.vehiclesByProduct[product];
+        const qCount = canViewQuads ? (data.quad || 0) : 0;
+        const bCount = canViewBuggies ? (data.buggy || 0) : 0;
+        if (qCount > 0 || bCount > 0) {
+          vehiclesBody.push([
+            product,
+            canViewQuads ? (qCount > 0 ? qCount.toString() : '-') : '',
+            canViewBuggies ? (bCount > 0 ? bCount.toString() : '-') : '',
+            (qCount + bCount).toString()
+          ]);
+        }
+      });
+      
+      const totalQuads = period.quads.vehicles || 0;
+      const totalBuggies = period.buggies.vehicles || 0;
+      
+      const vehiclesHead = [[
+        language === 'es' ? 'Producto' : 'Product',
+        ...(canViewQuads ? ['Quads'] : []),
+        ...(canViewBuggies ? ['Buggies'] : []),
+        'Total'
+      ]];
+      
+      const vehiclesFoot = [[
+        { content: 'TOTAL', styles: { fontStyle: 'bold' } },
+        ...(canViewQuads ? [{ content: totalQuads.toString(), styles: { fontStyle: 'bold' } }] : []),
+        ...(canViewBuggies ? [{ content: totalBuggies.toString(), styles: { fontStyle: 'bold' } }] : []),
+        { content: ((canViewQuads ? totalQuads : 0) + (canViewBuggies ? totalBuggies : 0)).toString(), styles: { fontStyle: 'bold' } }
+      ]];
+      
+      // Rebuild body with correct columns
+      const finalBody = productNames.map(product => {
+        const data = period.vehiclesByProduct[product];
+        const qCount = data.quad || 0;
+        const bCount = data.buggy || 0;
+        return [
+          product,
+          ...(canViewQuads ? [qCount > 0 ? qCount.toString() : '-'] : []),
+          ...(canViewBuggies ? [bCount > 0 ? bCount.toString() : '-'] : []),
+          ((canViewQuads ? qCount : 0) + (canViewBuggies ? bCount : 0)).toString()
+        ];
+      }).filter(row => {
+        // Only include rows with at least one vehicle
+        const total = parseInt(row[row.length - 1]);
+        return total > 0;
+      });
+      
+      if (finalBody.length > 0) {
+        doc.autoTable({
+          startY: y,
+          head: vehiclesHead,
+          body: finalBody,
+          foot: vehiclesFoot,
+          theme: 'grid',
+          headStyles: { fillColor: [0, 128, 128] },
+          footStyles: { fillColor: [220, 220, 220] },
+          styles: { fontSize: 9 },
+          columnStyles: { 
+            0: { cellWidth: 60 },
+            1: { halign: 'center' },
+            2: { halign: 'center' },
+            3: { halign: 'center', fontStyle: 'bold' }
+          }
+        });
+        
+        y = doc.lastAutoTable.finalY + 10;
+      }
+    }
+    
     // VAT Summary
     const totalGross = (canViewQuads ? period.quads.total : 0) + (canViewBuggies ? period.buggies.total : 0);
     const totalNet = totalGross / 1.21;
