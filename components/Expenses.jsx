@@ -474,6 +474,7 @@ export default function Expenses() {
                                 <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
                                 <TableHead>{language === 'es' ? 'Método' : 'Method'}</TableHead>
                                 <TableHead>{language === 'es' ? 'Notas' : 'Notes'}</TableHead>
+                                <TableHead>{language === 'es' ? 'Creado por' : 'Created by'}</TableHead>
                                 <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
                                 <TableHead className="w-12"></TableHead>
                               </TableRow>
@@ -491,6 +492,9 @@ export default function Expenses() {
                                   </TableCell>
                                   <TableCell className="text-muted-foreground text-sm">
                                     {exp.notes || '-'}
+                                  </TableCell>
+                                  <TableCell className="text-xs text-muted-foreground">
+                                    {exp.createdBy || '-'}
                                   </TableCell>
                                   <TableCell className="text-right font-medium text-red-600">
                                     -{formatCurrency(exp.amount)}
