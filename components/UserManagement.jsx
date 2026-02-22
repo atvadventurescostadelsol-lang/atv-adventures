@@ -250,6 +250,24 @@ export default function UserManagement() {
                       {t('admin')}
                     </div>
                   </SelectItem>
+                  <SelectItem value="quad">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-orange-600" />
+                      Quad (Solo GE)
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="buggy">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-blue-600" />
+                      Buggy (Solo E&S)
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="readonly">
+                    <div className="flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-gray-600" />
+                      Solo Lectura
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
