@@ -444,12 +444,6 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                   <span>🏦 {t('bank')}</span>
                   <span className="font-medium">€{quadStats.bankTotal.toFixed(2)}</span>
                 </div>
-                {quadStats.webTotal > 0 && (
-                  <div className="flex justify-between">
-                    <span>🌐 Web</span>
-                    <span className="font-medium">€{quadStats.webTotal.toFixed(2)}</span>
-                  </div>
-                )}
                 {quadStats.gygTotal > 0 && (
                   <div className="flex justify-between text-yellow-600">
                     <span>🎫 GYG (pendiente)</span>
