@@ -456,7 +456,7 @@ async function createIncome(body) {
   await ensureIncomesSheet();
   
   try {
-    const { date, amount, concept, account, notes = '', paymentMethod = 'efectivo' } = body;
+    const { date, amount, concept, account, notes = '', paymentMethod = 'efectivo', createdBy = 'Sistema' } = body;
     
     if (!date || amount === undefined || !concept || !account) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -481,13 +481,13 @@ async function createIncome(body) {
       account,
       notes,
       createdAt,
-      'system',
+      createdBy,
       paymentMethod
     ];
     
     await appendSheetData(SPREADSHEET_ID, 'Incomes!A:I', [incomeRow]);
     
-    await addAuditLog('CREATE', 'income', id, { date, amount, concept, account, paymentMethod });
+    await addAuditLog('CREATE', 'income', id, { date, amount, concept, account, paymentMethod }, createdBy, createdBy);
     
     return NextResponse.json({
       success: true,
@@ -499,7 +499,7 @@ async function createIncome(body) {
         account,
         notes,
         createdAt,
-        createdBy: 'system',
+        createdBy,
         paymentMethod
       }
     });
