@@ -41,6 +41,8 @@ export default function Reports() {
   const [channel, setChannel] = useState('all');
   const [expenseAccount, setExpenseAccount] = useState('all'); // Filter: all, GE, E&S
   const [expenseConcept, setExpenseConcept] = useState('all'); // Filter by concept
+  const [expensePaymentMethod, setExpensePaymentMethod] = useState('all'); // Filter: all, efectivo, banco
+  const [incomePaymentMethod, setIncomePaymentMethod] = useState('all'); // Filter: all, efectivo, banco
   const [expenseCategories, setExpenseCategories] = useState({ GE: [], 'E&S': [] });
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -56,6 +58,7 @@ export default function Reports() {
   const defaultExpenseAccount = !canViewGE && canViewES ? 'E&S' : (!canViewES && canViewGE ? 'GE' : 'all');
   const [expenseReportAccount, setExpenseReportAccount] = useState(defaultExpenseAccount);
   const [expenseReportConcept, setExpenseReportConcept] = useState('all');
+  const [expenseReportPaymentMethod, setExpenseReportPaymentMethod] = useState('all'); // NEW: Filter by payment method
   const [expenseResults, setExpenseResults] = useState(null);
   const [expenseLoading, setExpenseLoading] = useState(false);
 
@@ -65,6 +68,7 @@ export default function Reports() {
   const defaultIncomeAccount = !canViewGE && canViewES ? 'E&S' : (!canViewES && canViewGE ? 'GE' : 'all');
   const [incomeReportAccount, setIncomeReportAccount] = useState(defaultIncomeAccount);
   const [incomeReportConcept, setIncomeReportConcept] = useState('all');
+  const [incomeReportPaymentMethod, setIncomeReportPaymentMethod] = useState('all'); // NEW: Filter by payment method
   const [incomeResults, setIncomeResults] = useState(null);
   const [incomeLoading, setIncomeLoading] = useState(false);
   const [incomeCategories, setIncomeCategories] = useState({ GE: [], 'E&S': [] });
