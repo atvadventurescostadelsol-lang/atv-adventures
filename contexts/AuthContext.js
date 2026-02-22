@@ -8,17 +8,27 @@ const AuthContext = createContext();
 // admin: full access to everything
 // buggy: only buggy category and E&S account (like Charly)
 // quad: only quad category and GE account
+// readonly: only dashboard and reports access (no data modification)
 const ROLE_RESTRICTIONS = {
   'admin': null, // No restrictions - full access
   'buggy': {
     allowedCategories: ['buggy'],
     allowedExpenseAccounts: ['E&S'],
     canAccessAdmin: false,
+    isReadOnly: false,
   },
   'quad': {
     allowedCategories: ['quad'],
     allowedExpenseAccounts: ['GE'],
     canAccessAdmin: false,
+    isReadOnly: false,
+  },
+  'readonly': {
+    allowedCategories: ['quad', 'buggy'], // Can view all categories
+    allowedExpenseAccounts: ['GE', 'E&S'], // Can view all accounts
+    canAccessAdmin: false,
+    isReadOnly: true, // Only dashboard and reports
+    allowedTabs: ['dashboard', 'reports'], // Tabs this role can access
   }
 };
 
