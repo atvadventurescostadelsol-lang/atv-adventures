@@ -2304,6 +2304,7 @@ export default function Reports() {
                         <TableHead>{language === 'es' ? 'Fecha' : 'Date'}</TableHead>
                         <TableHead>{language === 'es' ? 'Cuenta' : 'Account'}</TableHead>
                         <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
+                        <TableHead>{language === 'es' ? 'Método' : 'Method'}</TableHead>
                         <TableHead>{language === 'es' ? 'Notas' : 'Notes'}</TableHead>
                         <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
                       </TableRow>
@@ -2319,6 +2320,11 @@ export default function Reports() {
                             </Badge>
                           </TableCell>
                           <TableCell>{exp.concept}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={exp.paymentMethod === 'banco' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}>
+                              {exp.paymentMethod === 'banco' ? '🏦 Banco' : '💵 Efectivo'}
+                            </Badge>
+                          </TableCell>
                           <TableCell className="text-muted-foreground">{exp.notes || '-'}</TableCell>
                           <TableCell className="text-right font-medium text-red-600">
                             -{formatCurrency(exp.amount)}
