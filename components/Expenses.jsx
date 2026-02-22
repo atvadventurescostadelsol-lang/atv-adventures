@@ -108,7 +108,8 @@ export default function Expenses() {
         body: JSON.stringify({
           ...newExpense,
           account: activeAccount,
-          amount: parseFloat(newExpense.amount)
+          amount: parseFloat(newExpense.amount),
+          paymentMethod: newExpense.paymentMethod
         })
       });
 
@@ -118,7 +119,8 @@ export default function Expenses() {
           date: new Date().toISOString().split('T')[0],
           amount: '',
           concept: '',
-          notes: ''
+          notes: '',
+          paymentMethod: 'efectivo'
         });
         loadData();
       } else {
