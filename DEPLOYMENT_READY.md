@@ -50,8 +50,8 @@
 
 ## 🔗 Production URLs
 
-- **Application**: https://financial-tracker-56.preview.emergentagent.com
-- **API Base**: https://financial-tracker-56.preview.emergentagent.com/api
+- **Application**: https://payment-breakdown-1.preview.emergentagent.com
+- **API Base**: https://payment-breakdown-1.preview.emergentagent.com/api
 - **Google Sheet**: https://docs.google.com/spreadsheets/d/1WeP9I6Phj28xsIqVHefg599u5tZerGj88P0dx4Pn9tA/edit
 
 ---
