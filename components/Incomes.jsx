@@ -56,7 +56,8 @@ export default function Incomes() {
     date: new Date().toISOString().split('T')[0],
     amount: '',
     concept: '',
-    notes: ''
+    notes: '',
+    paymentMethod: 'efectivo'
   });
 
   useEffect(() => {
@@ -107,7 +108,8 @@ export default function Incomes() {
         body: JSON.stringify({
           ...newIncome,
           account: activeAccount,
-          amount: parseFloat(newIncome.amount)
+          amount: parseFloat(newIncome.amount),
+          paymentMethod: newIncome.paymentMethod
         })
       });
 
@@ -117,7 +119,8 @@ export default function Incomes() {
           date: new Date().toISOString().split('T')[0],
           amount: '',
           concept: '',
-          notes: ''
+          notes: '',
+          paymentMethod: 'efectivo'
         });
         loadData();
       } else {
