@@ -780,6 +780,13 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                                 <p className="text-xs text-muted-foreground italic">📝 {dep.notes}</p>
                               </div>
                             )}
+                            
+                            {/* Created by */}
+                            {dep.createdByUser && (
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                👤 {dep.createdByUser}
+                              </div>
+                            )}
                           </CardContent>
                         </Card>
                       );
