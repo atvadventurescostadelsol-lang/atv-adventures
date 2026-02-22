@@ -345,7 +345,7 @@ export default function Incomes() {
                 {/* Add Income Form */}
                 <Card className={`${account === 'GE' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'}`}>
                   <CardContent className="p-4">
-                    <div className="grid gap-4 md:grid-cols-5">
+                    <div className="grid gap-4 md:grid-cols-6">
                       <div>
                         <Label>{language === 'es' ? 'Fecha' : 'Date'}</Label>
                         <Input
@@ -379,6 +379,25 @@ export default function Incomes() {
                             {categories[account]?.map(cat => (
                               <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
                             ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>{language === 'es' ? 'Método de Pago' : 'Payment Method'}</Label>
+                        <Select
+                          value={newIncome.paymentMethod}
+                          onValueChange={(value) => setNewIncome({ ...newIncome, paymentMethod: value })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="efectivo">
+                              {language === 'es' ? '💵 Efectivo' : '💵 Cash'}
+                            </SelectItem>
+                            <SelectItem value="banco">
+                              {language === 'es' ? '🏦 Banco' : '🏦 Bank'}
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
