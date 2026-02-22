@@ -56,7 +56,8 @@ export default function Expenses() {
     date: new Date().toISOString().split('T')[0],
     amount: '',
     concept: '',
-    notes: ''
+    notes: '',
+    paymentMethod: 'efectivo'
   });
 
   useEffect(() => {
