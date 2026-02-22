@@ -109,7 +109,8 @@ export default function Expenses() {
           ...newExpense,
           account: activeAccount,
           amount: parseFloat(newExpense.amount),
-          paymentMethod: newExpense.paymentMethod
+          paymentMethod: newExpense.paymentMethod,
+          createdBy: user?.username || 'Sistema'
         })
       });
 
