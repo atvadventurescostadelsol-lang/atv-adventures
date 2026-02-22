@@ -1298,6 +1298,13 @@ async function handleGet(request, path) {
       if (category) filtered = filtered.filter(d => d.category === category);
       if (channel) filtered = filtered.filter(d => d.salesChannel === channel);
       
+      // Filter by date range
+      const startDate = searchParams.get('startDate');
+      const endDate = searchParams.get('endDate');
+      if (startDate && endDate) {
+        filtered = filtered.filter(d => d.date >= startDate && d.date <= endDate);
+      }
+      
       return NextResponse.json(filtered);
     } catch (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
