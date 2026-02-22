@@ -1208,7 +1208,7 @@ async function handleGet(request, path) {
   // Debug and fix Expenses sheet
   if (path === 'debug-expenses') {
     try {
-      const data = await getSheetData(SPREADSHEET_ID, 'Expenses!A:H');
+      const data = await getSheetData(SPREADSHEET_ID, 'Expenses!A:I');
       return NextResponse.json({
         totalRows: data.length,
         headers: data[0],
@@ -1226,7 +1226,7 @@ async function handleGet(request, path) {
   // Fix Expenses sheet by removing empty rows
   if (path === 'fix-expenses') {
     try {
-      const data = await getSheetData(SPREADSHEET_ID, 'Expenses!A:H');
+      const data = await getSheetData(SPREADSHEET_ID, 'Expenses!A:I');
       const headers = data[0];
       
       // Filter out empty rows
@@ -1238,18 +1238,44 @@ async function handleGet(request, path) {
       
       await sheets.spreadsheets.values.clear({
         spreadsheetId: SPREADSHEET_ID,
-        range: 'Expenses!A:H'
+        range: 'Expenses!A:I'
       });
       
       // Write headers and valid data back
       const allData = [headers, ...validRows];
-      await updateSheetData(SPREADSHEET_ID, 'Expenses!A1:H' + allData.length, allData);
+      await updateSheetData(SPREADSHEET_ID, 'Expenses!A1:I' + allData.length, allData);
       
       return NextResponse.json({
         success: true,
         message: 'Expenses sheet fixed',
         originalRows: data.length - 1,
         validRows: validRows.length
+      });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
+  // Update Expenses and Incomes headers to include paymentMethod
+  if (path === 'fix-expenses-incomes-headers') {
+    try {
+      const { getSheetsClient } = require('@/lib/google-sheets');
+      const sheets = await getSheetsClient();
+      
+      const expensesHeaders = ['id', 'date', 'amount', 'concept', 'account', 'notes', 'createdAt', 'createdBy', 'paymentMethod'];
+      const incomesHeaders = ['id', 'date', 'amount', 'concept', 'account', 'notes', 'createdAt', 'createdBy', 'paymentMethod'];
+      
+      // Update Expenses headers
+      await updateSheetData(SPREADSHEET_ID, 'Expenses!A1:I1', [expensesHeaders]);
+      
+      // Update Incomes headers
+      await updateSheetData(SPREADSHEET_ID, 'Incomes!A1:I1', [incomesHeaders]);
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Headers updated successfully for Expenses and Incomes',
+        expensesHeaders,
+        incomesHeaders
       });
     } catch (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
