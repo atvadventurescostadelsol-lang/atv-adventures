@@ -471,6 +471,7 @@ export default function Expenses() {
                             <TableHeader>
                               <TableRow>
                                 <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
+                                <TableHead>{language === 'es' ? 'Método' : 'Method'}</TableHead>
                                 <TableHead>{language === 'es' ? 'Notas' : 'Notes'}</TableHead>
                                 <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
                                 <TableHead className="w-12"></TableHead>
@@ -481,6 +482,11 @@ export default function Expenses() {
                                 <TableRow key={exp.id}>
                                   <TableCell>
                                     <Badge variant="secondary">{exp.concept}</Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={exp.paymentMethod === 'banco' ? 'outline' : 'default'} className={exp.paymentMethod === 'banco' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}>
+                                      {exp.paymentMethod === 'banco' ? '🏦 Banco' : '💵 Efectivo'}
+                                    </Badge>
                                   </TableCell>
                                   <TableCell className="text-muted-foreground text-sm">
                                     {exp.notes || '-'}
