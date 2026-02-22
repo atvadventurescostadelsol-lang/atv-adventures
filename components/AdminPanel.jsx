@@ -9,10 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit2, Save, X, Check, Trash2, Users, Receipt, Car, Truck, Wallet } from 'lucide-react';
+import { Plus, Edit2, Save, X, Check, Trash2, Users, Receipt, Car, Truck, Wallet, HardDrive } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import UserManagement from '@/components/UserManagement';
+import BackupManager from '@/components/BackupManager';
 import {
   AlertDialog,
   AlertDialogAction,
