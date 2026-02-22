@@ -5,13 +5,17 @@ const {
   appendSheetData,
   updateSheetData,
   batchUpdateSheetData,
+  clearSheetData,
   parseSheetToObjects,
   objectsToSheetRows,
+  getDriveClient,
+  getSheetsClient,
 } = require('@/lib/google-sheets');
 const { safeAppendSheetData } = require('@/lib/safe-append');
 import { v4 as uuidv4 } from 'uuid';
 
 const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
+const BACKUP_FOLDER_NAME = 'ATV_Backups';
 
 // Helper to parse numbers that may use comma as decimal separator (Spanish format)
 function parseNumber(value) {
