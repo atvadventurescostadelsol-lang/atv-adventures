@@ -472,12 +472,23 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                 <div className="flex justify-between items-center text-red-600">
                   <span className="flex items-center gap-1">
                     <TrendingDown className="h-4 w-4" />
-                    {language === 'es' ? 'Gastos GE (del efectivo)' : 'GE Expenses (from cash)'}
+                    {language === 'es' ? 'Gastos GE' : 'GE Expenses'}
                   </span>
                   <span className="font-medium">-€{geExpenseTotal.toFixed(2)}</span>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {geExpenses.map(e => `${e.concept}: €${parseNumber(e.amount).toFixed(2)}`).join(', ')}
+                <div className="text-xs space-y-1 mt-1">
+                  {geExpenseCashTotal > 0 && (
+                    <div className="flex justify-between text-red-500">
+                      <span>💵 {language === 'es' ? 'Efectivo' : 'Cash'}</span>
+                      <span>-€{geExpenseCashTotal.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {geExpenseBankTotal > 0 && (
+                    <div className="flex justify-between text-red-500">
+                      <span>🏦 {language === 'es' ? 'Banco' : 'Bank'}</span>
+                      <span>-€{geExpenseBankTotal.toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -488,24 +499,43 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                 <div className="flex justify-between items-center text-green-600">
                   <span className="flex items-center gap-1">
                     <TrendingUp className="h-4 w-4" />
-                    {language === 'es' ? 'Ingresos GE (al efectivo)' : 'GE Incomes (to cash)'}
+                    {language === 'es' ? 'Ingresos GE' : 'GE Incomes'}
                   </span>
                   <span className="font-medium">+€{geIncomeTotal.toFixed(2)}</span>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {geIncomes.map(i => `${i.concept}: €${parseNumber(i.amount).toFixed(2)}`).join(', ')}
+                <div className="text-xs space-y-1 mt-1">
+                  {geIncomeCashTotal > 0 && (
+                    <div className="flex justify-between text-green-500">
+                      <span>💵 {language === 'es' ? 'Efectivo' : 'Cash'}</span>
+                      <span>+€{geIncomeCashTotal.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {geIncomeBankTotal > 0 && (
+                    <div className="flex justify-between text-green-500">
+                      <span>🏦 {language === 'es' ? 'Banco' : 'Bank'}</span>
+                      <span>+€{geIncomeBankTotal.toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Net Cash */}
-            <div className="border-t pt-2 bg-blue-50 -mx-4 px-4 py-2 rounded-b-lg">
+            {/* Net Cash & Bank */}
+            <div className="border-t pt-2 bg-blue-50 -mx-4 px-4 py-2 rounded-b-lg space-y-2">
               <div className="flex justify-between items-center">
                 <span className="font-semibold text-blue-800">
-                  💰 {language === 'es' ? 'Efectivo Neto Quads' : 'Net Cash Quads'}
+                  💵 {language === 'es' ? 'Efectivo Neto Quads' : 'Net Cash Quads'}
                 </span>
-                <span className={`font-bold text-xl ${quadCashNet >= 0 ? 'text-blue-700' : 'text-red-600'}`}>
+                <span className={`font-bold text-lg ${quadCashNet >= 0 ? 'text-blue-700' : 'text-red-600'}`}>
                   €{quadCashNet.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-blue-800">
+                  🏦 {language === 'es' ? 'Banco Neto Quads' : 'Net Bank Quads'}
+                </span>
+                <span className={`font-bold text-lg ${quadBankNet >= 0 ? 'text-blue-700' : 'text-red-600'}`}>
+                  €{quadBankNet.toFixed(2)}
                 </span>
               </div>
             </div>
