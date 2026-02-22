@@ -281,66 +281,99 @@ function AppContent() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full ${canAccessAdmin() ? 'grid-cols-7' : 'grid-cols-6'} lg:w-auto lg:inline-grid`}>
-            <TabsTrigger value="dashboard" className="gap-2">
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('dashboard')}</span>
-            </TabsTrigger>
-            <TabsTrigger value="entry" className="gap-2">
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('newTour')}</span>
-            </TabsTrigger>
-            <TabsTrigger value="calendar" className="gap-2">
-              <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('calendar')}</span>
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="gap-2">
-              <CreditCard className="h-4 w-4" />
-              <span className="hidden sm:inline">{language === 'es' ? 'Cobros' : 'Payments'}</span>
-            </TabsTrigger>
-            <TabsTrigger value="expenses" className="gap-2">
-              <Receipt className="h-4 w-4" />
-              <span className="hidden sm:inline">{language === 'es' ? 'Gastos' : 'Expenses'}</span>
-            </TabsTrigger>
-            <TabsTrigger value="incomes" className="gap-2">
-              <Wallet className="h-4 w-4" />
-              <span className="hidden sm:inline">{language === 'es' ? 'Ingresos' : 'Incomes'}</span>
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="gap-2">
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('reports')}</span>
-            </TabsTrigger>
-            {canAccessAdmin() && (
-              <TabsTrigger value="admin" className="gap-2">
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">{t('settings')}</span>
-              </TabsTrigger>
-            )}
-          </TabsList>
+          {/* Calculate grid columns based on visible tabs */}
+          {(() => {
+            // For readonly users, only show dashboard and reports
+            const readOnlyMode = isReadOnly();
+            let tabCount = 2; // dashboard + reports always visible
+            if (!readOnlyMode) {
+              tabCount = 7; // all tabs for regular users
+              if (canAccessAdmin()) tabCount = 8; // +1 for admin tab
+            }
+            
+            return (
+              <TabsList className={`grid w-full grid-cols-${tabCount} lg:w-auto lg:inline-grid`}>
+                <TabsTrigger value="dashboard" className="gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t('dashboard')}</span>
+                </TabsTrigger>
+                {canAccessTab('entry') && (
+                  <TabsTrigger value="entry" className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">{t('newTour')}</span>
+                  </TabsTrigger>
+                )}
+                {canAccessTab('calendar') && (
+                  <TabsTrigger value="calendar" className="gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span className="hidden sm:inline">{t('calendar')}</span>
+                  </TabsTrigger>
+                )}
+                {canAccessTab('payments') && (
+                  <TabsTrigger value="payments" className="gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    <span className="hidden sm:inline">{language === 'es' ? 'Cobros' : 'Payments'}</span>
+                  </TabsTrigger>
+                )}
+                {canAccessTab('expenses') && (
+                  <TabsTrigger value="expenses" className="gap-2">
+                    <Receipt className="h-4 w-4" />
+                    <span className="hidden sm:inline">{language === 'es' ? 'Gastos' : 'Expenses'}</span>
+                  </TabsTrigger>
+                )}
+                {canAccessTab('incomes') && (
+                  <TabsTrigger value="incomes" className="gap-2">
+                    <Wallet className="h-4 w-4" />
+                    <span className="hidden sm:inline">{language === 'es' ? 'Ingresos' : 'Incomes'}</span>
+                  </TabsTrigger>
+                )}
+                <TabsTrigger value="reports" className="gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t('reports')}</span>
+                </TabsTrigger>
+                {canAccessAdmin() && (
+                  <TabsTrigger value="admin" className="gap-2">
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline">{t('settings')}</span>
+                  </TabsTrigger>
+                )}
+              </TabsList>
+            );
+          })()}
 
           <TabsContent value="dashboard">
             <Dashboard selectedDate={selectedDate} onDateChange={setSelectedDate} />
           </TabsContent>
 
-          <TabsContent value="entry">
-            <BatchEntry />
-          </TabsContent>
+          {canAccessTab('entry') && (
+            <TabsContent value="entry">
+              <BatchEntry />
+            </TabsContent>
+          )}
 
-          <TabsContent value="calendar">
-            <CalendarView onDateSelect={handleDateSelect} />
-          </TabsContent>
+          {canAccessTab('calendar') && (
+            <TabsContent value="calendar">
+              <CalendarView onDateSelect={handleDateSelect} />
+            </TabsContent>
+          )}
 
-          <TabsContent value="payments">
-            <PendingPayments />
-          </TabsContent>
+          {canAccessTab('payments') && (
+            <TabsContent value="payments">
+              <PendingPayments />
+            </TabsContent>
+          )}
 
-          <TabsContent value="expenses">
-            <Expenses />
-          </TabsContent>
+          {canAccessTab('expenses') && (
+            <TabsContent value="expenses">
+              <Expenses />
+            </TabsContent>
+          )}
 
-          <TabsContent value="incomes">
-            <Incomes />
-          </TabsContent>
+          {canAccessTab('incomes') && (
+            <TabsContent value="incomes">
+              <Incomes />
+            </TabsContent>
+          )}
 
           <TabsContent value="reports">
             <Reports />
