@@ -794,36 +794,48 @@ export default function Reports() {
         
         const totals = calculateStats(data, filteredExpenses, `${startDate} - ${endDate}`, filteredIncomes);
         
-        // Calculate expense totals by concept for detailed breakdown
+        // Calculate expense totals by concept and payment method for detailed breakdown
         const expensesByAccount = { GE: {}, 'E&S': {} };
         const expenseTotalsByAccount = { GE: 0, 'E&S': 0 };
+        const expenseTotalsByMethod = { 
+          GE: { efectivo: 0, banco: 0 }, 
+          'E&S': { efectivo: 0, banco: 0 } 
+        };
         
         filteredExpenses.forEach(e => {
           const amount = parseNumber(e.amount);
           const account = e.account;
           const concept = e.concept;
+          const method = e.paymentMethod || 'efectivo';
           
           if (!expensesByAccount[account][concept]) {
             expensesByAccount[account][concept] = 0;
           }
           expensesByAccount[account][concept] += amount;
           expenseTotalsByAccount[account] += amount;
+          expenseTotalsByMethod[account][method] += amount;
         });
 
-        // Calculate income totals by concept for detailed breakdown
+        // Calculate income totals by concept and payment method for detailed breakdown
         const incomesByAccount = { GE: {}, 'E&S': {} };
         const incomeTotalsByAccount = { GE: 0, 'E&S': 0 };
+        const incomeTotalsByMethod = { 
+          GE: { efectivo: 0, banco: 0 }, 
+          'E&S': { efectivo: 0, banco: 0 } 
+        };
         
         filteredIncomes.forEach(i => {
           const amount = parseNumber(i.amount);
           const account = i.account;
           const concept = i.concept;
+          const method = i.paymentMethod || 'efectivo';
           
           if (!incomesByAccount[account][concept]) {
             incomesByAccount[account][concept] = 0;
           }
           incomesByAccount[account][concept] += amount;
           incomeTotalsByAccount[account] += amount;
+          incomeTotalsByMethod[account][method] += amount;
         });
         
         setResults({
@@ -838,8 +850,10 @@ export default function Reports() {
           expenseConceptFilter: expenseConcept,
           expensesByAccount,
           expenseTotalsByAccount,
+          expenseTotalsByMethod,
           incomesByAccount,
           incomeTotalsByAccount,
+          incomeTotalsByMethod,
         });
       }
     } catch (error) {
