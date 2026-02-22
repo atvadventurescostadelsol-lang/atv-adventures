@@ -564,12 +564,6 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                   <span>🏦 {t('bank')}</span>
                   <span className="font-medium">€{buggyStats.bankTotal.toFixed(2)}</span>
                 </div>
-                {buggyStats.webTotal > 0 && (
-                  <div className="flex justify-between">
-                    <span>🌐 Web</span>
-                    <span className="font-medium">€{buggyStats.webTotal.toFixed(2)}</span>
-                  </div>
-                )}
                 {buggyStats.gygTotal > 0 && (
                   <div className="flex justify-between text-yellow-600">
                     <span>🎫 GYG (pendiente)</span>
