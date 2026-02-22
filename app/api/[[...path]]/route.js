@@ -1783,6 +1783,32 @@ async function handleGet(request, path) {
 async function handlePost(request, path) {
   const body = await request.json();
 
+  // ==================== BACKUP ENDPOINTS ====================
+  
+  // Create backup
+  if (path === 'backups') {
+    try {
+      const result = await createBackup(body.userName || 'System');
+      return NextResponse.json(result);
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+  
+  // Restore from backup
+  if (path === 'backups/restore') {
+    try {
+      const { fileId, userName } = body;
+      if (!fileId) {
+        return NextResponse.json({ error: 'fileId is required' }, { status: 400 });
+      }
+      const result = await restoreFromBackup(fileId, userName || 'System');
+      return NextResponse.json(result);
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   // Auth: Login
   if (path === 'auth/login') {
     return handleLogin(body);
