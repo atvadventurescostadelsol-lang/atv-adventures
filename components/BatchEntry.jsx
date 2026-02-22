@@ -18,7 +18,7 @@ const GYG_DISCOUNT = 0.25; // 25% discount for GYG
 
 export default function BatchEntry() {
   const { t, language } = useLanguage();
-  const { canAccessCategory, getAllowedCategories } = useAuth();
+  const { user, canAccessCategory, getAllowedCategories } = useAuth();
   
   // Determine default category based on user permissions
   const allowedCategories = getAllowedCategories();
