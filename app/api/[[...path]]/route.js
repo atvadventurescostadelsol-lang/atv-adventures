@@ -744,7 +744,9 @@ async function handleCreateUser(body) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
     
-    if (role !== 'admin' && role !== 'user') {
+    // Valid roles: admin, user, buggy, quad, readonly
+    const validRoles = ['admin', 'user', 'buggy', 'quad', 'readonly'];
+    if (!validRoles.includes(role)) {
       return NextResponse.json({ success: false, error: 'Invalid role' }, { status: 400 });
     }
     
