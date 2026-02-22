@@ -272,7 +272,6 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
   const visibleVatAmount = visibleTotalGross - visibleNetBase;
   const visibleCashTotal = (canViewQuads ? quadStats.cashTotal : 0) + (canViewBuggies ? buggyStats.cashTotal : 0);
   const visibleBankTotal = (canViewQuads ? quadStats.bankTotal : 0) + (canViewBuggies ? buggyStats.bankTotal : 0);
-  const visibleWebTotal = (canViewQuads ? quadStats.webTotal : 0) + (canViewBuggies ? buggyStats.webTotal : 0);
   const visibleGygTotal = (canViewQuads ? quadStats.gygTotal : 0) + (canViewBuggies ? buggyStats.gygTotal : 0);
   const visibleCruiseTotal = (canViewQuads ? quadStats.cruiseTotal : 0) + (canViewBuggies ? buggyStats.cruiseTotal : 0);
   const visibleQuadCount = canViewQuads ? quadStats.vehiclesCount : 0;
