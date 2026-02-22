@@ -205,8 +205,8 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
   const quadStats = {
     totalGross: quadDepartures.reduce((sum, d) => sum + parseNumber(d.totalGross), 0),
     cashTotal: quadDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitCash), 0),
-    bankTotal: quadDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitBank), 0),
-    webTotal: quadDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitWeb), 0),
+    // Bank now includes web payments
+    bankTotal: quadDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitBank) + parseNumber(d.paymentSplitWeb), 0),
     gygTotal: quadDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitGyg), 0),
     cruiseTotal: quadDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitCruise), 0),
     vehiclesCount: quadDepartures.reduce((sum, d) => sum + parseInt(d.vehiclesCount || 0), 0),
@@ -215,8 +215,8 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
   const buggyStats = {
     totalGross: buggyDepartures.reduce((sum, d) => sum + parseNumber(d.totalGross), 0),
     cashTotal: buggyDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitCash), 0),
-    bankTotal: buggyDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitBank), 0),
-    webTotal: buggyDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitWeb), 0),
+    // Bank now includes web payments
+    bankTotal: buggyDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitBank) + parseNumber(d.paymentSplitWeb), 0),
     gygTotal: buggyDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitGyg), 0),
     cruiseTotal: buggyDepartures.reduce((sum, d) => sum + parseNumber(d.paymentSplitCruise), 0),
     vehiclesCount: buggyDepartures.reduce((sum, d) => sum + parseInt(d.vehiclesCount || 0), 0),
