@@ -334,7 +334,7 @@ async function getIncomes(searchParams) {
   await ensureIncomesSheet();
   
   try {
-    const data = await getSheetData(SPREADSHEET_ID, 'Incomes!A:H');
+    const data = await getSheetData(SPREADSHEET_ID, 'Incomes!A:I');
     let incomes = parseSheetToObjects(data);
     
     // Filter out empty rows
@@ -365,7 +365,7 @@ async function createIncome(body) {
   await ensureIncomesSheet();
   
   try {
-    const { date, amount, concept, account, notes = '' } = body;
+    const { date, amount, concept, account, notes = '', paymentMethod = 'efectivo' } = body;
     
     if (!date || amount === undefined || !concept || !account) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -373,6 +373,10 @@ async function createIncome(body) {
     
     if (!['GE', 'E&S'].includes(account)) {
       return NextResponse.json({ error: 'Invalid account. Must be GE or E&S' }, { status: 400 });
+    }
+    
+    if (paymentMethod !== 'efectivo' && paymentMethod !== 'banco') {
+      return NextResponse.json({ error: 'Invalid payment method. Must be efectivo or banco' }, { status: 400 });
     }
     
     const id = uuidv4();
@@ -386,12 +390,13 @@ async function createIncome(body) {
       account,
       notes,
       createdAt,
-      'system'
+      'system',
+      paymentMethod
     ];
     
-    await appendSheetData(SPREADSHEET_ID, 'Incomes!A:H', [incomeRow]);
+    await appendSheetData(SPREADSHEET_ID, 'Incomes!A:I', [incomeRow]);
     
-    await addAuditLog('CREATE', 'income', id, { date, amount, concept, account });
+    await addAuditLog('CREATE', 'income', id, { date, amount, concept, account, paymentMethod });
     
     return NextResponse.json({
       success: true,
@@ -403,7 +408,8 @@ async function createIncome(body) {
         account,
         notes,
         createdAt,
-        createdBy: 'system'
+        createdBy: 'system',
+        paymentMethod
       }
     });
   } catch (error) {
@@ -415,7 +421,7 @@ async function createIncome(body) {
 // Delete income (soft delete by clearing the row)
 async function deleteIncome(id) {
   try {
-    const data = await getSheetData(SPREADSHEET_ID, 'Incomes!A:H');
+    const data = await getSheetData(SPREADSHEET_ID, 'Incomes!A:I');
     const incomes = parseSheetToObjects(data);
     const index = incomes.findIndex(i => i.id === id);
     
@@ -427,7 +433,7 @@ async function deleteIncome(id) {
     
     // Clear the row (soft delete)
     const rowIndex = index + 2; // +2 for header and 0-based index
-    await updateSheetData(SPREADSHEET_ID, `Incomes!A${rowIndex}:H${rowIndex}`, [['', '', '', '', '', '', '', '']]);
+    await updateSheetData(SPREADSHEET_ID, `Incomes!A${rowIndex}:I${rowIndex}`, [['', '', '', '', '', '', '', '', '']]);
     
     await addAuditLog('DELETE', 'income', id, income);
     
