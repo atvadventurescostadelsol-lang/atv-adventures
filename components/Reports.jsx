@@ -818,6 +818,7 @@ export default function Reports() {
                           <TableHead>💵</TableHead>
                           <TableHead>🏦</TableHead>
                           <TableHead className="text-right">Total</TableHead>
+                          <TableHead>{language === 'es' ? 'Notas' : 'Notes'}</TableHead>
                         </TableRow></TableHeader>
                         <TableBody>
                           {detailedResults.departures.map((d, i) => (
@@ -829,6 +830,7 @@ export default function Reports() {
                               <TableCell>{formatCurrency(parseNumber(d.paymentSplitCash))}</TableCell>
                               <TableCell>{formatCurrency(parseNumber(d.paymentSplitBank) + parseNumber(d.paymentSplitWeb))}</TableCell>
                               <TableCell className="text-right font-bold">{formatCurrency(parseNumber(d.totalGross))}</TableCell>
+                              <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate" title={d.notes || ''}>{d.notes || '-'}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
