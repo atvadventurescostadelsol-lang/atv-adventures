@@ -284,17 +284,193 @@ export default function Reports() {
     }
   }
   
+  // Load expense and income categories
+  async function loadCategories() {
+    try {
+      const [expCatRes, incCatRes] = await Promise.all([
+        fetch('/api/expense-categories'),
+        fetch('/api/income-categories')
+      ]);
+      if (expCatRes.ok) {
+        const data = await expCatRes.json();
+        setExpenseCategories(data);
+      }
+      if (incCatRes.ok) {
+        const data = await incCatRes.json();
+        setIncomeCategories(data);
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  }
+  
+  // Generate expense-only report
+  async function generateExpenseReport() {
+    if (!expenseReportStartDate || !expenseReportEndDate) {
+      toast.error(language === 'es' ? 'Selecciona las fechas' : 'Select dates');
+      return;
+    }
+    
+    setExpenseReportLoading(true);
+    try {
+      const res = await fetch(`/api/expenses?startDate=${expenseReportStartDate}&endDate=${expenseReportEndDate}`);
+      if (res.ok) {
+        let data = await res.json();
+        
+        // Filter by permissions
+        data = data.filter(e => {
+          if (e.account === 'GE' && !canViewGE) return false;
+          if (e.account === 'E&S' && !canViewES) return false;
+          return true;
+        });
+        
+        // Apply filters
+        if (expenseReportAccount !== 'all') {
+          data = data.filter(e => e.account === expenseReportAccount);
+        }
+        if (expenseReportConcept !== 'all') {
+          data = data.filter(e => e.concept === expenseReportConcept);
+        }
+        if (expenseReportPaymentMethod !== 'all') {
+          data = data.filter(e => (e.paymentMethod || 'efectivo') === expenseReportPaymentMethod);
+        }
+        
+        // Calculate totals
+        const byAccount = { GE: { cash: 0, bank: 0 }, 'E&S': { cash: 0, bank: 0 } };
+        const byConcept = {};
+        
+        data.forEach(e => {
+          const amount = parseNumber(e.amount);
+          const method = e.paymentMethod || 'efectivo';
+          if (method === 'banco') {
+            byAccount[e.account].bank += amount;
+          } else {
+            byAccount[e.account].cash += amount;
+          }
+          if (!byConcept[e.concept]) byConcept[e.concept] = 0;
+          byConcept[e.concept] += amount;
+        });
+        
+        const total = Object.values(byAccount).reduce((sum, acc) => sum + acc.cash + acc.bank, 0);
+        
+        setExpenseReportResults({
+          data,
+          byAccount,
+          byConcept,
+          total,
+          filters: {
+            startDate: expenseReportStartDate,
+            endDate: expenseReportEndDate,
+            account: expenseReportAccount,
+            concept: expenseReportConcept,
+            paymentMethod: expenseReportPaymentMethod
+          }
+        });
+      }
+    } catch (error) {
+      toast.error('Error');
+    } finally {
+      setExpenseReportLoading(false);
+    }
+  }
+  
+  // Generate income-only report
+  async function generateIncomeReport() {
+    if (!incomeReportStartDate || !incomeReportEndDate) {
+      toast.error(language === 'es' ? 'Selecciona las fechas' : 'Select dates');
+      return;
+    }
+    
+    setIncomeReportLoading(true);
+    try {
+      const res = await fetch(`/api/incomes?startDate=${incomeReportStartDate}&endDate=${incomeReportEndDate}`);
+      if (res.ok) {
+        let data = await res.json();
+        
+        // Filter by permissions
+        data = data.filter(i => {
+          if (i.account === 'GE' && !canViewGE) return false;
+          if (i.account === 'E&S' && !canViewES) return false;
+          return true;
+        });
+        
+        // Apply filters
+        if (incomeReportAccount !== 'all') {
+          data = data.filter(i => i.account === incomeReportAccount);
+        }
+        if (incomeReportConcept !== 'all') {
+          data = data.filter(i => i.concept === incomeReportConcept);
+        }
+        if (incomeReportPaymentMethod !== 'all') {
+          data = data.filter(i => (i.paymentMethod || 'efectivo') === incomeReportPaymentMethod);
+        }
+        
+        // Calculate totals
+        const byAccount = { GE: { cash: 0, bank: 0 }, 'E&S': { cash: 0, bank: 0 } };
+        const byConcept = {};
+        
+        data.forEach(i => {
+          const amount = parseNumber(i.amount);
+          const method = i.paymentMethod || 'efectivo';
+          if (method === 'banco') {
+            byAccount[i.account].bank += amount;
+          } else {
+            byAccount[i.account].cash += amount;
+          }
+          if (!byConcept[i.concept]) byConcept[i.concept] = 0;
+          byConcept[i.concept] += amount;
+        });
+        
+        const total = Object.values(byAccount).reduce((sum, acc) => sum + acc.cash + acc.bank, 0);
+        
+        setIncomeReportResults({
+          data,
+          byAccount,
+          byConcept,
+          total,
+          filters: {
+            startDate: incomeReportStartDate,
+            endDate: incomeReportEndDate,
+            account: incomeReportAccount,
+            concept: incomeReportConcept,
+            paymentMethod: incomeReportPaymentMethod
+          }
+        });
+      }
+    } catch (error) {
+      toast.error('Error');
+    } finally {
+      setIncomeReportLoading(false);
+    }
+  }
+  
   useEffect(() => {
     loadReport();
+    loadCategories();
   }, []);
+  
+  // Get unique concepts for filters
+  const getExpenseConcepts = () => {
+    const concepts = new Set();
+    expenseCategories.forEach(c => concepts.add(c.name));
+    return Array.from(concepts);
+  };
+  
+  const getIncomeConcepts = () => {
+    const concepts = new Set();
+    incomeCategories.forEach(c => concepts.add(c.name));
+    return Array.from(concepts);
+  };
   
   // Calculate balance for each account
   const calculateBalance = (period) => {
-    if (!reportData) return null;
+    if (!reportData || !reportData.periods[period]) return null;
     
     const sales = reportData.periods[period];
     const exp = reportData.expenses[period];
     const inc = reportData.incomes[period];
+    
+    if (!sales || !exp || !inc) return null;
     
     return {
       quads: {
