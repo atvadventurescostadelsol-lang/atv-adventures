@@ -878,6 +878,7 @@ export default function Reports() {
                           <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
                           <TableHead>{language === 'es' ? 'Método' : 'Method'}</TableHead>
                           <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
+                          <TableHead>{language === 'es' ? 'Notas' : 'Notes'}</TableHead>
                         </TableRow></TableHeader>
                         <TableBody>
                           {detailedResults.incomes.map((inc, i) => (
@@ -887,6 +888,7 @@ export default function Reports() {
                               <TableCell>{inc.concept}</TableCell>
                               <TableCell><Badge variant="outline">{inc.paymentMethod === 'banco' ? '🏦' : '💵'}</Badge></TableCell>
                               <TableCell className="text-right font-bold text-green-600">+{formatCurrency(inc.amount)}</TableCell>
+                              <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate" title={inc.notes || ''}>{inc.notes || '-'}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
