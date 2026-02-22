@@ -345,7 +345,7 @@ export default function Expenses() {
                 {/* Add Expense Form */}
                 <Card className={`${account === 'GE' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'}`}>
                   <CardContent className="p-4">
-                    <div className="grid gap-4 md:grid-cols-5">
+                    <div className="grid gap-4 md:grid-cols-6">
                       <div>
                         <Label>{language === 'es' ? 'Fecha' : 'Date'}</Label>
                         <Input
@@ -386,6 +386,25 @@ export default function Expenses() {
                         </Select>
                       </div>
                       <div>
+                        <Label>{language === 'es' ? 'Método de Pago' : 'Payment Method'}</Label>
+                        <Select
+                          value={newExpense.paymentMethod}
+                          onValueChange={(value) => setNewExpense({ ...newExpense, paymentMethod: value })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="efectivo">
+                              {language === 'es' ? '💵 Efectivo' : '💵 Cash'}
+                            </SelectItem>
+                            <SelectItem value="banco">
+                              {language === 'es' ? '🏦 Banco' : '🏦 Bank'}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
                         <Label>{language === 'es' ? 'Notas' : 'Notes'}</Label>
                         <Input
                           placeholder={language === 'es' ? 'Opcional...' : 'Optional...'}
@@ -397,7 +416,7 @@ export default function Expenses() {
                       <div className="flex items-end">
                         <Button onClick={handleAddExpense} className="w-full">
                           <Plus className="h-4 w-4 mr-2" />
-                          {language === 'es' ? 'Añadir Gasto' : 'Add Expense'}
+                          {language === 'es' ? 'Añadir' : 'Add'}
                         </Button>
                       </div>
                     </div>
