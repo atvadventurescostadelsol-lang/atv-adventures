@@ -104,7 +104,7 @@ async function ensureExpensesSheet() {
   try {
     let data;
     try {
-      data = await getSheetData(SPREADSHEET_ID, 'Expenses!A:H');
+      data = await getSheetData(SPREADSHEET_ID, 'Expenses!A:I');
     } catch (e) {
       console.log('Expenses sheet might not exist, will create it');
       data = null;
@@ -114,7 +114,7 @@ async function ensureExpensesSheet() {
     
     if (needsInit) {
       console.log('Initializing Expenses sheet...');
-      const headers = ['id', 'date', 'amount', 'concept', 'account', 'notes', 'createdAt', 'createdBy'];
+      const headers = ['id', 'date', 'amount', 'concept', 'account', 'notes', 'createdAt', 'createdBy', 'paymentMethod'];
       
       try {
         const { getSheetsClient } = require('@/lib/google-sheets');
@@ -135,7 +135,7 @@ async function ensureExpensesSheet() {
           console.log('Expenses sheet might already exist:', sheetErr.message);
         }
         
-        await updateSheetData(SPREADSHEET_ID, 'Expenses!A1:H1', [headers]);
+        await updateSheetData(SPREADSHEET_ID, 'Expenses!A1:I1', [headers]);
       } catch (e) {
         console.error('Error initializing Expenses sheet:', e);
       }
