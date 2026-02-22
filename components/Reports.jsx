@@ -292,10 +292,11 @@ export default function Reports() {
           language === 'es' ? 'Fecha' : 'Date',
           language === 'es' ? 'Hora' : 'Time',
           language === 'es' ? 'Tipo' : 'Type',
-          language === 'es' ? 'Vehículos' : 'Vehicles',
+          language === 'es' ? 'Veh.' : 'Veh.',
           language === 'es' ? 'Efectivo' : 'Cash',
           language === 'es' ? 'Banco' : 'Bank',
-          'Total'
+          'Total',
+          language === 'es' ? 'Notas' : 'Notes'
         ]],
         body: r.departures.map(d => [
           format(new Date(d.date), 'dd/MM/yyyy'),
@@ -304,18 +305,21 @@ export default function Reports() {
           d.vehiclesCount || 1,
           formatCurrency(parseNumber(d.paymentSplitCash)),
           formatCurrency(parseNumber(d.paymentSplitBank) + parseNumber(d.paymentSplitWeb)),
-          formatCurrency(parseNumber(d.totalGross))
+          formatCurrency(parseNumber(d.totalGross)),
+          d.notes || '-'
         ]),
         foot: [[
           { content: 'TOTAL', colSpan: 4, styles: { fontStyle: 'bold' } },
           { content: formatCurrency(r.depsCash), styles: { fontStyle: 'bold' } },
           { content: formatCurrency(r.depsBank), styles: { fontStyle: 'bold' } },
-          { content: formatCurrency(r.depsTotal), styles: { fontStyle: 'bold' } }
+          { content: formatCurrency(r.depsTotal), styles: { fontStyle: 'bold' } },
+          ''
         ]],
         theme: 'grid',
         headStyles: { fillColor: [34, 139, 34] },
         footStyles: { fillColor: [220, 220, 220] },
-        styles: { fontSize: 8 }
+        styles: { fontSize: 7 },
+        columnStyles: { 7: { cellWidth: 40 } }
       });
       
       y = doc.lastAutoTable.finalY + 10;
