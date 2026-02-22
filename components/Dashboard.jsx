@@ -598,12 +598,23 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                 <div className="flex justify-between items-center text-red-600">
                   <span className="flex items-center gap-1">
                     <TrendingDown className="h-4 w-4" />
-                    {language === 'es' ? 'Gastos E&S (del efectivo)' : 'E&S Expenses (from cash)'}
+                    {language === 'es' ? 'Gastos E&S' : 'E&S Expenses'}
                   </span>
                   <span className="font-medium">-€{esExpenseTotal.toFixed(2)}</span>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {esExpenses.map(e => `${e.concept}: €${parseNumber(e.amount).toFixed(2)}`).join(', ')}
+                <div className="text-xs space-y-1 mt-1">
+                  {esExpenseCashTotal > 0 && (
+                    <div className="flex justify-between text-red-500">
+                      <span>💵 {language === 'es' ? 'Efectivo' : 'Cash'}</span>
+                      <span>-€{esExpenseCashTotal.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {esExpenseBankTotal > 0 && (
+                    <div className="flex justify-between text-red-500">
+                      <span>🏦 {language === 'es' ? 'Banco' : 'Bank'}</span>
+                      <span>-€{esExpenseBankTotal.toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -614,24 +625,43 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                 <div className="flex justify-between items-center text-green-600">
                   <span className="flex items-center gap-1">
                     <TrendingUp className="h-4 w-4" />
-                    {language === 'es' ? 'Ingresos E&S (al efectivo)' : 'E&S Incomes (to cash)'}
+                    {language === 'es' ? 'Ingresos E&S' : 'E&S Incomes'}
                   </span>
                   <span className="font-medium">+€{esIncomeTotal.toFixed(2)}</span>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {esIncomes.map(i => `${i.concept}: €${parseNumber(i.amount).toFixed(2)}`).join(', ')}
+                <div className="text-xs space-y-1 mt-1">
+                  {esIncomeCashTotal > 0 && (
+                    <div className="flex justify-between text-green-500">
+                      <span>💵 {language === 'es' ? 'Efectivo' : 'Cash'}</span>
+                      <span>+€{esIncomeCashTotal.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {esIncomeBankTotal > 0 && (
+                    <div className="flex justify-between text-green-500">
+                      <span>🏦 {language === 'es' ? 'Banco' : 'Bank'}</span>
+                      <span>+€{esIncomeBankTotal.toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Net Cash */}
-            <div className="border-t pt-2 bg-green-50 -mx-4 px-4 py-2 rounded-b-lg">
+            {/* Net Cash & Bank */}
+            <div className="border-t pt-2 bg-green-50 -mx-4 px-4 py-2 rounded-b-lg space-y-2">
               <div className="flex justify-between items-center">
                 <span className="font-semibold text-green-800">
-                  💰 {language === 'es' ? 'Efectivo Neto Buggies' : 'Net Cash Buggies'}
+                  💵 {language === 'es' ? 'Efectivo Neto Buggies' : 'Net Cash Buggies'}
                 </span>
-                <span className={`font-bold text-xl ${buggyCashNet >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                <span className={`font-bold text-lg ${buggyCashNet >= 0 ? 'text-green-700' : 'text-red-600'}`}>
                   €{buggyCashNet.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-green-800">
+                  🏦 {language === 'es' ? 'Banco Neto Buggies' : 'Net Bank Buggies'}
+                </span>
+                <span className={`font-bold text-lg ${buggyBankNet >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                  €{buggyBankNet.toFixed(2)}
                 </span>
               </div>
             </div>
