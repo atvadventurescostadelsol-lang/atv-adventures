@@ -1204,6 +1204,11 @@ export default function AdminPanel() {
             <TabsContent value="users" className="space-y-4">
               <UserManagement />
             </TabsContent>
+
+            {/* Backup Tab */}
+            <TabsContent value="backup" className="space-y-4">
+              <BackupManager />
+            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
