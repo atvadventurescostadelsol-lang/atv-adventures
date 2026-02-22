@@ -458,6 +458,7 @@ export default function Incomes() {
                                   <TableHead>{language === 'es' ? 'Concepto' : 'Concept'}</TableHead>
                                   <TableHead>{language === 'es' ? 'Método' : 'Method'}</TableHead>
                                   <TableHead>{language === 'es' ? 'Notas' : 'Notes'}</TableHead>
+                                  <TableHead>{language === 'es' ? 'Creado por' : 'Created by'}</TableHead>
                                   <TableHead className="text-right">{language === 'es' ? 'Cantidad' : 'Amount'}</TableHead>
                                   <TableHead className="w-10"></TableHead>
                                 </TableRow>
@@ -472,6 +473,7 @@ export default function Incomes() {
                                       </Badge>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground text-sm">{inc.notes || '-'}</TableCell>
+                                    <TableCell className="text-xs text-muted-foreground">{inc.createdBy || '-'}</TableCell>
                                     <TableCell className="text-right font-bold text-green-600">
                                       +{formatCurrency(inc.amount)}
                                     </TableCell>
