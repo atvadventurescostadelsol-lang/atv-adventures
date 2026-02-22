@@ -146,6 +146,29 @@ export function AuthProvider({ children }) {
     if (user?.restrictions?.canAccessAdmin === false) return false;
     return user?.role === 'admin';
   };
+  
+  // Check if user is read-only (only dashboard and reports)
+  const isReadOnly = () => {
+    return user?.restrictions?.isReadOnly === true;
+  };
+  
+  // Check if user can access a specific tab
+  const canAccessTab = (tabName) => {
+    // Admin has access to everything
+    if (!user?.restrictions) return true;
+    // If user has allowedTabs restriction, check against it
+    if (user?.restrictions?.allowedTabs) {
+      return user.restrictions.allowedTabs.includes(tabName);
+    }
+    // If no specific tab restrictions, allow access
+    return true;
+  };
+  
+  // Get list of allowed tabs for the user
+  const getAllowedTabs = () => {
+    if (!user?.restrictions?.allowedTabs) return null; // null means all tabs
+    return user.restrictions.allowedTabs;
+  };
 
   return (
     <AuthContext.Provider value={{ 
