@@ -913,7 +913,7 @@ async function handleGetExpenses(searchParams) {
   try {
     await ensureExpensesSheet();
     
-    const data = await getSheetData(SPREADSHEET_ID, 'Expenses!A:H');
+    const data = await getSheetData(SPREADSHEET_ID, 'Expenses!A:I');
     let expenses = parseSheetToObjects(data);
     
     // Filter out empty rows
@@ -944,7 +944,7 @@ async function handleCreateExpense(body) {
   try {
     await ensureExpensesSheet();
     
-    const { date, amount, concept, account, notes, userId = 'system' } = body;
+    const { date, amount, concept, account, notes, userId = 'system', paymentMethod = 'efectivo' } = body;
     
     if (!date || !amount || !concept || !account) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
@@ -952,6 +952,10 @@ async function handleCreateExpense(body) {
     
     if (account !== 'GE' && account !== 'E&S') {
       return NextResponse.json({ success: false, error: 'Invalid account. Must be GE or E&S' }, { status: 400 });
+    }
+    
+    if (paymentMethod !== 'efectivo' && paymentMethod !== 'banco') {
+      return NextResponse.json({ success: false, error: 'Invalid payment method. Must be efectivo or banco' }, { status: 400 });
     }
     
     const id = uuidv4();
@@ -965,12 +969,13 @@ async function handleCreateExpense(body) {
       account,
       notes || '',
       now,
-      userId
+      userId,
+      paymentMethod
     ];
     
-    await appendSheetData(SPREADSHEET_ID, 'Expenses!A:H', [expenseRow]);
+    await appendSheetData(SPREADSHEET_ID, 'Expenses!A:I', [expenseRow]);
     
-    await addAuditLog('CREATE', 'Expense', id, { amount, concept, account }, userId, userId);
+    await addAuditLog('CREATE', 'Expense', id, { amount, concept, account, paymentMethod }, userId, userId);
     
     return NextResponse.json({
       success: true,
@@ -981,7 +986,8 @@ async function handleCreateExpense(body) {
         concept,
         account,
         notes: notes || '',
-        createdAt: now
+        createdAt: now,
+        paymentMethod
       }
     });
   } catch (error) {
@@ -993,7 +999,7 @@ async function handleCreateExpense(body) {
 // Delete expense
 async function handleDeleteExpense(id) {
   try {
-    const data = await getSheetData(SPREADSHEET_ID, 'Expenses!A:H');
+    const data = await getSheetData(SPREADSHEET_ID, 'Expenses!A:I');
     const expenses = parseSheetToObjects(data);
     const index = expenses.findIndex(e => e.id === id);
     
@@ -1005,7 +1011,7 @@ async function handleDeleteExpense(id) {
     const headers = data[0];
     const emptyRow = headers.map(() => '');
     
-    await updateSheetData(SPREADSHEET_ID, `Expenses!A${index + 2}:H${index + 2}`, [emptyRow]);
+    await updateSheetData(SPREADSHEET_ID, `Expenses!A${index + 2}:I${index + 2}`, [emptyRow]);
     
     await addAuditLog('DELETE', 'Expense', id, { deleted: expense }, 'system', 'System');
     
