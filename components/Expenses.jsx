@@ -28,7 +28,7 @@ import {
 
 export default function Expenses() {
   const { language } = useLanguage();
-  const { canAccessExpenseAccount, getAllowedExpenseAccounts } = useAuth();
+  const { user, canAccessExpenseAccount, getAllowedExpenseAccounts } = useAuth();
   
   // Determine default account based on user permissions
   const allowedAccounts = getAllowedExpenseAccounts();
