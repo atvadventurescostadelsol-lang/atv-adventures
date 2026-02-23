@@ -485,7 +485,8 @@ async function createIncome(body) {
       paymentMethod
     ];
     
-    await appendSheetData(SPREADSHEET_ID, 'Incomes!A:I', [incomeRow]);
+    // Use safeAppendSheetData to avoid issues with deleted rows
+    await safeAppendSheetData(SPREADSHEET_ID, 'Incomes', [incomeRow]);
     
     await addAuditLog('CREATE', 'income', id, { date, amount, concept, account, paymentMethod }, createdBy, createdBy);
     
