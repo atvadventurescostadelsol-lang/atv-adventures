@@ -1352,6 +1352,57 @@ async function handleGet(request, path) {
     }
   }
 
+  // Debug Incomes sheet
+  if (path === 'debug-incomes') {
+    try {
+      const data = await getSheetData(SPREADSHEET_ID, 'Incomes!A:I');
+      return NextResponse.json({
+        totalRows: data.length,
+        headers: data[0],
+        rows: data.slice(1).map((row, i) => ({
+          rowIndex: i + 2,
+          isEmpty: !row || row.length === 0 || !row[0],
+          data: row
+        }))
+      });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
+  // Fix Incomes sheet by removing empty rows
+  if (path === 'fix-incomes') {
+    try {
+      const data = await getSheetData(SPREADSHEET_ID, 'Incomes!A:I');
+      const headers = data[0];
+      
+      // Filter out empty rows
+      const validRows = data.slice(1).filter(row => row && row.length > 0 && row[0]);
+      
+      // Clear the entire sheet first
+      const { getSheetsClient } = require('@/lib/google-sheets');
+      const sheets = await getSheetsClient();
+      
+      await sheets.spreadsheets.values.clear({
+        spreadsheetId: SPREADSHEET_ID,
+        range: 'Incomes!A:I'
+      });
+      
+      // Write headers and valid data back
+      const allData = [headers, ...validRows];
+      await updateSheetData(SPREADSHEET_ID, 'Incomes!A1:I' + allData.length, allData);
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Incomes sheet fixed',
+        originalRows: data.length - 1,
+        validRows: validRows.length
+      });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   // Update Expenses and Incomes headers to include paymentMethod
   if (path === 'fix-expenses-incomes-headers') {
     try {
