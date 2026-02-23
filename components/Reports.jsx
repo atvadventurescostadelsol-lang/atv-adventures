@@ -309,8 +309,8 @@ export default function Reports() {
     doc.text(`${language === 'es' ? 'Generado' : 'Generated'}: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, y);
     y += 10;
     
-    // Tours Section
-    if (r.departures.length > 0) {
+    // Tours Section - Solo en 'all' y 'tours'
+    if ((detailedType === 'all' || detailedType === 'tours') && r.departures.length > 0) {
       doc.setFontSize(12);
       doc.setTextColor(0, 100, 0);
       doc.text(language === 'es' ? 'TOURS' : 'TOURS', 14, y);
@@ -340,10 +340,10 @@ export default function Reports() {
           d.notes || '-'
         ]),
         foot: [[
-          { content: 'TOTAL', colSpan: 4, styles: { fontStyle: 'bold' } },
+          { content: 'TOTAL COBRADO', colSpan: 4, styles: { fontStyle: 'bold' } },
           { content: formatCurrency(r.depsCash), styles: { fontStyle: 'bold' } },
           { content: formatCurrency(r.depsBank), styles: { fontStyle: 'bold' } },
-          { content: formatCurrency(r.depsTotal), styles: { fontStyle: 'bold' } },
+          { content: formatCurrency(r.depsRealIncome), styles: { fontStyle: 'bold' } },
           ''
         ]],
         theme: 'grid',
@@ -353,11 +353,22 @@ export default function Reports() {
         columnStyles: { 7: { cellWidth: 40 } }
       });
       
-      y = doc.lastAutoTable.finalY + 10;
+      y = doc.lastAutoTable.finalY + 5;
+      
+      // Mostrar pendientes si existen
+      if (r.depsGyg > 0 || r.depsCruise > 0) {
+        doc.setFontSize(8);
+        doc.setTextColor(150, 100, 0);
+        doc.text(`Pendiente de cobro: GYG ${formatCurrency(r.depsGyg)} | Cruceros ${formatCurrency(r.depsCruise)}`, 14, y);
+        doc.setTextColor(0, 0, 0);
+        y += 5;
+      }
+      
+      y += 5;
     }
     
-    // Expenses Section
-    if ((detailedType === 'expenses' || detailedType === 'both') && r.expenses.length > 0) {
+    // Expenses Section - Solo en 'all' y 'expenses'
+    if ((detailedType === 'all' || detailedType === 'expenses') && r.expenses.length > 0) {
       if (y > 250) { doc.addPage(); y = 20; }
       
       doc.setFontSize(12);
