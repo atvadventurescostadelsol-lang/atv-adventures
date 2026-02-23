@@ -987,31 +987,47 @@ export default function Reports() {
               
               {detailedResults && (
                 <div className="space-y-4 mt-6">
-                  {/* Summary Cards */}
+                  {/* Summary Cards - Diferentes según el tipo */}
                   <div className="grid md:grid-cols-4 gap-4">
-                    <div className="p-4 bg-orange-100 rounded-lg">
-                      <div className="text-sm text-orange-600">{language === 'es' ? 'Tours' : 'Tours'}</div>
-                      <div className="text-xl font-bold">{formatCurrency(detailedResults.depsTotal)}</div>
-                      <div className="text-xs text-muted-foreground">💵 {formatCurrency(detailedResults.depsCash)} | 🏦 {formatCurrency(detailedResults.depsBank)}</div>
-                    </div>
-                    {(detailedType === 'incomes' || detailedType === 'both') && (
+                    {/* Tours Card - Solo en 'all' y 'tours' */}
+                    {(detailedType === 'all' || detailedType === 'tours') && (
+                      <div className="p-4 bg-orange-100 rounded-lg">
+                        <div className="text-sm text-orange-600">{language === 'es' ? 'Ingresos Tours' : 'Tour Income'}</div>
+                        <div className="text-xl font-bold">{formatCurrency(detailedResults.depsRealIncome)}</div>
+                        <div className="text-xs text-muted-foreground">💵 {formatCurrency(detailedResults.depsCash)} | 🏦 {formatCurrency(detailedResults.depsBank)}</div>
+                        {(detailedResults.depsGyg > 0 || detailedResults.depsCruise > 0) && (
+                          <div className="text-xs text-orange-500 mt-1">⏳ Pendiente: GYG {formatCurrency(detailedResults.depsGyg)} | Cruceros {formatCurrency(detailedResults.depsCruise)}</div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Incomes Card - Solo en 'all' y 'incomes' */}
+                    {(detailedType === 'all' || detailedType === 'incomes') && (
                       <div className="p-4 bg-green-100 rounded-lg">
                         <div className="text-sm text-green-600">{language === 'es' ? 'Ingresos Extra' : 'Extra Income'}</div>
                         <div className="text-xl font-bold text-green-700">+{formatCurrency(detailedResults.incTotal)}</div>
                         <div className="text-xs text-muted-foreground">💵 {formatCurrency(detailedResults.incByCash)} | 🏦 {formatCurrency(detailedResults.incByBank)}</div>
                       </div>
                     )}
-                    {(detailedType === 'expenses' || detailedType === 'both') && (
+                    
+                    {/* Expenses Card - Solo en 'all' y 'expenses' */}
+                    {(detailedType === 'all' || detailedType === 'expenses') && (
                       <div className="p-4 bg-red-100 rounded-lg">
                         <div className="text-sm text-red-600">{language === 'es' ? 'Gastos' : 'Expenses'}</div>
                         <div className="text-xl font-bold text-red-700">-{formatCurrency(detailedResults.expTotal)}</div>
                         <div className="text-xs text-muted-foreground">💵 {formatCurrency(detailedResults.expByCash)} | 🏦 {formatCurrency(detailedResults.expByBank)}</div>
                       </div>
                     )}
-                    {detailedType === 'both' && (
-                      <div className="p-4 bg-indigo-100 rounded-lg">
-                        <div className="text-sm text-indigo-600">{language === 'es' ? 'Balance' : 'Balance'}</div>
-                        <div className={`text-xl font-bold ${detailedResults.balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(detailedResults.balance)}</div>
+                    
+                    {/* Balance Card - Solo en 'all' */}
+                    {detailedType === 'all' && (
+                      <div className="p-4 bg-indigo-100 rounded-lg border-2 border-indigo-300">
+                        <div className="text-sm text-indigo-600 font-semibold">{language === 'es' ? 'BALANCE REAL' : 'REAL BALANCE'}</div>
+                        <div className={`text-2xl font-bold ${detailedResults.balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(detailedResults.balance)}</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          💵 {formatCurrency(detailedResults.balanceCash)} | 🏦 {formatCurrency(detailedResults.balanceBank)}
+                        </div>
+                        <div className="text-xs text-indigo-500 mt-1">(Tours + Ingresos - Gastos)</div>
                       </div>
                     )}
                   </div>
@@ -1024,8 +1040,8 @@ export default function Reports() {
                     </Button>
                   </div>
                   
-                  {/* Tours Table */}
-                  {detailedResults.departures.length > 0 && (
+                  {/* Tours Table - Solo en 'all' y 'tours' */}
+                  {(detailedType === 'all' || detailedType === 'tours') && detailedResults.departures.length > 0 && (
                     <div>
                       <h4 className="font-bold mb-2 flex items-center gap-2"><Car className="h-4 w-4" /> Tours ({detailedResults.departures.length})</h4>
                       <Table>
@@ -1057,8 +1073,8 @@ export default function Reports() {
                     </div>
                   )}
                   
-                  {/* Expenses Table */}
-                  {(detailedType === 'expenses' || detailedType === 'both') && detailedResults.expenses.length > 0 && (
+                  {/* Expenses Table - Solo en 'all' y 'expenses' */}
+                  {(detailedType === 'all' || detailedType === 'expenses') && detailedResults.expenses.length > 0 && (
                     <div>
                       <h4 className="font-bold mb-2 text-red-700 flex items-center gap-2"><TrendingDown className="h-4 w-4" /> {language === 'es' ? 'Gastos' : 'Expenses'} ({detailedResults.expenses.length})</h4>
                       <Table>
@@ -1086,8 +1102,8 @@ export default function Reports() {
                     </div>
                   )}
                   
-                  {/* Incomes Table */}
-                  {(detailedType === 'incomes' || detailedType === 'both') && detailedResults.incomes.length > 0 && (
+                  {/* Incomes Table - Solo en 'all' y 'incomes' */}
+                  {(detailedType === 'all' || detailedType === 'incomes') && detailedResults.incomes.length > 0 && (
                     <div>
                       <h4 className="font-bold mb-2 text-green-700 flex items-center gap-2"><TrendingUp className="h-4 w-4" /> {language === 'es' ? 'Ingresos Extra' : 'Extra Income'} ({detailedResults.incomes.length})</h4>
                       <Table>
