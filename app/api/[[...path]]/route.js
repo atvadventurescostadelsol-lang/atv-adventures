@@ -1853,7 +1853,8 @@ async function handlePost(request, path) {
         userId,
       ];
 
-      await appendSheetData(SPREADSHEET_ID, 'Departures!A:AX', [entry]);
+      // Use safeAppendSheetData to avoid issues with deleted rows
+      await safeAppendSheetData(SPREADSHEET_ID, 'Departures', [entry]);
       
       await addAuditLog('CREATE', 'Departure', id, { entry }, userId, userName);
 
