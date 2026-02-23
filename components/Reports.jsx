@@ -938,9 +938,10 @@ export default function Reports() {
                   <Select value={detailedType} onValueChange={setDetailedType}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="both">{language === 'es' ? '📊 Ambos + Balance' : '📊 Both + Balance'}</SelectItem>
+                      <SelectItem value="all">{language === 'es' ? '📊 Todo + Balance' : '📊 All + Balance'}</SelectItem>
+                      <SelectItem value="tours">{language === 'es' ? '🚗 Solo Tours' : '🚗 Tours Only'}</SelectItem>
                       <SelectItem value="expenses">{language === 'es' ? '💸 Solo Gastos' : '💸 Expenses Only'}</SelectItem>
-                      <SelectItem value="incomes">{language === 'es' ? '💰 Solo Ingresos' : '💰 Income Only'}</SelectItem>
+                      <SelectItem value="incomes">{language === 'es' ? '💰 Solo Ingresos Extra' : '💰 Extra Income Only'}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
