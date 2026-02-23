@@ -1072,7 +1072,8 @@ async function handleCreateExpense(body) {
       paymentMethod
     ];
     
-    await appendSheetData(SPREADSHEET_ID, 'Expenses!A:I', [expenseRow]);
+    // Use safeAppendSheetData to avoid issues with deleted rows
+    await safeAppendSheetData(SPREADSHEET_ID, 'Expenses', [expenseRow]);
     
     await addAuditLog('CREATE', 'Expense', id, { amount, concept, account, paymentMethod }, createdBy, createdBy);
     
