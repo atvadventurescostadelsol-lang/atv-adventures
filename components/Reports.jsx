@@ -259,16 +259,30 @@ export default function Reports() {
       const incByCash = incomes.filter(i => i.paymentMethod !== 'banco').reduce((s, i) => s + parseNumber(i.amount), 0);
       const incByBank = incomes.filter(i => i.paymentMethod === 'banco').reduce((s, i) => s + parseNumber(i.amount), 0);
       
-      // Departures totals
+      // Departures totals - SOLO efectivo y banco (NO GYG ni cruceros)
       const depsCash = departures.reduce((s, d) => s + parseNumber(d.paymentSplitCash), 0);
       const depsBank = departures.reduce((s, d) => s + parseNumber(d.paymentSplitBank) + parseNumber(d.paymentSplitWeb), 0);
+      const depsGyg = departures.reduce((s, d) => s + parseNumber(d.paymentSplitGyg), 0);
+      const depsCruise = departures.reduce((s, d) => s + parseNumber(d.paymentSplitCruise), 0);
       const depsTotal = departures.reduce((s, d) => s + parseNumber(d.totalGross), 0);
+      // Ingresos reales de tours (sin pendientes de GYG y cruceros)
+      const depsRealIncome = depsCash + depsBank;
+      
+      // Balance REAL = Ingresos Tours (efectivo+banco) + Ingresos Extra - Gastos
+      // NO incluye GYG ni cruceros porque son pendientes de cobrar
+      const realBalance = depsRealIncome + incTotal - expTotal;
+      
+      // Balance por método de pago
+      const balanceCash = depsCash + incByCash - expByCash;
+      const balanceBank = depsBank + incByBank - expByBank;
       
       setDetailedResults({
         expenses, incomes, departures,
         expTotal, incTotal, expByCash, expByBank, incByCash, incByBank,
-        depsCash, depsBank, depsTotal,
-        balance: incTotal - expTotal,
+        depsCash, depsBank, depsGyg, depsCruise, depsTotal, depsRealIncome,
+        balance: realBalance,
+        balanceCash,
+        balanceBank,
         filters: { startDate: detailedStartDate, endDate: detailedEndDate, type: detailedType, account: detailedAccount }
       });
     } catch (error) {
