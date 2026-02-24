@@ -802,28 +802,30 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
         </CardContent>
       </Card>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('deleteEntry')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('deleteConfirmation')}: <strong>{deleteDialog.departureName}</strong>
-              <br /><br />
-              {t('deleteWarning')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => handleDelete(deleteDialog.departureId)}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {t('delete')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete Confirmation Dialog - Only for non-readonly users */}
+      {!isReadonly && (
+        <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t('deleteEntry')}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t('deleteConfirmation')}: <strong>{deleteDialog.departureName}</strong>
+                <br /><br />
+                {t('deleteWarning')}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => handleDelete(deleteDialog.departureId)}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {t('delete')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
       {/* Edit Tour Dialog */}
       <Dialog open={editDialog.open} onOpenChange={(open) => !open && setEditDialog({ open: false, departure: null })}>
