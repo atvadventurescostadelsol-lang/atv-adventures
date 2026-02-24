@@ -38,7 +38,10 @@ export default function Reports() {
   // Unified detailed report states
   const [detailedStartDate, setDetailedStartDate] = useState('');
   const [detailedEndDate, setDetailedEndDate] = useState('');
-  const [detailedType, setDetailedType] = useState('all'); // 'all', 'expenses', 'incomes', 'tours'
+  // Multiple selection for report types
+  const [showTours, setShowTours] = useState(true);
+  const [showExpenses, setShowExpenses] = useState(true);
+  const [showIncomes, setShowIncomes] = useState(true);
   const [detailedAccount, setDetailedAccount] = useState('all');
   const [detailedConcept, setDetailedConcept] = useState('all');
   const [detailedPaymentMethod, setDetailedPaymentMethod] = useState('all');
