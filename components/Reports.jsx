@@ -272,13 +272,24 @@ export default function Reports() {
       // Ingresos reales de tours (sin pendientes de GYG y cruceros)
       const depsRealIncome = depsCash + depsBank;
       
-      // Balance REAL = Ingresos Tours (efectivo+banco) + Ingresos Extra - Gastos
-      // NO incluye GYG ni cruceros porque son pendientes de cobrar
-      const realBalance = depsRealIncome + incTotal - expTotal;
+      // Balance SOLO incluye lo que el usuario ha seleccionado
+      // Si no ha marcado tours, no se suman los tours al balance
+      const toursForBalance = showTours ? depsRealIncome : 0;
+      const incomesForBalance = showIncomes ? incTotal : 0;
+      const expensesForBalance = showExpenses ? expTotal : 0;
       
-      // Balance por método de pago
-      const balanceCash = depsCash + incByCash - expByCash;
-      const balanceBank = depsBank + incByBank - expByBank;
+      const realBalance = toursForBalance + incomesForBalance - expensesForBalance;
+      
+      // Balance por método de pago (también respetando selección)
+      const toursCashForBalance = showTours ? depsCash : 0;
+      const toursBankForBalance = showTours ? depsBank : 0;
+      const incCashForBalance = showIncomes ? incByCash : 0;
+      const incBankForBalance = showIncomes ? incByBank : 0;
+      const expCashForBalance = showExpenses ? expByCash : 0;
+      const expBankForBalance = showExpenses ? expByBank : 0;
+      
+      const balanceCash = toursCashForBalance + incCashForBalance - expCashForBalance;
+      const balanceBank = toursBankForBalance + incBankForBalance - expBankForBalance;
       
       setDetailedResults({
         expenses, incomes, departures,
