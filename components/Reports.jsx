@@ -286,7 +286,11 @@ export default function Reports() {
         balance: realBalance,
         balanceCash,
         balanceBank,
-        filters: { startDate: detailedStartDate, endDate: detailedEndDate, type: detailedType, account: detailedAccount }
+        // Store which sections are selected
+        showTours,
+        showExpenses,
+        showIncomes,
+        filters: { startDate: detailedStartDate, endDate: detailedEndDate, account: detailedAccount }
       });
     } catch (error) {
       toast.error('Error');
