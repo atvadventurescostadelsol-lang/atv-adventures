@@ -1112,8 +1112,8 @@ export default function Reports() {
                     </div>
                   )}
                   
-                  {/* Expenses Table - Solo en 'all' y 'expenses' */}
-                  {(detailedType === 'all' || detailedType === 'expenses') && detailedResults.expenses.length > 0 && (
+                  {/* Expenses Table */}
+                  {detailedResults.showExpenses && detailedResults.expenses.length > 0 && (
                     <div>
                       <h4 className="font-bold mb-2 text-red-700 flex items-center gap-2"><TrendingDown className="h-4 w-4" /> {language === 'es' ? 'Gastos' : 'Expenses'} ({detailedResults.expenses.length})</h4>
                       <Table>
@@ -1141,8 +1141,8 @@ export default function Reports() {
                     </div>
                   )}
                   
-                  {/* Incomes Table - Solo en 'all' y 'incomes' */}
-                  {(detailedType === 'all' || detailedType === 'incomes') && detailedResults.incomes.length > 0 && (
+                  {/* Incomes Table */}
+                  {detailedResults.showIncomes && detailedResults.incomes.length > 0 && (
                     <div>
                       <h4 className="font-bold mb-2 text-green-700 flex items-center gap-2"><TrendingUp className="h-4 w-4" /> {language === 'es' ? 'Ingresos Extra' : 'Extra Income'} ({detailedResults.incomes.length})</h4>
                       <Table>
