@@ -317,8 +317,8 @@ export default function Reports() {
     doc.text(`${language === 'es' ? 'Generado' : 'Generated'}: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, y);
     y += 10;
     
-    // Tours Section - Solo en 'all' y 'tours'
-    if ((detailedType === 'all' || detailedType === 'tours') && r.departures.length > 0) {
+    // Tours Section
+    if (r.showTours && r.departures.length > 0) {
       doc.setFontSize(12);
       doc.setTextColor(0, 100, 0);
       doc.text(language === 'es' ? 'TOURS' : 'TOURS', 14, y);
@@ -375,8 +375,8 @@ export default function Reports() {
       y += 5;
     }
     
-    // Expenses Section - Solo en 'all' y 'expenses'
-    if ((detailedType === 'all' || detailedType === 'expenses') && r.expenses.length > 0) {
+    // Expenses Section
+    if (r.showExpenses && r.expenses.length > 0) {
       if (y > 250) { doc.addPage(); y = 20; }
       
       doc.setFontSize(12);
