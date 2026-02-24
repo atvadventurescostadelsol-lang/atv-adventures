@@ -965,20 +965,25 @@ export default function Reports() {
               <CardDescription>{language === 'es' ? 'Genera un informe con filtros específicos y descárgalo en PDF' : 'Generate a report with specific filters'}</CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
-              <div className="grid gap-4 md:grid-cols-7 mb-4">
+              <div className="grid gap-4 md:grid-cols-6 mb-4">
                 <div><Label>Desde</Label><Input type="date" value={detailedStartDate} onChange={e => setDetailedStartDate(e.target.value)} className="mt-1" /></div>
                 <div><Label>Hasta</Label><Input type="date" value={detailedEndDate} onChange={e => setDetailedEndDate(e.target.value)} className="mt-1" /></div>
                 <div>
-                  <Label>{language === 'es' ? 'Tipo' : 'Type'}</Label>
-                  <Select value={detailedType} onValueChange={setDetailedType}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{language === 'es' ? '📊 Todo + Balance' : '📊 All + Balance'}</SelectItem>
-                      <SelectItem value="tours">{language === 'es' ? '🚗 Solo Tours' : '🚗 Tours Only'}</SelectItem>
-                      <SelectItem value="expenses">{language === 'es' ? '💸 Solo Gastos' : '💸 Expenses Only'}</SelectItem>
-                      <SelectItem value="incomes">{language === 'es' ? '💰 Solo Ingresos Extra' : '💰 Extra Income Only'}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>{language === 'es' ? 'Incluir' : 'Include'}</Label>
+                  <div className="flex flex-col gap-2 mt-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="showTours" checked={showTours} onCheckedChange={setShowTours} />
+                      <label htmlFor="showTours" className="text-sm cursor-pointer">🚗 Tours</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="showExpenses" checked={showExpenses} onCheckedChange={setShowExpenses} />
+                      <label htmlFor="showExpenses" className="text-sm cursor-pointer">💸 Gastos</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="showIncomes" checked={showIncomes} onCheckedChange={setShowIncomes} />
+                      <label htmlFor="showIncomes" className="text-sm cursor-pointer">💰 Ingresos Extra</label>
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <Label>{language === 'es' ? 'Cuenta' : 'Account'}</Label>
