@@ -28,7 +28,7 @@ const ROLE_RESTRICTIONS = {
     allowedExpenseAccounts: ['GE', 'E&S'], // Can view all accounts
     canAccessAdmin: false,
     isReadOnly: true, // Only dashboard and reports
-    allowedTabs: ['dashboard', 'reports'], // Tabs this role can access
+    allowedTabs: ['dashboard', 'reports', 'calendar'], // Tabs this role can access
   }
 };
 
