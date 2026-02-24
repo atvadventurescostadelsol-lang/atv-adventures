@@ -684,28 +684,31 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                       
                       return (
                         <Card key={idx} className={`bg-muted/50 relative ${dep.category === 'quad' ? 'border-l-4 border-l-blue-400' : 'border-l-4 border-l-green-400'}`}>
-                          <div className="absolute top-2 right-2 flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                              onClick={() => openEditDialog(dep)}
-                            >
-                              <Edit2 className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => setDeleteDialog({
-                                open: true,
-                                departureId: dep.id,
-                                departureName: `${dep.productName}`
-                              })}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
+                          {/* Hide edit/delete buttons for readonly users */}
+                          {!isReadonly && (
+                            <div className="absolute top-2 right-2 flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                onClick={() => openEditDialog(dep)}
+                              >
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => setDeleteDialog({
+                                  open: true,
+                                  departureId: dep.id,
+                                  departureName: `${dep.productName}`
+                                })}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
                           <CardContent className="p-3">
                             <div className="flex items-start justify-between mb-2">
                               <Badge variant={dep.category === 'quad' ? 'default' : 'secondary'} className={dep.category === 'quad' ? 'bg-blue-600' : 'bg-green-600'}>
