@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Download, Search, TrendingUp, TrendingDown, Car, Truck, RefreshCw, Wallet, Building2, Clock, CalendarDays, CalendarRange, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
