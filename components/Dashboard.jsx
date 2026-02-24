@@ -43,7 +43,8 @@ function parseNumber(value) {
 
 export default function Dashboard({ selectedDate: propDate, onDateChange }) {
   const { language, t } = useLanguage();
-  const { canAccessCategory, canAccessExpenseAccount, getAllowedCategories } = useAuth();
+  const { canAccessCategory, canAccessExpenseAccount, getAllowedCategories, user } = useAuth();
+  const isReadonly = user?.role === 'readonly';
   const [data, setData] = useState(null);
   const [expenses, setExpenses] = useState([]);
   const [incomes, setIncomes] = useState([]);
