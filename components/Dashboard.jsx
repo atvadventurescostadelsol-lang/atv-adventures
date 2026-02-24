@@ -708,9 +708,8 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
                           <CardContent className="p-3">
                             <div className="flex items-start justify-between mb-2">
                               <Badge variant={dep.category === 'quad' ? 'default' : 'secondary'} className={dep.category === 'quad' ? 'bg-blue-600' : 'bg-green-600'}>
-                                {dep.category === 'quad' ? 'Quad' : 'Buggy'}
+                                {dep.category === 'quad' ? 'Quad' : 'Buggy'} x{dep.vehiclesCount || 1}
                               </Badge>
-                              <span className="text-sm font-medium">{dep.vehiclesCount}x</span>
                             </div>
                             <p className="text-sm font-medium mb-2">{dep.productName}</p>
                             
