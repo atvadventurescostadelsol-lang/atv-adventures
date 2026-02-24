@@ -418,8 +418,8 @@ export default function Reports() {
       y = doc.lastAutoTable.finalY + 10;
     }
     
-    // Incomes Section - Solo en 'all' y 'incomes'
-    if ((detailedType === 'all' || detailedType === 'incomes') && r.incomes.length > 0) {
+    // Incomes Section
+    if (r.showIncomes && r.incomes.length > 0) {
       if (y > 250) { doc.addPage(); y = 20; }
       
       doc.setFontSize(12);
@@ -461,28 +461,35 @@ export default function Reports() {
       y = doc.lastAutoTable.finalY + 10;
     }
     
-    // Balance Summary - Solo en 'all'
-    if (detailedType === 'all') {
+    // Balance Summary - Si hay ingresos (tours o extra) Y gastos
+    if ((r.showTours || r.showIncomes) && r.showExpenses) {
       if (y > 250) { doc.addPage(); y = 20; }
       
       doc.setFontSize(14);
       doc.setTextColor(0, 0, 150);
-      doc.text(language === 'es' ? 'BALANCE REAL' : 'REAL BALANCE', 14, y);
+      doc.text(language === 'es' ? 'BALANCE' : 'BALANCE', 14, y);
       doc.setTextColor(0, 0, 0);
       y += 8;
       
+      const balanceRows = [];
+      if (r.showTours) {
+        balanceRows.push([language === 'es' ? 'Ingresos Tours (Efectivo + Banco)' : 'Tour Income (Cash + Bank)', `+${formatCurrency(r.depsRealIncome)}`]);
+      }
+      if (r.showIncomes) {
+        balanceRows.push([language === 'es' ? 'Ingresos Extra' : 'Extra Income', `+${formatCurrency(r.incTotal)}`]);
+      }
+      if (r.showExpenses) {
+        balanceRows.push([language === 'es' ? 'Total Gastos' : 'Total Expenses', `-${formatCurrency(r.expTotal)}`]);
+      }
+      balanceRows.push([{ content: language === 'es' ? 'BALANCE TOTAL' : 'TOTAL BALANCE', styles: { fontStyle: 'bold', fillColor: [230, 230, 250] } }, 
+         { content: formatCurrency(r.balance), styles: { fontStyle: 'bold', fillColor: [230, 230, 250], textColor: r.balance >= 0 ? [0, 100, 0] : [200, 0, 0] } }]);
+      balanceRows.push(['', '']);
+      balanceRows.push([language === 'es' ? '💵 Balance Efectivo' : '💵 Cash Balance', formatCurrency(r.balanceCash)]);
+      balanceRows.push([language === 'es' ? '🏦 Balance Banco' : '🏦 Bank Balance', formatCurrency(r.balanceBank)]);
+      
       doc.autoTable({
         startY: y,
-        body: [
-          [language === 'es' ? 'Ingresos Tours (Efectivo + Banco)' : 'Tour Income (Cash + Bank)', `+${formatCurrency(r.depsRealIncome)}`],
-          [language === 'es' ? 'Ingresos Extra' : 'Extra Income', `+${formatCurrency(r.incTotal)}`],
-          [language === 'es' ? 'Total Gastos' : 'Total Expenses', `-${formatCurrency(r.expTotal)}`],
-          [{ content: language === 'es' ? 'BALANCE TOTAL' : 'TOTAL BALANCE', styles: { fontStyle: 'bold', fillColor: [230, 230, 250] } }, 
-           { content: formatCurrency(r.balance), styles: { fontStyle: 'bold', fillColor: [230, 230, 250], textColor: r.balance >= 0 ? [0, 100, 0] : [200, 0, 0] } }],
-          ['', ''],
-          [language === 'es' ? '💵 Balance Efectivo' : '💵 Cash Balance', formatCurrency(r.balanceCash)],
-          [language === 'es' ? '🏦 Balance Banco' : '🏦 Bank Balance', formatCurrency(r.balanceBank)],
-        ],
+        body: balanceRows,
         theme: 'grid',
         styles: { fontSize: 10 },
         columnStyles: { 1: { fontStyle: 'bold', halign: 'right' } }
@@ -491,7 +498,7 @@ export default function Reports() {
       y = doc.lastAutoTable.finalY + 5;
       
       // Nota sobre pendientes
-      if (r.depsGyg > 0 || r.depsCruise > 0) {
+      if (r.showTours && (r.depsGyg > 0 || r.depsCruise > 0)) {
         doc.setFontSize(8);
         doc.setTextColor(150, 100, 0);
         doc.text(`Nota: No incluye pendientes de cobro - GYG: ${formatCurrency(r.depsGyg)} | Cruceros: ${formatCurrency(r.depsCruise)}`, 14, y);
