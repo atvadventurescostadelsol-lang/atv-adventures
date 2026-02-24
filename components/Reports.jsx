@@ -1027,10 +1027,10 @@ export default function Reports() {
               
               {detailedResults && (
                 <div className="space-y-4 mt-6">
-                  {/* Summary Cards - Diferentes según el tipo */}
+                  {/* Summary Cards - Según las opciones seleccionadas */}
                   <div className="grid md:grid-cols-4 gap-4">
-                    {/* Tours Card - Solo en 'all' y 'tours' */}
-                    {(detailedType === 'all' || detailedType === 'tours') && (
+                    {/* Tours Card */}
+                    {detailedResults.showTours && (
                       <div className="p-4 bg-orange-100 rounded-lg">
                         <div className="text-sm text-orange-600">{language === 'es' ? 'Ingresos Tours' : 'Tour Income'}</div>
                         <div className="text-xl font-bold">{formatCurrency(detailedResults.depsRealIncome)}</div>
@@ -1041,8 +1041,8 @@ export default function Reports() {
                       </div>
                     )}
                     
-                    {/* Incomes Card - Solo en 'all' y 'incomes' */}
-                    {(detailedType === 'all' || detailedType === 'incomes') && (
+                    {/* Incomes Card */}
+                    {detailedResults.showIncomes && (
                       <div className="p-4 bg-green-100 rounded-lg">
                         <div className="text-sm text-green-600">{language === 'es' ? 'Ingresos Extra' : 'Extra Income'}</div>
                         <div className="text-xl font-bold text-green-700">+{formatCurrency(detailedResults.incTotal)}</div>
@@ -1050,8 +1050,8 @@ export default function Reports() {
                       </div>
                     )}
                     
-                    {/* Expenses Card - Solo en 'all' y 'expenses' */}
-                    {(detailedType === 'all' || detailedType === 'expenses') && (
+                    {/* Expenses Card */}
+                    {detailedResults.showExpenses && (
                       <div className="p-4 bg-red-100 rounded-lg">
                         <div className="text-sm text-red-600">{language === 'es' ? 'Gastos' : 'Expenses'}</div>
                         <div className="text-xl font-bold text-red-700">-{formatCurrency(detailedResults.expTotal)}</div>
@@ -1059,15 +1059,14 @@ export default function Reports() {
                       </div>
                     )}
                     
-                    {/* Balance Card - Solo en 'all' */}
-                    {detailedType === 'all' && (
+                    {/* Balance Card - Solo si hay tours o ingresos Y gastos */}
+                    {(detailedResults.showTours || detailedResults.showIncomes) && detailedResults.showExpenses && (
                       <div className="p-4 bg-indigo-100 rounded-lg border-2 border-indigo-300">
-                        <div className="text-sm text-indigo-600 font-semibold">{language === 'es' ? 'BALANCE REAL' : 'REAL BALANCE'}</div>
+                        <div className="text-sm text-indigo-600 font-semibold">{language === 'es' ? 'BALANCE' : 'BALANCE'}</div>
                         <div className={`text-2xl font-bold ${detailedResults.balance >= 0 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(detailedResults.balance)}</div>
                         <div className="text-xs text-muted-foreground mt-1">
                           💵 {formatCurrency(detailedResults.balanceCash)} | 🏦 {formatCurrency(detailedResults.balanceBank)}
                         </div>
-                        <div className="text-xs text-indigo-500 mt-1">(Tours + Ingresos - Gastos)</div>
                       </div>
                     )}
                   </div>
@@ -1080,8 +1079,8 @@ export default function Reports() {
                     </Button>
                   </div>
                   
-                  {/* Tours Table - Solo en 'all' y 'tours' */}
-                  {(detailedType === 'all' || detailedType === 'tours') && detailedResults.departures.length > 0 && (
+                  {/* Tours Table */}
+                  {detailedResults.showTours && detailedResults.departures.length > 0 && (
                     <div>
                       <h4 className="font-bold mb-2 flex items-center gap-2"><Car className="h-4 w-4" /> Tours ({detailedResults.departures.length})</h4>
                       <Table>
