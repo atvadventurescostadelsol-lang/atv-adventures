@@ -2687,6 +2687,10 @@ async function handleDelete(request, path) {
       await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AX${index + 2}`, [emptyRow]);
 
       await addAuditLog('DELETE', 'Departure', id, { deleted: departure }, userId, userName);
+      
+      // Log activity - get role from URL params if available
+      const userRole = searchParams.get('userRole') || 'user';
+      await logUserActivity(userName, userRole, '-TOUR', `${departure.category} x${departure.vehiclesCount} €${departure.totalGross} (${departure.productName})`);
 
       return NextResponse.json({ success: true });
     } catch (error) {
