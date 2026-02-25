@@ -1493,18 +1493,6 @@ async function handleGet(request, path) {
     }
   }
 
-  // Track user action (for frontend to report views/reports)
-  if (path === 'track-action') {
-    const { username, role, action, details } = await request.json();
-    
-    if (!username || !action) {
-      return NextResponse.json({ error: 'Missing username or action' }, { status: 400 });
-    }
-    
-    await logUserActivity(username, role || 'user', action, details || '');
-    return NextResponse.json({ success: true });
-  }
-
   // Debug and fix Expenses sheet
   if (path === 'debug-expenses') {
     try {
