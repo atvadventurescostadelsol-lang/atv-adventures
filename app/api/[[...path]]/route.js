@@ -856,6 +856,9 @@ async function handleLogin(body) {
       await updateSheetData(SPREADSHEET_ID, `Users!E${userIndex + 2}`, [[now]]);
     }
     
+    // Log activity (except for admin)
+    await logUserActivity(user.username, user.role, 'LOGIN', '');
+    
     return NextResponse.json({
       success: true,
       user: {
