@@ -2482,7 +2482,7 @@ async function handlePut(request, path) {
   if (path.startsWith('departures/')) {
     try {
       const id = path.split('/')[1];
-      const { userId = 'system', userName = 'System', ...updates } = body;
+      const { userId = 'system', userName = 'System', userRole = 'user', ...updates } = body;
 
       // Get current data - extended to AV to include discount and manualTotal columns
       const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AX');
