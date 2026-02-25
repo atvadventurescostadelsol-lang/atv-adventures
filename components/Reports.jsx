@@ -20,9 +20,21 @@ import { jsPDF } from 'jspdf';
 import { applyPlugin } from 'jspdf-autotable';
 applyPlugin(jsPDF);
 
+// Helper to track user actions
+async function trackAction(user, action, details) {
+  if (!user || user.role === 'admin') return;
+  try {
+    await fetch('/api/track-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user.username, role: user.role, action, details })
+    });
+  } catch (e) { /* ignore */ }
+}
+
 export default function Reports() {
   const { language } = useLanguage();
-  const { canAccessCategory, canAccessExpenseAccount } = useAuth();
+  const { canAccessCategory, canAccessExpenseAccount, user } = useAuth();
   
   const canViewQuads = canAccessCategory('quad');
   const canViewBuggies = canAccessCategory('buggy');
