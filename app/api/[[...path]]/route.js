@@ -46,6 +46,110 @@ async function addAuditLog(action, entityType, entityId, changes, userId = 'syst
   }
 }
 
+// ==================== ACTIVITY TRACKING ====================
+
+// Initialize ActivityLog sheet if it doesn't exist
+async function ensureActivityLogSheet() {
+  try {
+    const sheets = await getSheetsClient();
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+    const sheetExists = spreadsheet.data.sheets?.some(s => s.properties?.title === 'ActivityLog');
+    
+    if (!sheetExists) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        resource: {
+          requests: [{
+            addSheet: {
+              properties: { title: 'ActivityLog' }
+            }
+          }]
+        }
+      });
+      // Add headers
+      await updateSheetData(SPREADSHEET_ID, 'ActivityLog!A1:H1', [[
+        'id', 'username', 'role', 'loginTime', 'lastActivity', 'actions', 'isNew', 'sessionId'
+      ]]);
+    }
+  } catch (error) {
+    console.error('Error ensuring ActivityLog sheet:', error);
+  }
+}
+
+// Add activity log entry (compact format)
+async function logUserActivity(username, role, action, details = '') {
+  // Don't track admin
+  if (role === 'admin') return;
+  
+  try {
+    await ensureActivityLogSheet();
+    
+    const now = new Date().toISOString();
+    const actionStr = `${action}${details ? ':' + details : ''}`;
+    
+    // Get existing sessions for this user today
+    const data = await getSheetData(SPREADSHEET_ID, 'ActivityLog!A:H');
+    const today = now.split('T')[0];
+    
+    // Find active session for this user (within last 30 minutes)
+    let sessionFound = false;
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (row[1] === username && row[4] > thirtyMinutesAgo) {
+        // Update existing session
+        const existingActions = row[5] || '';
+        const newActions = existingActions ? `${existingActions}|${actionStr}` : actionStr;
+        await updateSheetData(SPREADSHEET_ID, `ActivityLog!E${i + 1}:G${i + 1}`, [[now, newActions, 'Y']]);
+        sessionFound = true;
+        break;
+      }
+    }
+    
+    if (!sessionFound) {
+      // Create new session
+      const sessionId = uuidv4().substring(0, 8);
+      await safeAppendSheetData(SPREADSHEET_ID, 'ActivityLog', [[
+        uuidv4(), username, role, now, now, actionStr, 'Y', sessionId
+      ]]);
+    }
+    
+    // Cleanup old entries (older than 15 days)
+    await cleanupOldActivityLogs();
+    
+  } catch (error) {
+    console.error('Error logging activity:', error);
+  }
+}
+
+// Cleanup logs older than 15 days
+async function cleanupOldActivityLogs() {
+  try {
+    const data = await getSheetData(SPREADSHEET_ID, 'ActivityLog!A:H');
+    if (data.length <= 1) return;
+    
+    const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
+    const headers = data[0];
+    const validRows = data.slice(1).filter(row => row[3] > fifteenDaysAgo);
+    
+    if (validRows.length < data.length - 1) {
+      // Need to clean up
+      const sheets = await getSheetsClient();
+      await sheets.spreadsheets.values.clear({
+        spreadsheetId: SPREADSHEET_ID,
+        range: 'ActivityLog!A2:H'
+      });
+      
+      if (validRows.length > 0) {
+        await updateSheetData(SPREADSHEET_ID, `ActivityLog!A2:H${validRows.length + 1}`, validRows);
+      }
+    }
+  } catch (error) {
+    console.error('Error cleaning up activity logs:', error);
+  }
+}
+
 // ==================== BACKUP HELPERS ====================
 
 // Create backup of all sheets (returns data for download)
