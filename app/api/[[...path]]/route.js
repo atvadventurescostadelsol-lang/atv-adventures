@@ -1993,6 +1993,7 @@ async function handlePost(request, path) {
         paymentSplit, // New: array of {method: 'web'|'cash'|'bank'|'gyg', percentage: 20}
         userId = 'system',
         userName = 'System',
+        userRole = 'user',
       } = body;
 
       // Validate required fields
