@@ -465,9 +465,11 @@ export default function BatchEntry() {
           manualTotal: e.manualTotal !== '' && e.manualTotal !== null ? parseFloat(e.manualTotal) : null,
           userId: user?.id || 'user-1',
           userName: user?.username || 'Sistema',
+          userRole: user?.role || 'user',
         })),
         userId: user?.id || 'user-1',
         userName: user?.username || 'Sistema',
+        userRole: user?.role || 'user',
       };
 
       const res = await fetch('/api/departures/batch', {
