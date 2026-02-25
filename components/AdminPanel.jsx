@@ -1210,6 +1210,11 @@ export default function AdminPanel() {
               <UserManagement />
             </TabsContent>
 
+            {/* Activity Log Tab */}
+            <TabsContent value="activity" className="space-y-4">
+              <ActivityLog />
+            </TabsContent>
+
             {/* Backup Tab */}
             <TabsContent value="backup" className="space-y-4">
               <BackupManager />
