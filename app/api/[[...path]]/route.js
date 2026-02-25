@@ -1405,6 +1405,85 @@ async function handleGet(request, path) {
     }
   }
 
+  // ==================== ACTIVITY LOG ENDPOINTS ====================
+  
+  // Get activity log (admin only)
+  if (path === 'activity-log') {
+    try {
+      await ensureActivityLogSheet();
+      const data = await getSheetData(SPREADSHEET_ID, 'ActivityLog!A:H');
+      
+      if (data.length <= 1) {
+        return NextResponse.json({ 
+          sessions: [], 
+          newCount: 0,
+          totalCount: 0
+        });
+      }
+      
+      const sessions = data.slice(1)
+        .filter(row => row && row[0])
+        .map(row => ({
+          id: row[0],
+          username: row[1],
+          role: row[2],
+          loginTime: row[3],
+          lastActivity: row[4],
+          actions: row[5] || '',
+          isNew: row[6] === 'Y',
+          sessionId: row[7]
+        }))
+        .sort((a, b) => new Date(b.loginTime) - new Date(a.loginTime));
+      
+      const newCount = sessions.filter(s => s.isNew).length;
+      
+      return NextResponse.json({ 
+        sessions, 
+        newCount,
+        totalCount: sessions.length
+      });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+  
+  // Mark activity log as read (admin only)
+  if (path === 'activity-log/mark-read') {
+    try {
+      const data = await getSheetData(SPREADSHEET_ID, 'ActivityLog!A:H');
+      
+      if (data.length <= 1) {
+        return NextResponse.json({ success: true, marked: 0 });
+      }
+      
+      // Update all rows to mark as read (isNew = 'N')
+      const updates = [];
+      for (let i = 1; i < data.length; i++) {
+        if (data[i] && data[i][6] === 'Y') {
+          updates.push({
+            range: `ActivityLog!G${i + 1}`,
+            values: [['N']]
+          });
+        }
+      }
+      
+      if (updates.length > 0) {
+        const sheets = await getSheetsClient();
+        await sheets.spreadsheets.values.batchUpdate({
+          spreadsheetId: SPREADSHEET_ID,
+          resource: {
+            valueInputOption: 'RAW',
+            data: updates
+          }
+        });
+      }
+      
+      return NextResponse.json({ success: true, marked: updates.length });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   // Debug and fix Expenses sheet
   if (path === 'debug-expenses') {
     try {
