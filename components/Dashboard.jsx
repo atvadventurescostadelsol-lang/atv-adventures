@@ -156,8 +156,9 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...editForm,
-          userId: 'user-1',
-          userName: 'Usuario',
+          userId: user?.id || 'user-1',
+          userName: user?.username || 'Usuario',
+          userRole: user?.role || 'user',
         }),
       });
 
