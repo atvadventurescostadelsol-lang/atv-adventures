@@ -1904,6 +1904,20 @@ async function handleGet(request, path) {
 async function handlePost(request, path) {
   const body = await request.json();
 
+  // ==================== ACTIVITY TRACKING ====================
+  
+  // Track user action (for frontend to report views/reports)
+  if (path === 'track-action') {
+    const { username, role, action, details } = body;
+    
+    if (!username || !action) {
+      return NextResponse.json({ error: 'Missing username or action' }, { status: 400 });
+    }
+    
+    await logUserActivity(username, role || 'user', action, details || '');
+    return NextResponse.json({ success: true });
+  }
+
   // ==================== BACKUP ENDPOINTS ====================
   
   // Create backup (returns data for download)
