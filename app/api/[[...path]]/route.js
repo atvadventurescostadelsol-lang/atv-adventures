@@ -2115,6 +2115,9 @@ async function handlePost(request, path) {
       await safeAppendSheetData(SPREADSHEET_ID, 'Departures', [entry]);
       
       await addAuditLog('CREATE', 'Departure', id, { entry }, userId, userName);
+      
+      // Log activity
+      await logUserActivity(userName, userRole, '+TOUR', `${category} x${vehiclesCount} €${totalGross.toFixed(2)} (${pricing.productName})`);
 
       return NextResponse.json({ 
         success: true,
