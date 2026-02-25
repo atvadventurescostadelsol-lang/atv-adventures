@@ -2145,7 +2145,7 @@ async function handlePost(request, path) {
   // Create batch departures
   if (path === 'departures/batch') {
     try {
-      const { entries, userId = 'system', userName = 'System' } = body;
+      const { entries, userId = 'system', userName = 'System', userRole = 'user' } = body;
 
       console.log('Batch request received:', {
         entriesCount: entries?.length,
