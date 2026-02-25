@@ -316,6 +316,15 @@ export default function Reports() {
         showIncomes,
         filters: { startDate: detailedStartDate, endDate: detailedEndDate, account: detailedAccount }
       });
+      
+      // Track report generation for readonly users
+      const tipos = [];
+      if (showTours) tipos.push('Tours');
+      if (showExpenses) tipos.push('Gastos');
+      if (showIncomes) tipos.push('Ingresos');
+      const trackDetails = `${detailedStartDate} a ${detailedEndDate} | ${detailedAccount} | ${tipos.join('+')}`;
+      trackAction(user, 'INFORME', trackDetails);
+      
     } catch (error) {
       toast.error('Error');
     } finally {
