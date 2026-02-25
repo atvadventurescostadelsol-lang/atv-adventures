@@ -2522,6 +2522,13 @@ async function handlePut(request, path) {
       await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AX${index + 2}`, [rowData]);
 
       await addAuditLog('UPDATE', 'Departure', id, { before: current, after: updated }, userId, userName);
+      
+      // Log activity
+      const changes = [];
+      if (updates.vehiclesCount && updates.vehiclesCount != current.vehiclesCount) changes.push(`veh:${current.vehiclesCount}→${updates.vehiclesCount}`);
+      if (updates.paymentSplitCash !== undefined && updates.paymentSplitCash != current.paymentSplitCash) changes.push(`efect:${current.paymentSplitCash||0}→${updates.paymentSplitCash}`);
+      if (updates.paymentSplitBank !== undefined && updates.paymentSplitBank != current.paymentSplitBank) changes.push(`banco:${current.paymentSplitBank||0}→${updates.paymentSplitBank}`);
+      await logUserActivity(userName, userRole, '~TOUR', `${current.category} ${changes.join(', ')}`);
 
       return NextResponse.json({ success: true, updated });
     } catch (error) {
