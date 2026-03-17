@@ -6,7 +6,7 @@ Test to create a single-column debugging API call to check sheet headers
 import requests
 import json
 
-BASE_URL = "https://backup-restore-20.preview.emergentagent.com"
+BASE_URL = "https://pending-tracker-10.preview.emergentagent.com"
 API_BASE = f"{BASE_URL}/api"
 
 # Test direct sheet data access

@@ -294,6 +294,35 @@ function calculatePayoutDate(salesChannel, date) {
 
 // ==================== EXPENSES HELPERS ====================
 
+// Ensure Tasks sheet exists
+async function ensureTasksSheet() {
+  try {
+    const sheets = await getSheetsClient();
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+    const sheetExists = spreadsheet.data.sheets?.some(s => s.properties?.title === 'Tasks');
+    
+    if (!sheetExists) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        resource: {
+          requests: [{
+            addSheet: {
+              properties: { title: 'Tasks' }
+            }
+          }]
+        }
+      });
+      // Add headers
+      await updateSheetData(SPREADSHEET_ID, 'Tasks!A1:N1', [[
+        'id', 'description', 'price', 'priority', 'notes', 'createdBy', 'createdAt',
+        'status', 'completedBy', 'completedAt', 'completionNotes', 'createdByRole', 'createdByUsername', 'completedByUsername'
+      ]]);
+    }
+  } catch (error) {
+    console.error('Error ensuring Tasks sheet:', error);
+  }
+}
+
 // Ensure Expenses sheet exists
 async function ensureExpensesSheet() {
   try {
@@ -1493,6 +1522,37 @@ async function handleGet(request, path) {
     }
   }
 
+  // ==================== TASKS ENDPOINTS ====================
+  
+  // Get all tasks
+  if (path === 'tasks') {
+    try {
+      await ensureTasksSheet();
+      const data = await getSheetData(SPREADSHEET_ID, 'Tasks!A:N');
+      
+      if (data.length <= 1) {
+        return NextResponse.json([]);
+      }
+      
+      const tasks = parseSheetToObjects(data);
+      
+      // Sort: pending first (by priority), then completed (by completion date desc)
+      const priorityOrder = { 'urgente': 0, 'importante': 1, 'necesario': 2, 'sugerencia': 3 };
+      
+      const pending = tasks
+        .filter(t => t.status !== 'completed')
+        .sort((a, b) => (priorityOrder[a.priority] || 4) - (priorityOrder[b.priority] || 4));
+      
+      const completed = tasks
+        .filter(t => t.status === 'completed')
+        .sort((a, b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0));
+      
+      return NextResponse.json({ pending, completed });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   // Debug and fix Expenses sheet
   if (path === 'debug-expenses') {
     try {
@@ -1935,6 +1995,108 @@ async function handlePost(request, path) {
   // Auth: Login
   if (path === 'auth/login') {
     return handleLogin(body);
+  }
+
+  // ==================== TASKS ENDPOINTS (POST) ====================
+  
+  // Create new task
+  if (path === 'tasks') {
+    try {
+      await ensureTasksSheet();
+      
+      const { description, price, priority, notes, userId, username, userRole } = body;
+      
+      if (!description || !priority) {
+        return NextResponse.json({ error: 'Description and priority are required' }, { status: 400 });
+      }
+      
+      const validPriorities = ['urgente', 'importante', 'necesario', 'sugerencia'];
+      if (!validPriorities.includes(priority)) {
+        return NextResponse.json({ error: 'Invalid priority' }, { status: 400 });
+      }
+      
+      const id = uuidv4();
+      const now = new Date().toISOString();
+      
+      const taskRow = [
+        id,
+        description,
+        price || '',
+        priority,
+        notes || '',
+        userId || 'system',
+        now,
+        'pending',
+        '', // completedBy
+        '', // completedAt
+        '', // completionNotes
+        userRole || 'user',
+        username || 'Sistema',
+        '' // completedByUsername
+      ];
+      
+      await safeAppendSheetData(SPREADSHEET_ID, 'Tasks', [taskRow]);
+      
+      // Log activity
+      await logUserActivity(username || 'Sistema', userRole || 'user', '+TAREA', `${priority}: ${description.substring(0, 30)}...`);
+      
+      return NextResponse.json({
+        success: true,
+        task: {
+          id,
+          description,
+          price: price || '',
+          priority,
+          notes: notes || '',
+          createdBy: userId,
+          createdAt: now,
+          status: 'pending',
+          createdByUsername: username || 'Sistema'
+        }
+      });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+  
+  // Complete task
+  if (path === 'tasks/complete') {
+    try {
+      const { taskId, completionNotes, userId, username, userRole } = body;
+      
+      if (!taskId) {
+        return NextResponse.json({ error: 'taskId is required' }, { status: 400 });
+      }
+      
+      const data = await getSheetData(SPREADSHEET_ID, 'Tasks!A:N');
+      const tasks = parseSheetToObjects(data);
+      const taskIndex = tasks.findIndex(t => t.id === taskId);
+      
+      if (taskIndex === -1) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
+      
+      const now = new Date().toISOString();
+      const rowIndex = taskIndex + 2; // +1 for header, +1 for 1-based index
+      
+      // Update status, completedBy, completedAt, completionNotes, completedByUsername
+      await updateSheetData(SPREADSHEET_ID, `Tasks!H${rowIndex}:N${rowIndex}`, [[
+        'completed',
+        userId || 'system',
+        now,
+        completionNotes || '',
+        tasks[taskIndex].createdByRole,
+        tasks[taskIndex].createdByUsername,
+        username || 'Sistema'
+      ]]);
+      
+      // Log activity
+      await logUserActivity(username || 'Sistema', userRole || 'user', '✓TAREA', `Completada: ${tasks[taskIndex].description?.substring(0, 30)}...`);
+      
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
   }
 
   // Auth: Change own password
@@ -2631,6 +2793,69 @@ async function handlePut(request, path) {
     }
   }
 
+  // Update task
+  if (path.startsWith('tasks/')) {
+    try {
+      const id = path.split('/')[1];
+      const { description, price, priority, notes, userId, username, userRole } = body;
+      
+      const data = await getSheetData(SPREADSHEET_ID, 'Tasks!A:N');
+      const tasks = parseSheetToObjects(data);
+      const index = tasks.findIndex(t => t.id === id);
+      
+      if (index === -1) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
+      
+      const task = tasks[index];
+      
+      // Permission check: only creator or admin can edit
+      if (userRole !== 'admin' && task.createdBy !== userId) {
+        return NextResponse.json({ error: 'No tienes permiso para editar esta tarea' }, { status: 403 });
+      }
+      
+      // Validate priority if provided
+      if (priority) {
+        const validPriorities = ['urgente', 'importante', 'necesario', 'sugerencia'];
+        if (!validPriorities.includes(priority)) {
+          return NextResponse.json({ error: 'Invalid priority' }, { status: 400 });
+        }
+      }
+      
+      const rowIndex = index + 2;
+      
+      // Update fields - only update description, price, priority, notes (columns B, C, D, E)
+      const updatedRow = [
+        description || task.description,
+        price !== undefined ? price : task.price,
+        priority || task.priority,
+        notes !== undefined ? notes : task.notes
+      ];
+      
+      await updateSheetData(SPREADSHEET_ID, `Tasks!B${rowIndex}:E${rowIndex}`, [updatedRow]);
+      
+      // Log activity
+      await logUserActivity(username || 'Sistema', userRole || 'user', '~TAREA', `Editada: ${(description || task.description).substring(0, 30)}...`);
+      
+      return NextResponse.json({
+        success: true,
+        task: {
+          id,
+          description: updatedRow[0],
+          price: updatedRow[1],
+          priority: updatedRow[2],
+          notes: updatedRow[3],
+          createdBy: task.createdBy,
+          createdAt: task.createdAt,
+          status: task.status,
+          createdByUsername: task.createdByUsername
+        }
+      });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   return NextResponse.json({ error: 'Not found' }, { status: 404 });
 }
 
@@ -2667,6 +2892,43 @@ async function handleDelete(request, path) {
   if (path.startsWith('income-categories/')) {
     const id = path.split('/')[1];
     return deleteIncomeCategory(id);
+  }
+
+  // Delete task
+  if (path.startsWith('tasks/')) {
+    try {
+      const id = path.split('/')[1];
+      const requesterId = searchParams.get('userId') || 'system';
+      const requesterRole = searchParams.get('userRole') || 'user';
+      const requesterUsername = searchParams.get('userName') || 'Sistema';
+      
+      const data = await getSheetData(SPREADSHEET_ID, 'Tasks!A:N');
+      const tasks = parseSheetToObjects(data);
+      const index = tasks.findIndex(t => t.id === id);
+      
+      if (index === -1) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
+      
+      const task = tasks[index];
+      
+      // Permission check: only creator or admin can delete
+      if (requesterRole !== 'admin' && task.createdBy !== requesterId) {
+        return NextResponse.json({ error: 'No tienes permiso para eliminar esta tarea' }, { status: 403 });
+      }
+      
+      // Soft delete (clear the row)
+      const headers = data[0];
+      const emptyRow = headers.map(() => '');
+      await updateSheetData(SPREADSHEET_ID, `Tasks!A${index + 2}:N${index + 2}`, [emptyRow]);
+      
+      // Log activity
+      await logUserActivity(requesterUsername, requesterRole, '-TAREA', `Eliminada: ${task.description?.substring(0, 30)}...`);
+      
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
   }
 
   // Delete departure

@@ -50,8 +50,8 @@
 
 ## 🔗 Production URLs
 
-- **Application**: https://backup-restore-20.preview.emergentagent.com
-- **API Base**: https://backup-restore-20.preview.emergentagent.com/api
+- **Application**: https://pending-tracker-10.preview.emergentagent.com
+- **API Base**: https://pending-tracker-10.preview.emergentagent.com/api
 - **Google Sheet**: https://docs.google.com/spreadsheets/d/1WeP9I6Phj28xsIqVHefg599u5tZerGj88P0dx4Pn9tA/edit
 
 ---
