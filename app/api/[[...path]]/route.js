@@ -2912,9 +2912,17 @@ async function handleDelete(request, path) {
       
       const task = tasks[index];
       
-      // Permission check: only creator or admin can delete
-      if (requesterRole !== 'admin' && task.createdBy !== requesterId) {
-        return NextResponse.json({ error: 'No tienes permiso para eliminar esta tarea' }, { status: 403 });
+      // Permission check:
+      // - Completed tasks: only admin can delete
+      // - Pending tasks: creator or admin can delete
+      if (task.status === 'completed') {
+        if (requesterRole !== 'admin') {
+          return NextResponse.json({ error: 'Solo el administrador puede eliminar tareas completadas' }, { status: 403 });
+        }
+      } else {
+        if (requesterRole !== 'admin' && task.createdBy !== requesterId) {
+          return NextResponse.json({ error: 'No tienes permiso para eliminar esta tarea' }, { status: 403 });
+        }
       }
       
       // Soft delete (clear the row)

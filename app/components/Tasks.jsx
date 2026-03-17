@@ -55,7 +55,7 @@ const PRIORITIES = {
   },
 };
 
-function TaskCard({ task, onComplete, onEdit, onDelete, canModify }) {
+function TaskCard({ task, onComplete, onEdit, onDelete, canModify, canDelete }) {
   const priorityConfig = PRIORITIES[task.priority] || PRIORITIES.sugerencia;
   const PriorityIcon = priorityConfig.icon;
   
@@ -163,6 +163,18 @@ function TaskCard({ task, onComplete, onEdit, onDelete, canModify }) {
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </>
+            )}
+            {/* Delete button for completed tasks - only for admin */}
+            {canDelete && task.status === 'completed' && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
+                onClick={() => onDelete(task)}
+                title="Eliminar"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             )}
           </div>
         </div>
@@ -434,6 +446,7 @@ export default function Tasks() {
                 onEdit={openEditDialog}
                 onDelete={openDeleteConfirm}
                 canModify={canModifyTask(task)}
+                canDelete={false}
               />
             ))
           ) : (
@@ -464,8 +477,9 @@ export default function Tasks() {
                 task={task}
                 onComplete={() => {}}
                 onEdit={() => {}}
-                onDelete={() => {}}
+                onDelete={openDeleteConfirm}
                 canModify={false}
+                canDelete={isAdmin()}
               />
             ))
           ) : (
