@@ -429,35 +429,37 @@ export default function Tasks() {
       return;
     }
 
-    const doc = new jsPDF();
+    // Landscape mode for more space
+    const doc = new jsPDF('landscape');
     const today = new Date().toLocaleDateString('es-ES');
+    const pageWidth = doc.internal.pageSize.getWidth();
     
     // Header
     doc.setFontSize(20);
     doc.setTextColor(234, 88, 12); // Orange color
-    doc.text('TAREAS PENDIENTES', 105, 20, { align: 'center' });
+    doc.text('TAREAS PENDIENTES', pageWidth / 2, 20, { align: 'center' });
     
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Generado el: ${today}`, 105, 28, { align: 'center' });
-    doc.text(`Total: ${tasks.pending.length} tareas`, 105, 34, { align: 'center' });
+    doc.text(`Generado el: ${today}`, pageWidth / 2, 28, { align: 'center' });
+    doc.text(`Total: ${tasks.pending.length} tareas`, pageWidth / 2, 34, { align: 'center' });
 
     // Calculate total price
     const totalPrice = tasks.pending.reduce((sum, t) => sum + (parseFloat(t.price) || 0), 0);
     if (totalPrice > 0) {
       doc.setFontSize(12);
       doc.setTextColor(0, 128, 0);
-      doc.text(`Coste total estimado: €${totalPrice.toFixed(2)}`, 105, 42, { align: 'center' });
+      doc.text(`Coste total estimado: €${totalPrice.toFixed(2)}`, pageWidth / 2, 42, { align: 'center' });
     }
 
-    // Table data
+    // Table data - full text without truncation
     const tableData = tasks.pending.map((task, index) => [
       index + 1,
       priorityLabels[task.priority] || task.priority,
-      task.description?.substring(0, 50) + (task.description?.length > 50 ? '...' : ''),
+      task.description || '-',
       task.price ? `€${parseFloat(task.price).toFixed(2)}` : '-',
       task.createdByUsername || '-',
-      task.notes?.substring(0, 30) + (task.notes?.length > 30 ? '...' : '') || '-'
+      task.notes || '-'
     ]);
 
     doc.autoTable({
@@ -470,16 +472,18 @@ export default function Tasks() {
         fontStyle: 'bold'
       },
       styles: {
-        fontSize: 8,
-        cellPadding: 3
+        fontSize: 9,
+        cellPadding: 4,
+        overflow: 'linebreak',
+        cellWidth: 'wrap'
       },
       columnStyles: {
-        0: { cellWidth: 10 },
-        1: { cellWidth: 25, fontStyle: 'bold' },
-        2: { cellWidth: 60 },
-        3: { cellWidth: 20, halign: 'right' },
-        4: { cellWidth: 25 },
-        5: { cellWidth: 40 }
+        0: { cellWidth: 12 },
+        1: { cellWidth: 28, fontStyle: 'bold' },
+        2: { cellWidth: 'auto' },
+        3: { cellWidth: 22, halign: 'right' },
+        4: { cellWidth: 30 },
+        5: { cellWidth: 'auto' }
       },
       didParseCell: function(data) {
         // Color code priority
@@ -508,41 +512,43 @@ export default function Tasks() {
       return;
     }
 
-    const doc = new jsPDF();
+    // Landscape mode for more space
+    const doc = new jsPDF('landscape');
     const today = new Date().toLocaleDateString('es-ES');
+    const pageWidth = doc.internal.pageSize.getWidth();
     
     // Header
     doc.setFontSize(20);
     doc.setTextColor(22, 163, 74); // Green color
-    doc.text('TAREAS REALIZADAS', 105, 20, { align: 'center' });
+    doc.text('TAREAS REALIZADAS', pageWidth / 2, 20, { align: 'center' });
     
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Generado el: ${today}`, 105, 28, { align: 'center' });
-    doc.text(`Total: ${tasks.completed.length} tareas completadas`, 105, 34, { align: 'center' });
+    doc.text(`Generado el: ${today}`, pageWidth / 2, 28, { align: 'center' });
+    doc.text(`Total: ${tasks.completed.length} tareas completadas`, pageWidth / 2, 34, { align: 'center' });
 
     // Calculate total price
     const totalPrice = tasks.completed.reduce((sum, t) => sum + (parseFloat(t.price) || 0), 0);
     if (totalPrice > 0) {
       doc.setFontSize(12);
       doc.setTextColor(22, 163, 74);
-      doc.text(`Coste total: €${totalPrice.toFixed(2)}`, 105, 42, { align: 'center' });
+      doc.text(`Coste total: €${totalPrice.toFixed(2)}`, pageWidth / 2, 42, { align: 'center' });
     }
 
-    // Table data
+    // Table data - full text without truncation
     const tableData = tasks.completed.map((task, index) => [
       index + 1,
       priorityLabels[task.priority] || task.priority,
-      task.description?.substring(0, 40) + (task.description?.length > 40 ? '...' : ''),
+      task.description || '-',
       task.price ? `€${parseFloat(task.price).toFixed(2)}` : '-',
       task.completedByUsername || '-',
       formatDateForPDF(task.completedAt),
-      task.completionNotes?.substring(0, 25) + (task.completionNotes?.length > 25 ? '...' : '') || '-'
+      task.completionNotes || '-'
     ]);
 
     doc.autoTable({
       startY: totalPrice > 0 ? 50 : 42,
-      head: [['#', 'Prioridad', 'Descripción', 'Precio', 'Completado por', 'Fecha', 'Notas']],
+      head: [['#', 'Prioridad', 'Descripción', 'Precio', 'Completado por', 'Fecha', 'Notas de completado']],
       body: tableData,
       headStyles: {
         fillColor: [22, 163, 74],
@@ -550,17 +556,19 @@ export default function Tasks() {
         fontStyle: 'bold'
       },
       styles: {
-        fontSize: 7,
-        cellPadding: 2
+        fontSize: 9,
+        cellPadding: 4,
+        overflow: 'linebreak',
+        cellWidth: 'wrap'
       },
       columnStyles: {
-        0: { cellWidth: 8 },
-        1: { cellWidth: 22 },
-        2: { cellWidth: 45 },
-        3: { cellWidth: 18, halign: 'right' },
-        4: { cellWidth: 22 },
-        5: { cellWidth: 28 },
-        6: { cellWidth: 35 }
+        0: { cellWidth: 12 },
+        1: { cellWidth: 28 },
+        2: { cellWidth: 'auto' },
+        3: { cellWidth: 22, halign: 'right' },
+        4: { cellWidth: 30 },
+        5: { cellWidth: 35 },
+        6: { cellWidth: 'auto' }
       }
     });
 
