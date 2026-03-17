@@ -1536,16 +1536,27 @@ async function handleGet(request, path) {
       
       const tasks = parseSheetToObjects(data);
       
+      // Filter out empty rows
+      const validTasks = tasks.filter(t => t.id && t.id.trim() !== '');
+      
       // Sort: both pending and completed by priority (urgente > importante > necesario > sugerencia)
       const priorityOrder = { 'urgente': 0, 'importante': 1, 'necesario': 2, 'sugerencia': 3 };
       
-      const pending = tasks
+      const pending = validTasks
         .filter(t => t.status !== 'completed')
-        .sort((a, b) => (priorityOrder[a.priority] || 4) - (priorityOrder[b.priority] || 4));
+        .sort((a, b) => {
+          const orderA = priorityOrder[a.priority] !== undefined ? priorityOrder[a.priority] : 4;
+          const orderB = priorityOrder[b.priority] !== undefined ? priorityOrder[b.priority] : 4;
+          return orderA - orderB;
+        });
       
-      const completed = tasks
+      const completed = validTasks
         .filter(t => t.status === 'completed')
-        .sort((a, b) => (priorityOrder[a.priority] || 4) - (priorityOrder[b.priority] || 4));
+        .sort((a, b) => {
+          const orderA = priorityOrder[a.priority] !== undefined ? priorityOrder[a.priority] : 4;
+          const orderB = priorityOrder[b.priority] !== undefined ? priorityOrder[b.priority] : 4;
+          return orderA - orderB;
+        });
       
       return NextResponse.json({ pending, completed });
     } catch (error) {
