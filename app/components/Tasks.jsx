@@ -466,7 +466,7 @@ export default function Tasks() {
             <Badge variant="secondary">{tasks.completed?.length || 0}</Badge>
           </CardTitle>
           <CardDescription>
-            {language === 'es' ? 'Últimas tareas completadas' : 'Recently completed tasks'}
+            {language === 'es' ? 'Ordenadas por prioridad' : 'Ordered by priority'}
           </CardDescription>
         </CardHeader>
         <CardContent>

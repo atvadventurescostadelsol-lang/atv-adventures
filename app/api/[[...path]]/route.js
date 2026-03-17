@@ -1536,7 +1536,7 @@ async function handleGet(request, path) {
       
       const tasks = parseSheetToObjects(data);
       
-      // Sort: pending first (by priority), then completed (by completion date desc)
+      // Sort: both pending and completed by priority (urgente > importante > necesario > sugerencia)
       const priorityOrder = { 'urgente': 0, 'importante': 1, 'necesario': 2, 'sugerencia': 3 };
       
       const pending = tasks
@@ -1545,7 +1545,7 @@ async function handleGet(request, path) {
       
       const completed = tasks
         .filter(t => t.status === 'completed')
-        .sort((a, b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0));
+        .sort((a, b) => (priorityOrder[a.priority] || 4) - (priorityOrder[b.priority] || 4));
       
       return NextResponse.json({ pending, completed });
     } catch (error) {
