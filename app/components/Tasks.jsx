@@ -22,10 +22,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Check, Edit, Trash2, AlertTriangle, AlertCircle, Info, Lightbulb, Clock, User, CheckCircle2 } from 'lucide-react';
+import { Plus, Check, Edit, Trash2, AlertTriangle, AlertCircle, Info, Lightbulb, Clock, User, CheckCircle2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { jsPDF } from 'jspdf';
+import { applyPlugin } from 'jspdf-autotable';
+
+// Register the autoTable plugin
+applyPlugin(jsPDF);
 
 // Priority configuration
 const PRIORITIES = {
@@ -398,6 +403,171 @@ export default function Tasks() {
     });
   };
 
+  // Priority labels for PDF
+  const priorityLabels = {
+    urgente: 'URGENTE',
+    importante: 'IMPORTANTE',
+    necesario: 'NECESARIO',
+    sugerencia: 'SUGERENCIA'
+  };
+
+  const formatDateForPDF = (dateStr) => {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('es-ES', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const downloadPendingPDF = () => {
+    if (!tasks.pending || tasks.pending.length === 0) {
+      toast.error('No hay tareas pendientes para descargar');
+      return;
+    }
+
+    const doc = new jsPDF();
+    const today = new Date().toLocaleDateString('es-ES');
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setTextColor(234, 88, 12); // Orange color
+    doc.text('TAREAS PENDIENTES', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generado el: ${today}`, 105, 28, { align: 'center' });
+    doc.text(`Total: ${tasks.pending.length} tareas`, 105, 34, { align: 'center' });
+
+    // Calculate total price
+    const totalPrice = tasks.pending.reduce((sum, t) => sum + (parseFloat(t.price) || 0), 0);
+    if (totalPrice > 0) {
+      doc.setFontSize(12);
+      doc.setTextColor(0, 128, 0);
+      doc.text(`Coste total estimado: €${totalPrice.toFixed(2)}`, 105, 42, { align: 'center' });
+    }
+
+    // Table data
+    const tableData = tasks.pending.map((task, index) => [
+      index + 1,
+      priorityLabels[task.priority] || task.priority,
+      task.description?.substring(0, 50) + (task.description?.length > 50 ? '...' : ''),
+      task.price ? `€${parseFloat(task.price).toFixed(2)}` : '-',
+      task.createdByUsername || '-',
+      task.notes?.substring(0, 30) + (task.notes?.length > 30 ? '...' : '') || '-'
+    ]);
+
+    doc.autoTable({
+      startY: totalPrice > 0 ? 50 : 42,
+      head: [['#', 'Prioridad', 'Descripción', 'Precio', 'Creado por', 'Observaciones']],
+      body: tableData,
+      headStyles: {
+        fillColor: [234, 88, 12],
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      styles: {
+        fontSize: 8,
+        cellPadding: 3
+      },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 25, fontStyle: 'bold' },
+        2: { cellWidth: 60 },
+        3: { cellWidth: 20, halign: 'right' },
+        4: { cellWidth: 25 },
+        5: { cellWidth: 40 }
+      },
+      didParseCell: function(data) {
+        // Color code priority
+        if (data.column.index === 1 && data.section === 'body') {
+          const priority = tasks.pending[data.row.index]?.priority;
+          if (priority === 'urgente') {
+            data.cell.styles.textColor = [220, 38, 38]; // Red
+          } else if (priority === 'importante') {
+            data.cell.styles.textColor = [234, 88, 12]; // Orange
+          } else if (priority === 'necesario') {
+            data.cell.styles.textColor = [180, 130, 0]; // Amber
+          } else {
+            data.cell.styles.textColor = [59, 130, 246]; // Blue
+          }
+        }
+      }
+    });
+
+    doc.save(`tareas_pendientes_${today.replace(/\//g, '-')}.pdf`);
+    toast.success('PDF de tareas pendientes descargado');
+  };
+
+  const downloadCompletedPDF = () => {
+    if (!tasks.completed || tasks.completed.length === 0) {
+      toast.error('No hay tareas completadas para descargar');
+      return;
+    }
+
+    const doc = new jsPDF();
+    const today = new Date().toLocaleDateString('es-ES');
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setTextColor(22, 163, 74); // Green color
+    doc.text('TAREAS REALIZADAS', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generado el: ${today}`, 105, 28, { align: 'center' });
+    doc.text(`Total: ${tasks.completed.length} tareas completadas`, 105, 34, { align: 'center' });
+
+    // Calculate total price
+    const totalPrice = tasks.completed.reduce((sum, t) => sum + (parseFloat(t.price) || 0), 0);
+    if (totalPrice > 0) {
+      doc.setFontSize(12);
+      doc.setTextColor(22, 163, 74);
+      doc.text(`Coste total: €${totalPrice.toFixed(2)}`, 105, 42, { align: 'center' });
+    }
+
+    // Table data
+    const tableData = tasks.completed.map((task, index) => [
+      index + 1,
+      priorityLabels[task.priority] || task.priority,
+      task.description?.substring(0, 40) + (task.description?.length > 40 ? '...' : ''),
+      task.price ? `€${parseFloat(task.price).toFixed(2)}` : '-',
+      task.completedByUsername || '-',
+      formatDateForPDF(task.completedAt),
+      task.completionNotes?.substring(0, 25) + (task.completionNotes?.length > 25 ? '...' : '') || '-'
+    ]);
+
+    doc.autoTable({
+      startY: totalPrice > 0 ? 50 : 42,
+      head: [['#', 'Prioridad', 'Descripción', 'Precio', 'Completado por', 'Fecha', 'Notas']],
+      body: tableData,
+      headStyles: {
+        fillColor: [22, 163, 74],
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      styles: {
+        fontSize: 7,
+        cellPadding: 2
+      },
+      columnStyles: {
+        0: { cellWidth: 8 },
+        1: { cellWidth: 22 },
+        2: { cellWidth: 45 },
+        3: { cellWidth: 18, halign: 'right' },
+        4: { cellWidth: 22 },
+        5: { cellWidth: 28 },
+        6: { cellWidth: 35 }
+      }
+    });
+
+    doc.save(`tareas_realizadas_${today.replace(/\//g, '-')}.pdf`);
+    toast.success('PDF de tareas realizadas descargado');
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -427,14 +597,24 @@ export default function Tasks() {
       {/* Pending Tasks Section */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Clock className="h-5 w-5 text-orange-600" />
-            {language === 'es' ? 'Pendientes' : 'Pending'}
-            <Badge variant="secondary">{tasks.pending?.length || 0}</Badge>
-          </CardTitle>
-          <CardDescription>
-            {language === 'es' ? 'Ordenadas por prioridad' : 'Ordered by priority'}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Clock className="h-5 w-5 text-orange-600" />
+                {language === 'es' ? 'Pendientes' : 'Pending'}
+                <Badge variant="secondary">{tasks.pending?.length || 0}</Badge>
+              </CardTitle>
+              <CardDescription>
+                {language === 'es' ? 'Ordenadas por prioridad' : 'Ordered by priority'}
+              </CardDescription>
+            </div>
+            {tasks.pending?.length > 0 && (
+              <Button variant="outline" size="sm" onClick={downloadPendingPDF} className="gap-2">
+                <Download className="h-4 w-4" />
+                PDF
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {tasks.pending?.length > 0 ? (
@@ -460,14 +640,24 @@ export default function Tasks() {
       {/* Completed Tasks Section */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-            {language === 'es' ? 'Realizados' : 'Completed'}
-            <Badge variant="secondary">{tasks.completed?.length || 0}</Badge>
-          </CardTitle>
-          <CardDescription>
-            {language === 'es' ? 'Ordenadas por prioridad' : 'Ordered by priority'}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                {language === 'es' ? 'Realizados' : 'Completed'}
+                <Badge variant="secondary">{tasks.completed?.length || 0}</Badge>
+              </CardTitle>
+              <CardDescription>
+                {language === 'es' ? 'Ordenadas por prioridad' : 'Ordered by priority'}
+              </CardDescription>
+            </div>
+            {tasks.completed?.length > 0 && (
+              <Button variant="outline" size="sm" onClick={downloadCompletedPDF} className="gap-2 text-green-600 border-green-200 hover:bg-green-50">
+                <Download className="h-4 w-4" />
+                PDF
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {tasks.completed?.length > 0 ? (
