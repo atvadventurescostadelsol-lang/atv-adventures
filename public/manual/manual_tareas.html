@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Tareas - ATV Operations</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            border-radius: 0 0 20px 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(234, 88, 12, 0.3);
+        }
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        .lang-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .lang-btn {
+            padding: 10px 25px;
+            border: 2px solid #ea580c;
+            background: white;
+            color: #ea580c;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .lang-btn.active, .lang-btn:hover {
+            background: #ea580c;
+            color: white;
+        }
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        }
+        .section h2 {
+            color: #ea580c;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #fed7aa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section h3 {
+            color: #c2410c;
+            margin: 20px 0 10px 0;
+        }
+        .intro-box {
+            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+            border-left: 4px solid #ea580c;
+            padding: 20px;
+            border-radius: 0 10px 10px 0;
+            margin-bottom: 20px;
+        }
+        .priority-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .priority-item {
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .priority-urgente { background: #fef2f2; color: #dc2626; border: 2px solid #fecaca; }
+        .priority-importante { background: #fff7ed; color: #ea580c; border: 2px solid #fed7aa; }
+        .priority-necesario { background: #fffbeb; color: #b45309; border: 2px solid #fde68a; }
+        .priority-sugerencia { background: #eff6ff; color: #2563eb; border: 2px solid #bfdbfe; }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .feature-card {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+        .feature-card h4 {
+            color: #ea580c;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .icon {
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #ea580c;
+            color: white;
+            border-radius: 50%;
+            font-size: 14px;
+        }
+        .step {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 10px;
+        }
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background: #ea580c;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .btn-example {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            margin: 5px;
+        }
+        .btn-green { background: #dcfce7; color: #16a34a; }
+        .btn-blue { background: #dbeafe; color: #2563eb; }
+        .btn-red { background: #fef2f2; color: #dc2626; }
+        .btn-orange { background: #ffedd5; color: #ea580c; }
+        .note {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 15px 0;
+        }
+        .note-title {
+            font-weight: bold;
+            color: #b45309;
+            margin-bottom: 5px;
+        }
+        .permissions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .permissions-table th, .permissions-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .permissions-table th {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .check { color: #16a34a; font-weight: bold; }
+        .cross { color: #dc2626; font-weight: bold; }
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #64748b;
+        }
+        .hidden { display: none; }
+        
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.8em; }
+            .section { padding: 20px; }
+            .priority-list { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>📋 Manual de Tareas</h1>
+        <p>ATV Operations - Gestión de Tareas y Notas</p>
+    </header>
+
+    <div class="container">
+        <div class="lang-toggle">
+            <button class="lang-btn active" onclick="showLang('es')">🇪🇸 Español</button>
+            <button class="lang-btn" onclick="showLang('en')">🇬🇧 English</button>
+        </div>
+
+        <!-- SPANISH VERSION -->
+        <div id="content-es">
+            <div class="section">
+                <h2>📌 Introducción</h2>
+                <div class="intro-box">
+                    <p><strong>¿Por qué esta función?</strong></p>
+                    <p>Debido a la cantidad de tareas que se van acumulando por hacer, más los costos que estas suponen, y para que no se nos queden cosas olvidadas, se ha actualizado la aplicación para poder tenerlas presentes.</p>
+                    <br>
+                    <p>Ahora podemos ir haciéndolas poco a poco y todo lo que se nos vaya viniendo a la cabeza que debemos hacer, ya sea urgente o no, podemos tenerlo escrito e ir llevándolas a cabo de forma organizada.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🎯 Niveles de Prioridad</h2>
+                <p>Las tareas se organizan por prioridad para que siempre sepas qué hacer primero:</p>
+                <div class="priority-list">
+                    <div class="priority-item priority-urgente">
+                        🔴 URGENTE<br>
+                        <small>Hacer inmediatamente</small>
+                    </div>
+                    <div class="priority-item priority-importante">
+                        🟠 IMPORTANTE<br>
+                        <small>Hacer pronto</small>
+                    </div>
+                    <div class="priority-item priority-necesario">
+                        🟡 NECESARIO<br>
+                        <small>Hacer cuando se pueda</small>
+                    </div>
+                    <div class="priority-item priority-sugerencia">
+                        🔵 SUGERENCIA<br>
+                        <small>Ideas para el futuro</small>
+                    </div>
+                </div>
+                <p><strong>Las tareas siempre se muestran ordenadas: primero las urgentes, luego las importantes, después las necesarias y por último las sugerencias.</strong></p>
+            </div>
+
+            <div class="section">
+                <h2>➕ Crear Nueva Tarea</h2>
+                <p>Para añadir una nueva tarea a la lista:</p>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong>Accede a la pestaña "Tareas"</strong><br>
+                        En el menú principal, haz clic en la pestaña <span class="btn-example btn-orange">📋 Tareas</span>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong>Pulsa "Nueva Tarea"</strong><br>
+                        Haz clic en el botón <span class="btn-example btn-orange">+ Nueva Tarea</span> en la esquina superior derecha
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong>Rellena los datos:</strong>
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li><strong>Descripción</strong> (obligatorio): Qué hay que hacer</li>
+                            <li><strong>Prioridad</strong> (obligatorio): Urgente, Importante, Necesario o Sugerencia</li>
+                            <li><strong>Precio</strong> (opcional): Coste estimado en euros</li>
+                            <li><strong>Observaciones</strong> (opcional): Detalles adicionales</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div>
+                        <strong>Guarda la tarea</strong><br>
+                        Pulsa <span class="btn-example btn-orange">Crear Tarea</span> para guardarla
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>✅ Marcar Tarea como Realizada</h2>
+                <p>Cuando completes una tarea:</p>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong>Busca la tarea</strong><br>
+                        En la sección "Pendientes", localiza la tarea que has completado
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong>Pulsa el botón de completar</strong><br>
+                        Haz clic en el icono <span class="btn-example btn-green">✓</span> (check verde) a la derecha de la tarea
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong>Añade notas (opcional)</strong><br>
+                        Puedes escribir comentarios sobre cómo se completó la tarea
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div>
+                        <strong>Confirma</strong><br>
+                        Pulsa <span class="btn-example btn-green">Completar</span>. La tarea se moverá a la sección "Realizados"
+                    </div>
+                </div>
+                
+                <div class="note">
+                    <div class="note-title">📝 Nota</div>
+                    La tarea quedará registrada con quién la completó y cuándo, junto con las notas que hayas añadido.
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>✏️ Editar una Tarea</h2>
+                <p>Si necesitas modificar una tarea pendiente:</p>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        Haz clic en el icono <span class="btn-example btn-blue">✏️</span> (lápiz azul) de la tarea
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        Modifica los campos que necesites (descripción, prioridad, precio, observaciones)
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>
+                        Pulsa <span class="btn-example btn-orange">Guardar</span> para aplicar los cambios
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🗑️ Eliminar una Tarea</h2>
+                <p>Para eliminar una tarea:</p>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        Haz clic en el icono <span class="btn-example btn-red">🗑️</span> (papelera roja) de la tarea
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        Confirma la eliminación en el diálogo que aparece
+                    </div>
+                </div>
+                
+                <div class="note">
+                    <div class="note-title">⚠️ Permisos</div>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>Tareas pendientes:</strong> Solo puedes eliminar las que tú creaste (o si eres administrador)</li>
+                        <li><strong>Tareas completadas:</strong> Solo el administrador puede eliminarlas</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📄 Descargar PDF</h2>
+                <p>Puedes descargar un PDF con todas las tareas para tenerlas a mano o imprimirlas:</p>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">📋</span> PDF Pendientes</h4>
+                        <p>Haz clic en el botón <strong>"PDF"</strong> de la sección "Pendientes" para descargar todas las tareas por hacer, ordenadas por prioridad.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon" style="background: #16a34a;">✓</span> PDF Realizados</h4>
+                        <p>Haz clic en el botón <strong>"PDF"</strong> verde de la sección "Realizados" para descargar el historial de tareas completadas.</p>
+                    </div>
+                </div>
+                
+                <p style="margin-top: 15px;"><strong>Los PDFs incluyen:</strong> Prioridad, descripción completa, precio, quién creó/completó la tarea, fecha y observaciones.</p>
+            </div>
+
+            <div class="section">
+                <h2>👥 Permisos por Rol</h2>
+                <table class="permissions-table">
+                    <thead>
+                        <tr>
+                            <th>Acción</th>
+                            <th>Todos los usuarios</th>
+                            <th>Solo Administrador</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Ver tareas</td>
+                            <td class="check">✓</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Crear tareas</td>
+                            <td class="check">✓</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Marcar como realizada</td>
+                            <td class="check">✓</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Editar tarea propia</td>
+                            <td class="check">✓</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Eliminar tarea propia (pendiente)</td>
+                            <td class="check">✓</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Editar/Eliminar tareas de otros</td>
+                            <td class="cross">✗</td>
+                            <td class="check">✓</td>
+                        </tr>
+                        <tr>
+                            <td>Eliminar tareas completadas</td>
+                            <td class="cross">✗</td>
+                            <td class="check">✓</td>
+                        </tr>
+                        <tr>
+                            <td>Descargar PDFs</td>
+                            <td class="check">✓</td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ENGLISH VERSION -->
+        <div id="content-en" class="hidden">
+            <div class="section">
+                <h2>📌 Introduction</h2>
+                <div class="intro-box">
+                    <p><strong>Why this feature?</strong></p>
+                    <p>Due to the number of tasks that keep accumulating, plus the costs they involve, and to make sure nothing gets forgotten, the application has been updated to keep them visible.</p>
+                    <br>
+                    <p>Now we can tackle them gradually, and everything that comes to mind that needs to be done, whether urgent or not, can be written down and completed in an organized manner.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🎯 Priority Levels</h2>
+                <p>Tasks are organized by priority so you always know what to do first:</p>
+                <div class="priority-list">
+                    <div class="priority-item priority-urgente">
+                        🔴 URGENT<br>
+                        <small>Do immediately</small>
+                    </div>
+                    <div class="priority-item priority-importante">
+                        🟠 IMPORTANT<br>
+                        <small>Do soon</small>
+                    </div>
+                    <div class="priority-item priority-necesario">
+                        🟡 NECESSARY<br>
+                        <small>Do when possible</small>
+                    </div>
+                    <div class="priority-item priority-sugerencia">
+                        🔵 SUGGESTION<br>
+                        <small>Ideas for the future</small>
+                    </div>
+                </div>
+                <p><strong>Tasks are always displayed in order: urgent first, then important, then necessary, and finally suggestions.</strong></p>
+            </div>
+
+            <div class="section">
+                <h2>➕ Create New Task</h2>
+                <p>To add a new task to the list:</p>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong>Access the "Tasks" tab</strong><br>
+                        In the main menu, click on the <span class="btn-example btn-orange">📋 Tasks</span> tab
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong>Click "New Task"</strong><br>
+                        Click the <span class="btn-example btn-orange">+ New Task</span> button in the top right corner
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong>Fill in the details:</strong>
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li><strong>Description</strong> (required): What needs to be done</li>
+                            <li><strong>Priority</strong> (required): Urgent, Important, Necessary, or Suggestion</li>
+                            <li><strong>Price</strong> (optional): Estimated cost in euros</li>
+                            <li><strong>Notes</strong> (optional): Additional details</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div>
+                        <strong>Save the task</strong><br>
+                        Click <span class="btn-example btn-orange">Create Task</span> to save it
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>✅ Mark Task as Complete</h2>
+                <p>When you complete a task:</p>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong>Find the task</strong><br>
+                        In the "Pending" section, locate the task you've completed
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong>Click the complete button</strong><br>
+                        Click the <span class="btn-example btn-green">✓</span> (green check) icon on the right side of the task
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong>Add notes (optional)</strong><br>
+                        You can write comments about how the task was completed
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div>
+                        <strong>Confirm</strong><br>
+                        Click <span class="btn-example btn-green">Complete</span>. The task will move to the "Completed" section
+                    </div>
+                </div>
+                
+                <div class="note">
+                    <div class="note-title">📝 Note</div>
+                    The task will be recorded with who completed it and when, along with any notes you added.
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>✏️ Edit a Task</h2>
+                <p>If you need to modify a pending task:</p>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        Click the <span class="btn-example btn-blue">✏️</span> (blue pencil) icon on the task
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        Modify the fields you need (description, priority, price, notes)
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>
+                        Click <span class="btn-example btn-orange">Save</span> to apply the changes
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🗑️ Delete a Task</h2>
+                <p>To delete a task:</p>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        Click the <span class="btn-example btn-red">🗑️</span> (red trash) icon on the task
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        Confirm the deletion in the dialog that appears
+                    </div>
+                </div>
+                
+                <div class="note">
+                    <div class="note-title">⚠️ Permissions</div>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>Pending tasks:</strong> You can only delete tasks you created (or if you're an administrator)</li>
+                        <li><strong>Completed tasks:</strong> Only the administrator can delete them</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📄 Download PDF</h2>
+                <p>You can download a PDF with all tasks to have them handy or print them:</p>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4><span class="icon">📋</span> Pending PDF</h4>
+                        <p>Click the <strong>"PDF"</strong> button in the "Pending" section to download all tasks to do, sorted by priority.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="icon" style="background: #16a34a;">✓</span> Completed PDF</h4>
+                        <p>Click the green <strong>"PDF"</strong> button in the "Completed" section to download the history of completed tasks.</p>
+                    </div>
+                </div>
+                
+                <p style="margin-top: 15px;"><strong>PDFs include:</strong> Priority, full description, price, who created/completed the task, date, and notes.</p>
+            </div>
+
+            <div class="section">
+                <h2>👥 Permissions by Role</h2>
+                <table class="permissions-table">
+                    <thead>
+                        <tr>
+                            <th>Action</th>
+                            <th>All Users</th>
+                            <th>Admin Only</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>View tasks</td>
+                            <td class="check">✓</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Create tasks</td>
+                            <td class="check">✓</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Mark as complete</td>
+                            <td class="check">✓</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Edit own task</td>
+                            <td class="check">✓</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Delete own task (pending)</td>
+                            <td class="check">✓</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Edit/Delete others' tasks</td>
+                            <td class="cross">✗</td>
+                            <td class="check">✓</td>
+                        </tr>
+                        <tr>
+                            <td>Delete completed tasks</td>
+                            <td class="cross">✗</td>
+                            <td class="check">✓</td>
+                        </tr>
+                        <tr>
+                            <td>Download PDFs</td>
+                            <td class="check">✓</td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer>
+            <p>ATV Operations - Manual de Tareas v1.0</p>
+            <p>Marzo 2026</p>
+        </footer>
+    </div>
+
+    <script>
+        function showLang(lang) {
+            document.getElementById('content-es').classList.toggle('hidden', lang !== 'es');
+            document.getElementById('content-en').classList.toggle('hidden', lang !== 'en');
+            
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
