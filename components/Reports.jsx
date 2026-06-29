@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Download, Search, TrendingUp, TrendingDown, Car, Truck, RefreshCw, Wallet, Building2, Clock, CalendarDays, CalendarRange, FileText } from 'lucide-react';
+import { Download, Search, TrendingUp, TrendingDown, Car, Truck, RefreshCw, Wallet, Building2, Clock, CalendarDays, CalendarRange, FileText, Save, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
@@ -60,6 +60,14 @@ export default function Reports() {
   const [detailedPaymentMethod, setDetailedPaymentMethod] = useState('all');
   const [detailedResults, setDetailedResults] = useState(null);
   const [detailedLoading, setDetailedLoading] = useState(false);
+
+  // Cierre de caja
+  const [showCierreModal, setShowCierreModal] = useState(false);
+  const [showHistorialModal, setShowHistorialModal] = useState(false);
+  const [cierreNota, setCierreNota] = useState('');
+  const [cierreSaving, setCierreSaving] = useState(false);
+  const [cierreHistorial, setCierreHistorial] = useState([]);
+  const [cierreHistorialLoading, setCierreHistorialLoading] = useState(false);
   
   // Categories
   const [expenseCategories, setExpenseCategories] = useState([]);
@@ -751,6 +759,50 @@ export default function Reports() {
 
   const balance = calcBalance(selectedPeriod);
 
+  const handleGuardarCierre = async () => {
+    if (!balance) return;
+    setCierreSaving(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const payload = {
+        fecha: today,
+        geEfectivo: balance.quads?.cashNet || 0,
+        geBanco: balance.quads?.bankNet || 0,
+        esEfectivo: balance.buggies?.cashNet || 0,
+        esBanco: balance.buggies?.bankNet || 0,
+        nota: cierreNota,
+        usuario: user?.username || 'admin'
+      };
+      const res = await fetch('/api/cierre-caja', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Error al guardar');
+      toast.success('✅ Cierre de caja guardado correctamente');
+      setShowCierreModal(false);
+      setCierreNota('');
+    } catch (e) {
+      toast.error('❌ Error al guardar el cierre: ' + e.message);
+    } finally {
+      setCierreSaving(false);
+    }
+  };
+
+  const handleVerHistorial = async () => {
+    setCierreHistorialLoading(true);
+    setShowHistorialModal(true);
+    try {
+      const res = await fetch('/api/cierre-caja');
+      const data = await res.json();
+      setCierreHistorial(data);
+    } catch (e) {
+      toast.error('Error al cargar historial');
+    } finally {
+      setCierreHistorialLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -993,6 +1045,23 @@ export default function Reports() {
                     </div>
                   )}
                 </div>
+                {/* Botones cierre de caja */}
+                <div className="flex gap-3 mt-4 pt-4 border-t border-orange-200">
+                  <button
+                    onClick={() => setShowCierreModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium text-sm transition-colors"
+                  >
+                    <Save className="h-4 w-4" />
+                    💾 Guardar cierre de caja
+                  </button>
+                  <button
+                    onClick={handleVerHistorial}
+                    className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-orange-50 text-orange-600 border-2 border-orange-300 rounded-lg font-medium text-sm transition-colors"
+                  >
+                    <History className="h-4 w-4" />
+                    Ver historial
+                  </button>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -1213,6 +1282,124 @@ export default function Reports() {
             </CardContent>
           </Card>
         </>
+      )}
+
+      {/* ===== MODAL GUARDAR CIERRE DE CAJA ===== */}
+      {showCierreModal && balance && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-5 rounded-t-2xl">
+              <h2 className="text-xl font-bold flex items-center gap-2"><Save className="h-5 w-5" />💾 Cierre de Caja</h2>
+              <p className="text-orange-100 text-sm mt-1">{new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                {canViewQuads && (
+                  <>
+                    <div className="p-3 bg-green-50 rounded-xl border border-green-200 text-center">
+                      <div className="text-xs text-green-600 font-medium">GE 💵 Efectivo</div>
+                      <div className="text-xl font-bold text-green-700">{formatCurrency(balance.quads.cashNet)}</div>
+                    </div>
+                    <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-center">
+                      <div className="text-xs text-blue-600 font-medium">GE 🏦 Banco</div>
+                      <div className="text-xl font-bold text-blue-700">{formatCurrency(balance.quads.bankNet)}</div>
+                    </div>
+                  </>
+                )}
+                {canViewBuggies && (
+                  <>
+                    <div className="p-3 bg-green-50 rounded-xl border border-green-200 text-center">
+                      <div className="text-xs text-green-600 font-medium">E&S 💵 Efectivo</div>
+                      <div className="text-xl font-bold text-green-700">{formatCurrency(balance.buggies.cashNet)}</div>
+                    </div>
+                    <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-center">
+                      <div className="text-xs text-blue-600 font-medium">E&S 🏦 Banco</div>
+                      <div className="text-xl font-bold text-blue-700">{formatCurrency(balance.buggies.bankNet)}</div>
+                    </div>
+                  </>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">📝 Anotación (opcional)</label>
+                <textarea
+                  value={cierreNota}
+                  onChange={e => setCierreNota(e.target.value)}
+                  placeholder="Ej: Todo cuadra. Faltaban 20€ en GE, revisado con Charly..."
+                  className="w-full border rounded-lg p-2 text-sm resize-none h-20 focus:outline-none focus:ring-2 focus:ring-orange-300"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleGuardarCierre}
+                  disabled={cierreSaving}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white py-2 rounded-lg font-medium flex items-center justify-center gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  {cierreSaving ? 'Guardando...' : 'Guardar cierre'}
+                </button>
+                <button
+                  onClick={() => { setShowCierreModal(false); setCierreNota(''); }}
+                  className="px-4 py-2 border-2 border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== MODAL HISTORIAL CIERRES ===== */}
+      {showHistorialModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+            <div className="bg-gradient-to-r from-gray-700 to-gray-900 text-white p-5 rounded-t-2xl flex items-center justify-between">
+              <h2 className="text-xl font-bold flex items-center gap-2"><History className="h-5 w-5" />📋 Historial de Cierres</h2>
+              <button onClick={() => setShowHistorialModal(false)} className="text-white/70 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+            <div className="overflow-y-auto p-5 space-y-3">
+              {cierreHistorialLoading ? (
+                <div className="text-center py-8 text-gray-400">Cargando...</div>
+              ) : cierreHistorial.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">No hay cierres guardados todavía</div>
+              ) : (
+                cierreHistorial.map((c, i) => (
+                  <div key={i} className="border rounded-xl p-4 bg-gray-50">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-bold text-gray-800">
+                        📅 {new Date(c.fecha + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                      </div>
+                      <div className="text-xs text-gray-400">por {c.usuario}</div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+                      <div className="text-center p-2 bg-green-50 rounded-lg border border-green-200">
+                        <div className="text-xs text-green-600">GE 💵 Efectivo</div>
+                        <div className="font-bold text-green-700">{formatCurrency(c.geEfectivo)}</div>
+                      </div>
+                      <div className="text-center p-2 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="text-xs text-blue-600">GE 🏦 Banco</div>
+                        <div className="font-bold text-blue-700">{formatCurrency(c.geBanco)}</div>
+                      </div>
+                      <div className="text-center p-2 bg-green-50 rounded-lg border border-green-200">
+                        <div className="text-xs text-green-600">E&S 💵 Efectivo</div>
+                        <div className="font-bold text-green-700">{formatCurrency(c.esEfectivo)}</div>
+                      </div>
+                      <div className="text-center p-2 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="text-xs text-blue-600">E&S 🏦 Banco</div>
+                        <div className="font-bold text-blue-700">{formatCurrency(c.esBanco)}</div>
+                      </div>
+                    </div>
+                    {c.nota && (
+                      <div className="text-sm text-gray-600 bg-yellow-50 border border-yellow-200 rounded-lg p-2 mt-2">
+                        📝 {c.nota}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
