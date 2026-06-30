@@ -294,6 +294,27 @@ function calculatePayoutDate(salesChannel, date) {
 
 // ==================== EXPENSES HELPERS ====================
 
+// Ensure CierreCaja sheet exists
+async function ensureCierreCajaSheet() {
+  try {
+    const { getSheetsClient } = require('@/lib/google-sheets');
+    const sheets = await getSheetsClient();
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+    const sheetExists = spreadsheet.data.sheets?.some(s => s.properties?.title === 'CierreCaja');
+    if (!sheetExists) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        requestBody: { requests: [{ addSheet: { properties: { title: 'CierreCaja' } } }] }
+      });
+      await updateSheetData(SPREADSHEET_ID, 'CierreCaja!A1:I1', [
+        ['id', 'fecha', 'geEfectivo', 'geBanco', 'esEfectivo', 'esBanco', 'nota', 'usuario', 'createdAt']
+      ]);
+    }
+  } catch (error) {
+    console.error('Error ensuring CierreCaja sheet:', error);
+  }
+}
+
 // Ensure Tasks sheet exists
 async function ensureTasksSheet() {
   try {
@@ -1956,6 +1977,24 @@ async function handleGet(request, path) {
     }
   }
 
+  // ==================== CIERRE DE CAJA ====================
+  if (path === 'cierre-caja') {
+    try {
+      await ensureCierreCajaSheet();
+      const data = await getSheetData(SPREADSHEET_ID, 'CierreCaja!A:J');
+      if (!data || data.length <= 1) return NextResponse.json([]);
+      const headers = data[0];
+      const rows = data.slice(1).map(row => {
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = row[i] || '');
+        return obj;
+      });
+      return NextResponse.json(rows.reverse()); // más reciente primero
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   return NextResponse.json({ message: 'ATV Operations API' });
 }
 
@@ -2006,6 +2045,22 @@ async function handlePost(request, path) {
   // Auth: Login
   if (path === 'auth/login') {
     return handleLogin(body);
+  }
+
+  // ==================== CIERRE DE CAJA (POST) ====================
+  if (path === 'cierre-caja') {
+    try {
+      await ensureCierreCajaSheet();
+      const { fecha, geEfectivo, geBanco, esEfectivo, esBanco, nota, usuario } = body;
+      const id = `cierre_${Date.now()}`;
+      const createdAt = new Date().toISOString();
+      const row = [id, fecha || createdAt.split('T')[0], geEfectivo || 0, geBanco || 0, esEfectivo || 0, esBanco || 0, nota || '', usuario || 'admin', createdAt];
+      await safeAppendSheetData(SPREADSHEET_ID, 'CierreCaja', [row]);
+      await addAuditLog('CREATE', 'CierreCaja', id, { fecha, geEfectivo, geBanco: geBanco || 0, esEfectivo, esBanco }, usuario || 'admin', usuario || 'admin');
+      return NextResponse.json({ success: true, id });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
   }
 
   // ==================== TASKS ENDPOINTS (POST) ====================
