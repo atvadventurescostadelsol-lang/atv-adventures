@@ -1,732 +1,573 @@
 #!/usr/bin/env python3
-"""
-Backend API Testing Script for Tour Management System
-Tests authentication, departures, expenses, and expense categories APIs
-"""
-
 import requests
 import json
 import sys
 from datetime import datetime
+import uuid
 
-# Get base URL from environment 
-BASE_URL = "https://backup-restore-20.preview.emergentagent.com/api"
+# Configuration
+BASE_URL = "https://pending-tracker-10.preview.emergentagent.com/api"
 
-def print_test_result(test_name, passed, details=""):
-    """Print test results with consistent formatting"""
-    status = "✅ PASS" if passed else "❌ FAIL"
+# Test data - using realistic data as per system instructions
+TEST_USER_DATA = {
+    'userId': 'tester123',
+    'username': 'TestManager',
+    'userRole': 'admin'
+}
+
+def print_test_result(test_name, success, details=""):
+    """Print formatted test results"""
+    status = "✅ PASS" if success else "❌ FAIL"
     print(f"{status} - {test_name}")
     if details:
-        print(f"    {details}")
+        print(f"    Details: {details}")
     print()
 
-def test_auth_login():
-    """Test authentication endpoints"""
-    print("=== TESTING AUTHENTICATION ===")
+def test_get_tasks():
+    """Test GET /api/tasks - Get all tasks"""
+    print("🧪 Testing GET /api/tasks...")
     
-    # Test 1: Admin login with credentials from code
-    print("Testing admin login (Zorrouad/25592776)...")
     try:
-        response = requests.post(f"{BASE_URL}/auth/login", 
-                               json={"username": "Zorrouad", "password": "25592776"})
+        response = requests.get(f"{BASE_URL}/tasks")
         
         if response.status_code == 200:
             data = response.json()
-            if data.get('success') and data.get('user', {}).get('role') == 'admin':
-                print_test_result("Admin login (Zorrouad/25592776)", True, 
-                                f"Login successful, role: {data['user']['role']}")
-                admin_user = data['user']
+            
+            # Should return object with 'pending' and 'completed' arrays
+            if isinstance(data, dict) and 'pending' in data and 'completed' in data:
+                print_test_result("GET /api/tasks structure", True, 
+                                f"Returns pending ({len(data['pending'])}) and completed ({len(data['completed'])}) tasks")
+                
+                # Check if pending tasks are sorted by priority
+                if data['pending']:
+                    priority_order = ['urgente', 'importante', 'necesario', 'sugerencia']
+                    priorities = [task.get('priority') for task in data['pending']]
+                    is_sorted = all(priority_order.index(priorities[i]) <= priority_order.index(priorities[i+1]) 
+                                  for i in range(len(priorities)-1) if priorities[i] and priorities[i+1])
+                    print_test_result("Priority sorting", is_sorted, f"Priorities: {priorities[:3]}...")
+                
+                return True, data
             else:
-                print_test_result("Admin login (Zorrouad/25592776)", False, 
-                                f"Unexpected response: {data}")
-                admin_user = None
+                print_test_result("GET /api/tasks structure", False, f"Invalid response structure: {type(data)}")
+                return False, None
         else:
-            print_test_result("Admin login (Zorrouad/25592776)", False, 
-                            f"HTTP {response.status_code}: {response.text}")
-            admin_user = None
+            print_test_result("GET /api/tasks", False, f"HTTP {response.status_code}: {response.text}")
+            return False, None
+            
     except Exception as e:
-        print_test_result("Admin login (Zorrouad/25592776)", False, f"Exception: {str(e)}")
-        admin_user = None
+        print_test_result("GET /api/tasks", False, f"Exception: {str(e)}")
+        return False, None
 
-    # Test 2: Alternative admin login from request
-    print("Testing admin login (Zorroaud/25592776)...")
-    try:
-        response = requests.post(f"{BASE_URL}/auth/login", 
-                               json={"username": "Zorroaud", "password": "25592776"})
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('success'):
-                print_test_result("Admin login (Zorroaud/25592776)", True, 
-                                f"Login successful, role: {data['user']['role']}")
-            else:
-                print_test_result("Admin login (Zorroaud/25592776)", False, 
-                                f"Unexpected response: {data}")
-        else:
-            print_test_result("Admin login (Zorroaud/25592776)", False, 
-                            f"HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("Admin login (Zorroaud/25592776)", False, f"Exception: {str(e)}")
-
-    # Test 3: User login with credentials from code
-    print("Testing user login (Charly/Sajer)...")
-    try:
-        response = requests.post(f"{BASE_URL}/auth/login", 
-                               json={"username": "Charly", "password": "Sajer"})
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('success') and data.get('user', {}).get('role') == 'user':
-                print_test_result("User login (Charly/Sajer)", True, 
-                                f"Login successful, role: {data['user']['role']}")
-                charly_user = data['user']
-            else:
-                print_test_result("User login (Charly/Sajer)", False, 
-                                f"Unexpected response: {data}")
-                charly_user = None
-        else:
-            print_test_result("User login (Charly/Sajer)", False, 
-                            f"HTTP {response.status_code}: {response.text}")
-            charly_user = None
-    except Exception as e:
-        print_test_result("User login (Charly/Sajer)", False, f"Exception: {str(e)}")
-        charly_user = None
-
-    # Test 4: Alternative user login from request
-    print("Testing user login (Charly/Charly2024)...")
-    try:
-        response = requests.post(f"{BASE_URL}/auth/login", 
-                               json={"username": "Charly", "password": "Charly2024"})
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('success'):
-                print_test_result("User login (Charly/Charly2024)", True, 
-                                f"Login successful, role: {data['user']['role']}")
-            else:
-                print_test_result("User login (Charly/Charly2024)", False, 
-                                f"Unexpected response: {data}")
-        else:
-            print_test_result("User login (Charly/Charly2024)", False, 
-                            f"HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("User login (Charly/Charly2024)", False, f"Exception: {str(e)}")
-
-    # Test 5: Invalid credentials
-    print("Testing invalid login...")
-    try:
-        response = requests.post(f"{BASE_URL}/auth/login", 
-                               json={"username": "invalid", "password": "wrong"})
-        
-        if response.status_code == 401:
-            data = response.json()
-            if not data.get('success') and 'credentials' in data.get('error', '').lower():
-                print_test_result("Invalid login rejection", True, 
-                                f"Correctly rejected with: {data.get('error')}")
-            else:
-                print_test_result("Invalid login rejection", False, 
-                                f"Unexpected response: {data}")
-        else:
-            print_test_result("Invalid login rejection", False, 
-                            f"Expected 401, got HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("Invalid login rejection", False, f"Exception: {str(e)}")
-
-    return admin_user, charly_user
-
-def test_departures_api():
-    """Test departures endpoints"""
-    print("=== TESTING DEPARTURES API ===")
+def test_create_task():
+    """Test POST /api/tasks - Create new task"""
+    print("🧪 Testing POST /api/tasks...")
     
-    # Test GET /api/departures
-    print("Testing GET /api/departures...")
-    try:
-        response = requests.get(f"{BASE_URL}/departures")
-        
-        if response.status_code == 200:
-            data = response.json()
-            if isinstance(data, list):
-                print_test_result("GET /api/departures", True, 
-                                f"Returned {len(data)} departures as array")
-                
-                # Check data structure if we have departures
-                if len(data) > 0:
-                    departure = data[0]
-                    expected_fields = ['id', 'date', 'timeSlot', 'category', 'vehiclesCount']
-                    missing_fields = [field for field in expected_fields if field not in departure]
-                    if missing_fields:
-                        print(f"    Warning: Missing expected fields: {missing_fields}")
-                    else:
-                        print(f"    Sample departure structure looks good")
-            else:
-                print_test_result("GET /api/departures", False, 
-                                f"Expected array, got: {type(data)}")
-        else:
-            print_test_result("GET /api/departures", False, 
-                            f"HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("GET /api/departures", False, f"Exception: {str(e)}")
-
-    # Test with date filter
-    print("Testing GET /api/departures with date filter...")
-    try:
-        today = datetime.now().strftime("%Y-%m-%d")
-        response = requests.get(f"{BASE_URL}/departures", params={"date": today})
-        
-        if response.status_code == 200:
-            data = response.json()
-            if isinstance(data, list):
-                print_test_result("GET /api/departures?date=" + today, True, 
-                                f"Returned {len(data)} departures for {today}")
-            else:
-                print_test_result("GET /api/departures?date=" + today, False, 
-                                f"Expected array, got: {type(data)}")
-        else:
-            print_test_result("GET /api/departures?date=" + today, False, 
-                            f"HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("GET /api/departures?date=" + today, False, f"Exception: {str(e)}")
-
-def test_expenses_api():
-    """Test expenses endpoints"""
-    print("=== TESTING EXPENSES API ===")
+    test_task = {
+        'description': 'Revisar sistema de frenos en todos los quads',
+        'priority': 'urgente',
+        'price': '150.00',
+        'notes': 'Revisión de seguridad mensual requerida',
+        **TEST_USER_DATA
+    }
     
-    # Test GET /api/expenses
-    print("Testing GET /api/expenses...")
     try:
-        response = requests.get(f"{BASE_URL}/expenses")
+        response = requests.post(f"{BASE_URL}/tasks", json=test_task)
         
         if response.status_code == 200:
             data = response.json()
-            if isinstance(data, list):
-                print_test_result("GET /api/expenses", True, 
-                                f"Returned {len(data)} expenses as array")
+            
+            if data.get('success') and 'task' in data:
+                task = data['task']
+                created_task_id = task.get('id')
                 
-                # Check data structure if we have expenses
-                if len(data) > 0:
-                    expense = data[0]
-                    expected_fields = ['id', 'date', 'amount', 'concept', 'account']
-                    missing_fields = [field for field in expected_fields if field not in expense]
-                    if missing_fields:
-                        print(f"    Warning: Missing expected fields: {missing_fields}")
-                    else:
-                        print(f"    Sample expense structure looks good")
+                # Verify required fields
+                checks = [
+                    (task.get('description') == test_task['description'], "Description matches"),
+                    (task.get('priority') == test_task['priority'], "Priority matches"),
+                    (task.get('price') == test_task['price'], "Price matches"),
+                    (task.get('notes') == test_task['notes'], "Notes matches"),
+                    (task.get('status') == 'pending', "Status is pending"),
+                    (created_task_id is not None, "ID generated")
+                ]
+                
+                all_passed = all(check[0] for check in checks)
+                failed_checks = [check[1] for check in checks if not check[0]]
+                
+                print_test_result("POST /api/tasks", all_passed, 
+                                f"Created task ID: {created_task_id}" + 
+                                (f" | Failed: {failed_checks}" if failed_checks else ""))
+                
+                return all_passed, created_task_id
             else:
-                print_test_result("GET /api/expenses", False, 
-                                f"Expected array, got: {type(data)}")
+                print_test_result("POST /api/tasks", False, f"Invalid response: {data}")
+                return False, None
         else:
-            print_test_result("GET /api/expenses", False, 
-                            f"HTTP {response.status_code}: {response.text}")
+            print_test_result("POST /api/tasks", False, f"HTTP {response.status_code}: {response.text}")
+            return False, None
+            
     except Exception as e:
-        print_test_result("GET /api/expenses", False, f"Exception: {str(e)}")
+        print_test_result("POST /api/tasks", False, f"Exception: {str(e)}")
+        return False, None
 
-    # Test with account filter
-    print("Testing GET /api/expenses with account filter...")
-    try:
-        response = requests.get(f"{BASE_URL}/expenses", params={"account": "GE"})
-        
-        if response.status_code == 200:
-            data = response.json()
-            if isinstance(data, list):
-                print_test_result("GET /api/expenses?account=GE", True, 
-                                f"Returned {len(data)} GE expenses")
-                # Verify all returned expenses are for GE account
-                if data:
-                    non_ge_expenses = [e for e in data if e.get('account') != 'GE']
-                    if non_ge_expenses:
-                        print(f"    Warning: Found {len(non_ge_expenses)} non-GE expenses in filtered results")
-                    else:
-                        print(f"    Account filtering working correctly")
-            else:
-                print_test_result("GET /api/expenses?account=GE", False, 
-                                f"Expected array, got: {type(data)}")
-        else:
-            print_test_result("GET /api/expenses?account=GE", False, 
-                            f"HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("GET /api/expenses?account=GE", False, f"Exception: {str(e)}")
-
-def test_expense_categories_api():
-    """Test expense categories endpoints"""
-    print("=== TESTING EXPENSE CATEGORIES API ===")
+def test_create_task_validation():
+    """Test POST /api/tasks validation"""
+    print("🧪 Testing POST /api/tasks validation...")
     
-    # Test GET /api/expense-categories
-    print("Testing GET /api/expense-categories...")
-    try:
-        response = requests.get(f"{BASE_URL}/expense-categories")
-        
-        if response.status_code == 200:
-            data = response.json()
-            if isinstance(data, list):
-                print_test_result("GET /api/expense-categories", True, 
-                                f"Returned {len(data)} expense categories as array")
-                
-                # Check data structure if we have categories
-                if len(data) > 0:
-                    category = data[0]
-                    expected_fields = ['id', 'name', 'account', 'createdAt']
-                    missing_fields = [field for field in expected_fields if field not in category]
-                    if missing_fields:
-                        print(f"    Warning: Missing expected fields: {missing_fields}")
-                    else:
-                        print(f"    Sample category structure looks good")
-                    
-                    # Check if we have default categories
-                    category_names = [c.get('name') for c in data]
-                    expected_categories = ['Gasolina', 'Alimentación', 'Guía', 'Mantenimiento', 'Otros']
-                    found_categories = [cat for cat in expected_categories if cat in category_names]
-                    print(f"    Found default categories: {found_categories}")
-            else:
-                print_test_result("GET /api/expense-categories", False, 
-                                f"Expected array, got: {type(data)}")
-        else:
-            print_test_result("GET /api/expense-categories", False, 
-                            f"HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("GET /api/expense-categories", False, f"Exception: {str(e)}")
-
-def test_incomes_api():
-    """Test incomes endpoints as per review request"""
-    print("=== TESTING INCOMES API ===")
+    # Test missing required fields
+    invalid_tasks = [
+        ({}, "Empty payload"),
+        ({'description': 'Test'}, "Missing priority"),
+        ({'priority': 'urgente'}, "Missing description"),
+        ({'description': 'Test', 'priority': 'invalid'}, "Invalid priority")
+    ]
     
-    # Test 1: GET /api/incomes - Should return list of incomes
-    print("Testing GET /api/incomes...")
-    try:
-        response = requests.get(f"{BASE_URL}/incomes")
-        
-        if response.status_code == 200:
-            data = response.json()
-            if isinstance(data, list):
-                print_test_result("GET /api/incomes", True, 
-                                f"Returned {len(data)} incomes as array")
-                
-                # Check data structure if we have incomes
-                if len(data) > 0:
-                    income = data[0]
-                    expected_fields = ['id', 'date', 'amount', 'concept', 'account', 'notes', 'createdAt']
-                    missing_fields = [field for field in expected_fields if field not in income]
-                    if missing_fields:
-                        print(f"    Warning: Missing expected fields: {missing_fields}")
-                    else:
-                        print(f"    Sample income structure looks good")
-            else:
-                print_test_result("GET /api/incomes", False, 
-                                f"Expected array, got: {type(data)}")
-        else:
-            print_test_result("GET /api/incomes", False, 
-                            f"HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("GET /api/incomes", False, f"Exception: {str(e)}")
-
-    # Test 2: GET /api/incomes with date range filter
-    print("Testing GET /api/incomes with date range filter...")
-    try:
-        test_date = "2026-02-17"
-        response = requests.get(f"{BASE_URL}/incomes", 
-                               params={"startDate": test_date, "endDate": test_date})
-        
-        if response.status_code == 200:
-            data = response.json()
-            if isinstance(data, list):
-                print_test_result("GET /api/incomes with date filter", True, 
-                                f"Returned {len(data)} incomes for date range {test_date}")
-                # Verify all returned incomes are within date range
-                if data:
-                    out_of_range = [i for i in data if i.get('date') < test_date or i.get('date') > test_date]
-                    if out_of_range:
-                        print(f"    Warning: Found {len(out_of_range)} incomes outside date range")
-                    else:
-                        print(f"    Date filtering working correctly")
-            else:
-                print_test_result("GET /api/incomes with date filter", False, 
-                                f"Expected array, got: {type(data)}")
-        else:
-            print_test_result("GET /api/incomes with date filter", False, 
-                            f"HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("GET /api/incomes with date filter", False, f"Exception: {str(e)}")
-
-    # Test 3: GET /api/incomes with account filter
-    print("Testing GET /api/incomes with account filter...")
-    try:
-        response = requests.get(f"{BASE_URL}/incomes", params={"account": "GE"})
-        
-        if response.status_code == 200:
-            data = response.json()
-            if isinstance(data, list):
-                print_test_result("GET /api/incomes?account=GE", True, 
-                                f"Returned {len(data)} GE incomes")
-                # Verify all returned incomes are for GE account
-                if data:
-                    non_ge_incomes = [i for i in data if i.get('account') != 'GE']
-                    if non_ge_incomes:
-                        print(f"    Warning: Found {len(non_ge_incomes)} non-GE incomes in filtered results")
-                    else:
-                        print(f"    Account filtering working correctly")
-            else:
-                print_test_result("GET /api/incomes?account=GE", False, 
-                                f"Expected array, got: {type(data)}")
-        else:
-            print_test_result("GET /api/incomes?account=GE", False, 
-                            f"HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("GET /api/incomes?account=GE", False, f"Exception: {str(e)}")
-
-    # Test 4: POST /api/incomes - Create an income
-    print("Testing POST /api/incomes (create income)...")
-    created_income_id = None
-    try:
-        test_income = {
-            "date": "2026-02-17",
-            "amount": 50,
-            "concept": "Transferencia",
-            "account": "E&S",
-            "notes": "Test income creation"
-        }
-        
-        response = requests.post(f"{BASE_URL}/incomes", json=test_income)
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('success') and 'income' in data:
-                created_income_id = data['income'].get('id')
-                print_test_result("POST /api/incomes (create)", True, 
-                                f"Income created successfully with ID: {created_income_id}")
-                
-                # Verify the created income structure
-                income = data['income']
-                expected_fields = ['id', 'date', 'amount', 'concept', 'account', 'notes']
-                missing_fields = [field for field in expected_fields if field not in income]
-                if missing_fields:
-                    print(f"    Warning: Created income missing fields: {missing_fields}")
-                else:
-                    print(f"    Created income structure is complete")
-                    
-                # Verify field values
-                if income.get('amount') == "50.00" and income.get('concept') == "Transferencia":
-                    print(f"    Created income field values are correct")
-                else:
-                    print(f"    Warning: Field values don't match input")
-            else:
-                print_test_result("POST /api/incomes (create)", False, 
-                                f"Unexpected response structure: {data}")
-        else:
-            print_test_result("POST /api/incomes (create)", False, 
-                            f"HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("POST /api/incomes (create)", False, f"Exception: {str(e)}")
-
-    # Test 5: POST /api/incomes with invalid data
-    print("Testing POST /api/incomes with invalid data...")
-    try:
-        invalid_income = {
-            "date": "2026-02-17",
-            "amount": 25,
-            "concept": "Test",
-            "account": "INVALID"  # Invalid account
-        }
-        
-        response = requests.post(f"{BASE_URL}/incomes", json=invalid_income)
-        
-        if response.status_code == 400:
-            data = response.json()
-            if 'error' in data and 'account' in data['error'].lower():
-                print_test_result("POST /api/incomes (invalid account)", True, 
-                                f"Correctly rejected invalid account: {data.get('error')}")
-            else:
-                print_test_result("POST /api/incomes (invalid account)", False, 
-                                f"Unexpected error message: {data}")
-        else:
-            print_test_result("POST /api/incomes (invalid account)", False, 
-                            f"Expected 400, got HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("POST /api/incomes (invalid account)", False, f"Exception: {str(e)}")
-
-    # Test 6: DELETE /api/incomes/{id} - Delete the created income
-    if created_income_id:
-        print(f"Testing DELETE /api/incomes/{created_income_id}...")
+    all_passed = True
+    
+    for invalid_task, test_desc in invalid_tasks:
         try:
-            response = requests.delete(f"{BASE_URL}/incomes/{created_income_id}")
+            response = requests.post(f"{BASE_URL}/tasks", json=invalid_task)
+            
+            if response.status_code == 400:
+                print_test_result(f"Validation - {test_desc}", True, "Correctly rejected")
+            else:
+                print_test_result(f"Validation - {test_desc}", False, 
+                                f"Expected 400, got {response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            print_test_result(f"Validation - {test_desc}", False, f"Exception: {str(e)}")
+            all_passed = False
+    
+    return all_passed
+
+def test_complete_task(task_id):
+    """Test POST /api/tasks/complete - Mark task as complete"""
+    print("🧪 Testing POST /api/tasks/complete...")
+    
+    if not task_id:
+        print_test_result("POST /api/tasks/complete", False, "No task ID provided")
+        return False
+    
+    complete_data = {
+        'taskId': task_id,
+        'completionNotes': 'Revisión completada. Todos los frenos funcionan correctamente.',
+        **TEST_USER_DATA
+    }
+    
+    try:
+        response = requests.post(f"{BASE_URL}/tasks/complete", json=complete_data)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            if data.get('success'):
+                print_test_result("POST /api/tasks/complete", True, f"Task {task_id} marked as completed")
+                return True
+            else:
+                print_test_result("POST /api/tasks/complete", False, f"Success=false: {data}")
+                return False
+        else:
+            print_test_result("POST /api/tasks/complete", False, f"HTTP {response.status_code}: {response.text}")
+            return False
+            
+    except Exception as e:
+        print_test_result("POST /api/tasks/complete", False, f"Exception: {str(e)}")
+        return False
+
+def test_update_task(task_id):
+    """Test PUT /api/tasks/{id} - Update task"""
+    print("🧪 Testing PUT /api/tasks/{id}...")
+    
+    if not task_id:
+        print_test_result("PUT /api/tasks/{id}", False, "No task ID provided")
+        return False
+    
+    update_data = {
+        'description': 'Revisar sistema de frenos y neumáticos en todos los quads',
+        'price': '200.00',
+        'priority': 'importante',
+        'notes': 'Revisión ampliada incluyendo neumáticos',
+        **TEST_USER_DATA
+    }
+    
+    try:
+        response = requests.put(f"{BASE_URL}/tasks/{task_id}", json=update_data)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            if data.get('success') and 'task' in data:
+                task = data['task']
+                
+                # Verify updates
+                checks = [
+                    (task.get('description') == update_data['description'], "Description updated"),
+                    (task.get('price') == update_data['price'], "Price updated"),
+                    (task.get('priority') == update_data['priority'], "Priority updated"),
+                    (task.get('notes') == update_data['notes'], "Notes updated")
+                ]
+                
+                all_passed = all(check[0] for check in checks)
+                failed_checks = [check[1] for check in checks if not check[0]]
+                
+                print_test_result("PUT /api/tasks/{id}", all_passed, 
+                                f"Task {task_id} updated" + 
+                                (f" | Failed: {failed_checks}" if failed_checks else ""))
+                return all_passed
+            else:
+                print_test_result("PUT /api/tasks/{id}", False, f"Invalid response: {data}")
+                return False
+        else:
+            print_test_result("PUT /api/tasks/{id}", False, f"HTTP {response.status_code}: {response.text}")
+            return False
+            
+    except Exception as e:
+        print_test_result("PUT /api/tasks/{id}", False, f"Exception: {str(e)}")
+        return False
+
+def test_update_task_permissions():
+    """Test PUT /api/tasks/{id} permissions"""
+    print("🧪 Testing PUT /api/tasks/{id} permissions...")
+    
+    # First create a task with different user
+    other_user_task = {
+        'description': 'Tarea de otro usuario',
+        'priority': 'necesario',
+        'userId': 'other_user',
+        'username': 'OtherUser',
+        'userRole': 'user'
+    }
+    
+    try:
+        # Create task with other user
+        response = requests.post(f"{BASE_URL}/tasks", json=other_user_task)
+        if response.status_code != 200:
+            print_test_result("Permission test setup", False, "Failed to create test task")
+            return False
+        
+        task_id = response.json()['task']['id']
+        
+        # Try to update with different user (non-admin)
+        update_data = {
+            'description': 'Trying to update other user task',
+            'userId': 'different_user',
+            'username': 'DifferentUser',
+            'userRole': 'user'
+        }
+        
+        response = requests.put(f"{BASE_URL}/tasks/{task_id}", json=update_data)
+        
+        if response.status_code == 403:
+            print_test_result("Permission check - non-admin/non-creator", True, "Correctly denied access")
+            return True
+        else:
+            print_test_result("Permission check - non-admin/non-creator", False, 
+                            f"Expected 403, got {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print_test_result("Permission test", False, f"Exception: {str(e)}")
+        return False
+
+def test_delete_task():
+    """Test DELETE /api/tasks/{id} - Delete task"""
+    print("🧪 Testing DELETE /api/tasks/{id}...")
+    
+    # Create a test task first
+    test_task = {
+        'description': 'Tarea para eliminar',
+        'priority': 'sugerencia',
+        **TEST_USER_DATA
+    }
+    
+    try:
+        # Create task
+        response = requests.post(f"{BASE_URL}/tasks", json=test_task)
+        if response.status_code != 200:
+            print_test_result("DELETE setup", False, "Failed to create test task")
+            return False
+        
+        task_id = response.json()['task']['id']
+        
+        # Delete task
+        params = {
+            'userId': TEST_USER_DATA['userId'],
+            'userRole': TEST_USER_DATA['userRole'],
+            'userName': TEST_USER_DATA['username']
+        }
+        
+        response = requests.delete(f"{BASE_URL}/tasks/{task_id}", params=params)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            if data.get('success'):
+                print_test_result("DELETE /api/tasks/{id}", True, f"Task {task_id} deleted successfully")
+                return True
+            else:
+                print_test_result("DELETE /api/tasks/{id}", False, f"Success=false: {data}")
+                return False
+        else:
+            print_test_result("DELETE /api/tasks/{id}", False, f"HTTP {response.status_code}: {response.text}")
+            return False
+            
+    except Exception as e:
+        print_test_result("DELETE /api/tasks/{id}", False, f"Exception: {str(e)}")
+        return False
+
+def test_delete_task_permissions():
+    """Test DELETE /api/tasks/{id} permissions"""
+    print("🧪 Testing DELETE /api/tasks/{id} permissions...")
+    
+    # Create a task with specific user
+    test_task = {
+        'description': 'Tarea de usuario específico',
+        'priority': 'necesario',
+        'userId': 'specific_user',
+        'username': 'SpecificUser',
+        'userRole': 'user'
+    }
+    
+    try:
+        # Create task
+        response = requests.post(f"{BASE_URL}/tasks", json=test_task)
+        if response.status_code != 200:
+            print_test_result("DELETE permission setup", False, "Failed to create test task")
+            return False
+        
+        task_id = response.json()['task']['id']
+        
+        # Try to delete with different user (non-admin)
+        params = {
+            'userId': 'different_user',
+            'userRole': 'user',
+            'userName': 'DifferentUser'
+        }
+        
+        response = requests.delete(f"{BASE_URL}/tasks/{task_id}", params=params)
+        
+        if response.status_code == 403:
+            print_test_result("DELETE permission check", True, "Correctly denied access")
+            
+            # Cleanup - delete with correct user
+            params['userId'] = 'specific_user'
+            requests.delete(f"{BASE_URL}/tasks/{task_id}", params=params)
+            
+            return True
+        elif response.status_code == 404:
+            print_test_result("DELETE permission check", False, "Task not found - possible issue")
+            return False
+        else:
+            print_test_result("DELETE permission check", False, 
+                            f"Expected 403, got {response.status_code}: {response.text}")
+            return False
+            
+    except Exception as e:
+        print_test_result("DELETE permission test", False, f"Exception: {str(e)}")
+        return False
+
+def test_task_priority_validation():
+    """Test that only valid priorities are accepted"""
+    print("🧪 Testing priority validation...")
+    
+    valid_priorities = ['urgente', 'importante', 'necesario', 'sugerencia']
+    invalid_priorities = ['high', 'low', 'medium', 'critical', 'invalid']
+    
+    all_passed = True
+    
+    # Test valid priorities
+    for priority in valid_priorities:
+        test_task = {
+            'description': f'Test task with {priority} priority',
+            'priority': priority,
+            **TEST_USER_DATA
+        }
+        
+        try:
+            response = requests.post(f"{BASE_URL}/tasks", json=test_task)
             
             if response.status_code == 200:
-                data = response.json()
-                if data.get('success'):
-                    print_test_result("DELETE /api/incomes/{id}", True, 
-                                    f"Income {created_income_id} deleted successfully")
-                else:
-                    print_test_result("DELETE /api/incomes/{id}", False, 
-                                    f"Unexpected response: {data}")
+                print_test_result(f"Valid priority '{priority}'", True, "Accepted")
+                # Cleanup - delete the created task
+                if response.json().get('task', {}).get('id'):
+                    task_id = response.json()['task']['id']
+                    params = {'userId': TEST_USER_DATA['userId'], 'userRole': TEST_USER_DATA['userRole'], 'userName': TEST_USER_DATA['username']}
+                    requests.delete(f"{BASE_URL}/tasks/{task_id}", params=params)
             else:
-                print_test_result("DELETE /api/incomes/{id}", False, 
-                                f"HTTP {response.status_code}: {response.text}")
+                print_test_result(f"Valid priority '{priority}'", True, f"HTTP {response.status_code}")
+                all_passed = False
+                
         except Exception as e:
-            print_test_result("DELETE /api/incomes/{id}", False, f"Exception: {str(e)}")
-    else:
-        print("Skipping DELETE test - no income was created")
-
-    # Test 7: DELETE /api/incomes/{nonexistent_id}
-    print("Testing DELETE /api/incomes with nonexistent ID...")
-    try:
-        fake_id = "nonexistent-id-12345"
-        response = requests.delete(f"{BASE_URL}/incomes/{fake_id}")
-        
-        if response.status_code == 404:
-            data = response.json()
-            if 'error' in data and 'not found' in data['error'].lower():
-                print_test_result("DELETE /api/incomes (nonexistent)", True, 
-                                f"Correctly returned 404 for nonexistent income: {data.get('error')}")
-            else:
-                print_test_result("DELETE /api/incomes (nonexistent)", False, 
-                                f"Unexpected error message: {data}")
-        else:
-            print_test_result("DELETE /api/incomes (nonexistent)", False, 
-                            f"Expected 404, got HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("DELETE /api/incomes (nonexistent)", False, f"Exception: {str(e)}")
-
-def test_income_categories_api():
-    """Test income categories endpoints as per review request"""
-    print("=== TESTING INCOME CATEGORIES API ===")
+            print_test_result(f"Valid priority '{priority}'", False, f"Exception: {str(e)}")
+            all_passed = False
     
-    # Test 1: GET /api/income-categories - Should return income categories
-    print("Testing GET /api/income-categories...")
-    try:
-        response = requests.get(f"{BASE_URL}/income-categories")
-        
-        if response.status_code == 200:
-            data = response.json()
-            if isinstance(data, list):
-                print_test_result("GET /api/income-categories", True, 
-                                f"Returned {len(data)} income categories as array")
-                
-                # Check data structure if we have categories
-                if len(data) > 0:
-                    category = data[0]
-                    expected_fields = ['id', 'name', 'account', 'createdAt']
-                    missing_fields = [field for field in expected_fields if field not in category]
-                    if missing_fields:
-                        print(f"    Warning: Missing expected fields: {missing_fields}")
-                    else:
-                        print(f"    Sample category structure looks good")
-                    
-                    # Check if we have default categories (Transferencia, Pago pendiente, Otros)
-                    category_names = [c.get('name') for c in data]
-                    expected_categories = ['Transferencia', 'Pago pendiente', 'Otros']
-                    found_categories = [cat for cat in expected_categories if cat in category_names]
-                    print(f"    Found default income categories: {found_categories}")
-                    
-                    # Check accounts
-                    accounts = [c.get('account') for c in data]
-                    expected_accounts = ['GE', 'E&S']
-                    found_accounts = list(set(accounts))
-                    print(f"    Found accounts: {found_accounts}")
-            else:
-                print_test_result("GET /api/income-categories", False, 
-                                f"Expected array, got: {type(data)}")
-        else:
-            print_test_result("GET /api/income-categories", False, 
-                            f"HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("GET /api/income-categories", False, f"Exception: {str(e)}")
-
-    # Test 2: POST /api/income-categories - Create category
-    print("Testing POST /api/income-categories...")
-    created_category_id = None
-    try:
-        test_category = {
-            "name": "Test Category",
-            "account": "GE"
+    # Test invalid priorities
+    for priority in invalid_priorities:
+        test_task = {
+            'description': f'Test task with {priority} priority',
+            'priority': priority,
+            **TEST_USER_DATA
         }
         
-        response = requests.post(f"{BASE_URL}/income-categories", json=test_category)
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('success') and 'category' in data:
-                created_category_id = data['category'].get('id')
-                print_test_result("POST /api/income-categories (create)", True, 
-                                f"Category created successfully with ID: {created_category_id}")
-                
-                # Verify the created category structure
-                category = data['category']
-                if category.get('name') == "Test Category" and category.get('account') == "GE":
-                    print(f"    Created category field values are correct")
-                else:
-                    print(f"    Warning: Field values don't match input")
-            else:
-                print_test_result("POST /api/income-categories (create)", False, 
-                                f"Unexpected response structure: {data}")
-        else:
-            print_test_result("POST /api/income-categories (create)", False, 
-                            f"HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("POST /api/income-categories (create)", False, f"Exception: {str(e)}")
-
-    # Test 3: POST /api/income-categories with invalid account
-    print("Testing POST /api/income-categories with invalid account...")
-    try:
-        invalid_category = {
-            "name": "Invalid Category",
-            "account": "INVALID"
-        }
-        
-        response = requests.post(f"{BASE_URL}/income-categories", json=invalid_category)
-        
-        if response.status_code == 400:
-            data = response.json()
-            if 'error' in data and 'account' in data['error'].lower():
-                print_test_result("POST /api/income-categories (invalid account)", True, 
-                                f"Correctly rejected invalid account: {data.get('error')}")
-            else:
-                print_test_result("POST /api/income-categories (invalid account)", False, 
-                                f"Unexpected error message: {data}")
-        else:
-            print_test_result("POST /api/income-categories (invalid account)", False, 
-                            f"Expected 400, got HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("POST /api/income-categories (invalid account)", False, f"Exception: {str(e)}")
-
-    # Test 4: DELETE /api/income-categories/{id} - Delete the created category
-    if created_category_id:
-        print(f"Testing DELETE /api/income-categories/{created_category_id}...")
         try:
-            response = requests.delete(f"{BASE_URL}/income-categories/{created_category_id}")
+            response = requests.post(f"{BASE_URL}/tasks", json=test_task)
             
-            if response.status_code == 200:
-                data = response.json()
-                if data.get('success'):
-                    print_test_result("DELETE /api/income-categories/{id}", True, 
-                                    f"Category {created_category_id} deleted successfully")
-                else:
-                    print_test_result("DELETE /api/income-categories/{id}", False, 
-                                    f"Unexpected response: {data}")
+            if response.status_code == 400:
+                print_test_result(f"Invalid priority '{priority}'", True, "Correctly rejected")
             else:
-                print_test_result("DELETE /api/income-categories/{id}", False, 
-                                f"HTTP {response.status_code}: {response.text}")
-        except Exception as e:
-            print_test_result("DELETE /api/income-categories/{id}", False, f"Exception: {str(e)}")
-    else:
-        print("Skipping DELETE test - no category was created")
-
-    # Test 5: DELETE /api/income-categories/{nonexistent_id}
-    print("Testing DELETE /api/income-categories with nonexistent ID...")
-    try:
-        fake_id = "nonexistent-category-id"
-        response = requests.delete(f"{BASE_URL}/income-categories/{fake_id}")
-        
-        if response.status_code == 404:
-            data = response.json()
-            if 'error' in data and 'not found' in data['error'].lower():
-                print_test_result("DELETE /api/income-categories (nonexistent)", True, 
-                                f"Correctly returned 404 for nonexistent category: {data.get('error')}")
-            else:
-                print_test_result("DELETE /api/income-categories (nonexistent)", False, 
-                                f"Unexpected error message: {data}")
-        else:
-            print_test_result("DELETE /api/income-categories (nonexistent)", False, 
-                            f"Expected 404, got HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("DELETE /api/income-categories (nonexistent)", False, f"Exception: {str(e)}")
-
-def test_additional_endpoints():
-    """Test other important endpoints mentioned in test_result.md"""
-    print("=== TESTING ADDITIONAL ENDPOINTS ===")
-    
-    # Test dashboard endpoint
-    print("Testing GET /api/dashboard...")
-    try:
-        response = requests.get(f"{BASE_URL}/dashboard")
-        
-        if response.status_code == 200:
-            data = response.json()
-            if isinstance(data, dict) and 'stats' in data:
-                print_test_result("GET /api/dashboard", True, 
-                                f"Dashboard returned stats structure")
+                print_test_result(f"Invalid priority '{priority}'", False, 
+                                f"Expected 400, got {response.status_code}")
+                all_passed = False
                 
-                # Check stats structure
-                stats = data['stats']
-                expected_stats = ['totalGross', 'netBase', 'vatAmount', 'quadCount', 'buggyCount']
-                missing_stats = [stat for stat in expected_stats if stat not in stats]
-                if missing_stats:
-                    print(f"    Warning: Missing expected stats: {missing_stats}")
-                else:
-                    print(f"    Dashboard stats structure looks complete")
-            else:
-                print_test_result("GET /api/dashboard", False, 
-                                f"Expected dict with 'stats', got: {type(data)}")
-        else:
-            print_test_result("GET /api/dashboard", False, 
-                            f"HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("GET /api/dashboard", False, f"Exception: {str(e)}")
+        except Exception as e:
+            print_test_result(f"Invalid priority '{priority}'", False, f"Exception: {str(e)}")
+            all_passed = False
+    
+    return all_passed
 
-    # Test products endpoint
-    print("Testing GET /api/products...")
+def verify_google_sheets_integration():
+    """Verify that tasks are actually stored in Google Sheets"""
+    print("🧪 Testing Google Sheets integration...")
+    
     try:
-        response = requests.get(f"{BASE_URL}/products")
+        # Create a unique task
+        unique_desc = f"Integration test task {datetime.now().isoformat()}"
+        test_task = {
+            'description': unique_desc,
+            'priority': 'importante',
+            'price': '99.99',
+            **TEST_USER_DATA
+        }
         
-        if response.status_code == 200:
-            data = response.json()
-            if isinstance(data, list):
-                print_test_result("GET /api/products", True, 
-                                f"Returned {len(data)} products")
-            else:
-                print_test_result("GET /api/products", False, 
-                                f"Expected array, got: {type(data)}")
-        else:
-            print_test_result("GET /api/products", False, 
-                            f"HTTP {response.status_code}: {response.text}")
-    except Exception as e:
-        print_test_result("GET /api/products", False, f"Exception: {str(e)}")
-
-    # Test timeslots endpoint
-    print("Testing GET /api/timeslots...")
-    try:
-        response = requests.get(f"{BASE_URL}/timeslots")
+        # Create task
+        response = requests.post(f"{BASE_URL}/tasks", json=test_task)
+        if response.status_code != 200:
+            print_test_result("Sheets integration - create", False, "Failed to create task")
+            return False
         
-        if response.status_code == 200:
-            data = response.json()
-            if isinstance(data, list):
-                print_test_result("GET /api/timeslots", True, 
-                                f"Returned {len(data)} time slots")
-            else:
-                print_test_result("GET /api/timeslots", False, 
-                                f"Expected array, got: {type(data)}")
+        task_id = response.json()['task']['id']
+        
+        # Retrieve all tasks and verify our task is there
+        response = requests.get(f"{BASE_URL}/tasks")
+        if response.status_code != 200:
+            print_test_result("Sheets integration - retrieve", False, "Failed to get tasks")
+            return False
+        
+        tasks_data = response.json()
+        all_tasks = tasks_data.get('pending', []) + tasks_data.get('completed', [])
+        
+        # Find our task
+        found_task = next((t for t in all_tasks if t.get('description') == unique_desc), None)
+        
+        if found_task:
+            print_test_result("Google Sheets integration", True, 
+                            f"Task persisted and retrieved correctly (ID: {task_id})")
+            
+            # Cleanup
+            params = {'userId': TEST_USER_DATA['userId'], 'userRole': TEST_USER_DATA['userRole'], 'userName': TEST_USER_DATA['username']}
+            requests.delete(f"{BASE_URL}/tasks/{task_id}", params=params)
+            
+            return True
         else:
-            print_test_result("GET /api/timeslots", False, 
-                            f"HTTP {response.status_code}: {response.text}")
+            print_test_result("Google Sheets integration", False, 
+                            "Task not found in retrieved list")
+            return False
+            
     except Exception as e:
-        print_test_result("GET /api/timeslots", False, f"Exception: {str(e)}")
+        print_test_result("Google Sheets integration", False, f"Exception: {str(e)}")
+        return False
 
-def main():
-    """Run all backend API tests"""
-    print("🚀 Starting Backend API Tests - Including Income Functionality")
+def run_comprehensive_tasks_api_test():
+    """Run all Tasks API tests"""
+    print("=" * 70)
+    print("🚀 COMPREHENSIVE TASKS API TESTING STARTED")
     print(f"Base URL: {BASE_URL}")
-    print("=" * 60)
+    print(f"Timestamp: {datetime.now().isoformat()}")
+    print("=" * 70)
+    print()
     
-    # Test authentication first
-    admin_user, charly_user = test_auth_login()
+    test_results = []
+    created_task_id = None
     
-    # Test departures API
-    test_departures_api()
+    # Test 1: GET /api/tasks
+    success, initial_data = test_get_tasks()
+    test_results.append(("GET /api/tasks", success))
     
-    # Test expenses API
-    test_expenses_api()
+    # Test 2: POST /api/tasks - Create new task
+    success, task_id = test_create_task()
+    test_results.append(("POST /api/tasks", success))
+    if success:
+        created_task_id = task_id
     
-    # Test expense categories API
-    test_expense_categories_api()
+    # Test 3: POST /api/tasks validation
+    success = test_create_task_validation()
+    test_results.append(("POST /api/tasks validation", success))
     
-    # Test incomes API (NEW)
-    test_incomes_api()
+    # Test 4: Priority validation
+    success = test_task_priority_validation()
+    test_results.append(("Priority validation", success))
     
-    # Test income categories API (NEW)
-    test_income_categories_api()
+    # Test 5: PUT /api/tasks/{id} - Update task
+    success = test_update_task(created_task_id)
+    test_results.append(("PUT /api/tasks/{id}", success))
     
-    # Test additional endpoints
-    test_additional_endpoints()
+    # Test 6: PUT /api/tasks/{id} permissions
+    success = test_update_task_permissions()
+    test_results.append(("PUT permissions", success))
     
-    print("=" * 60)
-    print("✅ Backend API Testing Complete - All Income functionality tested")
+    # Test 7: POST /api/tasks/complete
+    success = test_complete_task(created_task_id)
+    test_results.append(("POST /api/tasks/complete", success))
+    
+    # Test 8: DELETE /api/tasks/{id}
+    success = test_delete_task()
+    test_results.append(("DELETE /api/tasks/{id}", success))
+    
+    # Test 9: DELETE permissions
+    success = test_delete_task_permissions()
+    test_results.append(("DELETE permissions", success))
+    
+    # Test 10: Google Sheets integration
+    success = verify_google_sheets_integration()
+    test_results.append(("Google Sheets integration", success))
+    
+    # Final verification - GET tasks again to verify structure
+    success, final_data = test_get_tasks()
+    test_results.append(("Final verification", success))
+    
+    # Summary
+    print("=" * 70)
+    print("📊 TASKS API TEST RESULTS SUMMARY")
+    print("=" * 70)
+    
+    passed = 0
+    total = len(test_results)
+    
+    for test_name, success in test_results:
+        status = "✅ PASS" if success else "❌ FAIL"
+        print(f"{status} - {test_name}")
+        if success:
+            passed += 1
+    
+    print()
+    print(f"📈 OVERALL RESULTS: {passed}/{total} tests passed ({(passed/total)*100:.1f}%)")
+    
+    if passed == total:
+        print("🎉 ALL TASKS API ENDPOINTS ARE WORKING CORRECTLY!")
+    else:
+        print("⚠️  SOME TESTS FAILED - INVESTIGATION REQUIRED")
+    
+    print("=" * 70)
+    
+    return passed == total
 
 if __name__ == "__main__":
-    main()
+    try:
+        success = run_comprehensive_tasks_api_test()
+        sys.exit(0 if success else 1)
+    except KeyboardInterrupt:
+        print("\n❌ Tests interrupted by user")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n❌ Unexpected error: {str(e)}")
+        sys.exit(1)

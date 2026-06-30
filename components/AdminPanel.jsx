@@ -9,11 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit2, Save, X, Check, Trash2, Users, Receipt, Car, Truck, Wallet, HardDrive } from 'lucide-react';
+import { Plus, Edit2, Save, X, Check, Trash2, Users, Receipt, Car, Truck, Wallet, HardDrive, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import UserManagement from '@/components/UserManagement';
 import BackupManager from '@/components/BackupManager';
+import ActivityLog from '@/components/admin/ActivityLog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -497,6 +498,10 @@ export default function AdminPanel() {
               <TabsTrigger value="users" className="gap-2">
                 <Users className="h-4 w-4" />
                 {t('users')}
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="gap-2">
+                <Bell className="h-4 w-4" />
+                {language === 'es' ? 'Actividad' : 'Activity'}
               </TabsTrigger>
               <TabsTrigger value="backup" className="gap-2">
                 <HardDrive className="h-4 w-4" />
@@ -1203,6 +1208,11 @@ export default function AdminPanel() {
             {/* Users Tab */}
             <TabsContent value="users" className="space-y-4">
               <UserManagement />
+            </TabsContent>
+
+            {/* Activity Log Tab */}
+            <TabsContent value="activity" className="space-y-4">
+              <ActivityLog />
             </TabsContent>
 
             {/* Backup Tab */}

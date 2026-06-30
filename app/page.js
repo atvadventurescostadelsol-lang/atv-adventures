@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Plus, BarChart3, Settings, LogOut, Globe, User, Key, CreditCard, Receipt, Wallet } from 'lucide-react';
+import { Calendar, Plus, BarChart3, Settings, LogOut, Globe, User, Key, CreditCard, Receipt, Wallet, ClipboardList } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
 import Dashboard from '@/components/Dashboard';
@@ -16,6 +16,7 @@ import LoginForm from '@/components/LoginForm';
 import PendingPayments from '@/components/PendingPayments';
 import Expenses from '@/components/Expenses';
 import Incomes from '@/components/Incomes';
+import Tasks from '@/components/Tasks';
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import {
@@ -284,10 +285,10 @@ function AppContent() {
           {/* Tabs are conditionally rendered based on user role */}
           <TabsList className={`grid w-full ${
             isReadOnly() 
-              ? 'grid-cols-2' 
+              ? 'grid-cols-3' 
               : canAccessAdmin() 
-                ? 'grid-cols-8' 
-                : 'grid-cols-7'
+                ? 'grid-cols-9' 
+                : 'grid-cols-8'
           } lg:w-auto lg:inline-grid`}>
             <TabsTrigger value="dashboard" className="gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -323,6 +324,10 @@ function AppContent() {
                 <span className="hidden sm:inline">{language === 'es' ? 'Ingresos' : 'Incomes'}</span>
               </TabsTrigger>
             )}
+            <TabsTrigger value="tasks" className="gap-2">
+              <ClipboardList className="h-4 w-4" />
+              <span className="hidden sm:inline">{language === 'es' ? 'Tareas' : 'Tasks'}</span>
+            </TabsTrigger>
             <TabsTrigger value="reports" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">{t('reports')}</span>
@@ -368,6 +373,10 @@ function AppContent() {
               <Incomes />
             </TabsContent>
           )}
+
+          <TabsContent value="tasks">
+            <Tasks />
+          </TabsContent>
 
           <TabsContent value="reports">
             <Reports />

@@ -46,6 +46,110 @@ async function addAuditLog(action, entityType, entityId, changes, userId = 'syst
   }
 }
 
+// ==================== ACTIVITY TRACKING ====================
+
+// Initialize ActivityLog sheet if it doesn't exist
+async function ensureActivityLogSheet() {
+  try {
+    const sheets = await getSheetsClient();
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+    const sheetExists = spreadsheet.data.sheets?.some(s => s.properties?.title === 'ActivityLog');
+    
+    if (!sheetExists) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        resource: {
+          requests: [{
+            addSheet: {
+              properties: { title: 'ActivityLog' }
+            }
+          }]
+        }
+      });
+      // Add headers
+      await updateSheetData(SPREADSHEET_ID, 'ActivityLog!A1:H1', [[
+        'id', 'username', 'role', 'loginTime', 'lastActivity', 'actions', 'isNew', 'sessionId'
+      ]]);
+    }
+  } catch (error) {
+    console.error('Error ensuring ActivityLog sheet:', error);
+  }
+}
+
+// Add activity log entry (compact format)
+async function logUserActivity(username, role, action, details = '') {
+  // Don't track admin
+  if (role === 'admin') return;
+  
+  try {
+    await ensureActivityLogSheet();
+    
+    const now = new Date().toISOString();
+    const actionStr = `${action}${details ? ':' + details : ''}`;
+    
+    // Get existing sessions for this user today
+    const data = await getSheetData(SPREADSHEET_ID, 'ActivityLog!A:H');
+    const today = now.split('T')[0];
+    
+    // Find active session for this user (within last 30 minutes)
+    let sessionFound = false;
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (row[1] === username && row[4] > thirtyMinutesAgo) {
+        // Update existing session
+        const existingActions = row[5] || '';
+        const newActions = existingActions ? `${existingActions}|${actionStr}` : actionStr;
+        await updateSheetData(SPREADSHEET_ID, `ActivityLog!E${i + 1}:G${i + 1}`, [[now, newActions, 'Y']]);
+        sessionFound = true;
+        break;
+      }
+    }
+    
+    if (!sessionFound) {
+      // Create new session
+      const sessionId = uuidv4().substring(0, 8);
+      await safeAppendSheetData(SPREADSHEET_ID, 'ActivityLog', [[
+        uuidv4(), username, role, now, now, actionStr, 'Y', sessionId
+      ]]);
+    }
+    
+    // Cleanup old entries (older than 15 days)
+    await cleanupOldActivityLogs();
+    
+  } catch (error) {
+    console.error('Error logging activity:', error);
+  }
+}
+
+// Cleanup logs older than 15 days
+async function cleanupOldActivityLogs() {
+  try {
+    const data = await getSheetData(SPREADSHEET_ID, 'ActivityLog!A:H');
+    if (data.length <= 1) return;
+    
+    const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
+    const headers = data[0];
+    const validRows = data.slice(1).filter(row => row[3] > fifteenDaysAgo);
+    
+    if (validRows.length < data.length - 1) {
+      // Need to clean up
+      const sheets = await getSheetsClient();
+      await sheets.spreadsheets.values.clear({
+        spreadsheetId: SPREADSHEET_ID,
+        range: 'ActivityLog!A2:H'
+      });
+      
+      if (validRows.length > 0) {
+        await updateSheetData(SPREADSHEET_ID, `ActivityLog!A2:H${validRows.length + 1}`, validRows);
+      }
+    }
+  } catch (error) {
+    console.error('Error cleaning up activity logs:', error);
+  }
+}
+
 // ==================== BACKUP HELPERS ====================
 
 // Create backup of all sheets (returns data for download)
@@ -189,6 +293,56 @@ function calculatePayoutDate(salesChannel, date) {
 }
 
 // ==================== EXPENSES HELPERS ====================
+
+// Ensure CierreCaja sheet exists
+async function ensureCierreCajaSheet() {
+  try {
+    const { getSheetsClient } = require('@/lib/google-sheets');
+    const sheets = await getSheetsClient();
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+    const sheetExists = spreadsheet.data.sheets?.some(s => s.properties?.title === 'CierreCaja');
+    if (!sheetExists) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        requestBody: { requests: [{ addSheet: { properties: { title: 'CierreCaja' } } }] }
+      });
+      await updateSheetData(SPREADSHEET_ID, 'CierreCaja!A1:I1', [
+        ['id', 'fecha', 'geEfectivo', 'geBanco', 'esEfectivo', 'esBanco', 'nota', 'usuario', 'createdAt']
+      ]);
+    }
+  } catch (error) {
+    console.error('Error ensuring CierreCaja sheet:', error);
+  }
+}
+
+// Ensure Tasks sheet exists
+async function ensureTasksSheet() {
+  try {
+    const sheets = await getSheetsClient();
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+    const sheetExists = spreadsheet.data.sheets?.some(s => s.properties?.title === 'Tasks');
+    
+    if (!sheetExists) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        resource: {
+          requests: [{
+            addSheet: {
+              properties: { title: 'Tasks' }
+            }
+          }]
+        }
+      });
+      // Add headers
+      await updateSheetData(SPREADSHEET_ID, 'Tasks!A1:N1', [[
+        'id', 'description', 'price', 'priority', 'notes', 'createdBy', 'createdAt',
+        'status', 'completedBy', 'completedAt', 'completionNotes', 'createdByRole', 'createdByUsername', 'completedByUsername'
+      ]]);
+    }
+  } catch (error) {
+    console.error('Error ensuring Tasks sheet:', error);
+  }
+}
 
 // Ensure Expenses sheet exists
 async function ensureExpensesSheet() {
@@ -456,7 +610,7 @@ async function createIncome(body) {
   await ensureIncomesSheet();
   
   try {
-    const { date, amount, concept, account, notes = '', paymentMethod = 'efectivo', createdBy = 'Sistema' } = body;
+    const { date, amount, concept, account, notes = '', paymentMethod = 'efectivo', createdBy = 'Sistema', userRole = 'user' } = body;
     
     if (!date || amount === undefined || !concept || !account) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -489,6 +643,9 @@ async function createIncome(body) {
     await safeAppendSheetData(SPREADSHEET_ID, 'Incomes', [incomeRow]);
     
     await addAuditLog('CREATE', 'income', id, { date, amount, concept, account, paymentMethod }, createdBy, createdBy);
+    
+    // Log activity
+    await logUserActivity(createdBy, userRole, '+INGRESO', `€${parseFloat(amount).toFixed(2)} ${concept} (${account})`);
     
     return NextResponse.json({
       success: true,
@@ -751,6 +908,9 @@ async function handleLogin(body) {
       const now = new Date().toISOString();
       await updateSheetData(SPREADSHEET_ID, `Users!E${userIndex + 2}`, [[now]]);
     }
+    
+    // Log activity (except for admin)
+    await logUserActivity(user.username, user.role, 'LOGIN', '');
     
     return NextResponse.json({
       success: true,
@@ -1044,7 +1204,7 @@ async function handleCreateExpense(body) {
   try {
     await ensureExpensesSheet();
     
-    const { date, amount, concept, account, notes, createdBy = 'Sistema', paymentMethod = 'efectivo' } = body;
+    const { date, amount, concept, account, notes, createdBy = 'Sistema', paymentMethod = 'efectivo', userRole = 'user' } = body;
     
     if (!date || !amount || !concept || !account) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
@@ -1077,6 +1237,9 @@ async function handleCreateExpense(body) {
     await safeAppendSheetData(SPREADSHEET_ID, 'Expenses', [expenseRow]);
     
     await addAuditLog('CREATE', 'Expense', id, { amount, concept, account, paymentMethod }, createdBy, createdBy);
+    
+    // Log activity
+    await logUserActivity(createdBy, userRole, '+GASTO', `€${parseFloat(amount).toFixed(2)} ${concept} (${account})`);
     
     return NextResponse.json({
       success: true,
@@ -1296,6 +1459,127 @@ async function handleGet(request, path) {
         success: true, 
         message: 'TimeSlots headers fixed'
       });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
+  // ==================== ACTIVITY LOG ENDPOINTS ====================
+  
+  // Get activity log (admin only)
+  if (path === 'activity-log') {
+    try {
+      await ensureActivityLogSheet();
+      const data = await getSheetData(SPREADSHEET_ID, 'ActivityLog!A:H');
+      
+      if (data.length <= 1) {
+        return NextResponse.json({ 
+          sessions: [], 
+          newCount: 0,
+          totalCount: 0
+        });
+      }
+      
+      const sessions = data.slice(1)
+        .filter(row => row && row[0])
+        .map(row => ({
+          id: row[0],
+          username: row[1],
+          role: row[2],
+          loginTime: row[3],
+          lastActivity: row[4],
+          actions: row[5] || '',
+          isNew: row[6] === 'Y',
+          sessionId: row[7]
+        }))
+        .sort((a, b) => new Date(b.loginTime) - new Date(a.loginTime));
+      
+      const newCount = sessions.filter(s => s.isNew).length;
+      
+      return NextResponse.json({ 
+        sessions, 
+        newCount,
+        totalCount: sessions.length
+      });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+  
+  // Mark activity log as read (admin only)
+  if (path === 'activity-log/mark-read') {
+    try {
+      const data = await getSheetData(SPREADSHEET_ID, 'ActivityLog!A:H');
+      
+      if (data.length <= 1) {
+        return NextResponse.json({ success: true, marked: 0 });
+      }
+      
+      // Update all rows to mark as read (isNew = 'N')
+      const updates = [];
+      for (let i = 1; i < data.length; i++) {
+        if (data[i] && data[i][6] === 'Y') {
+          updates.push({
+            range: `ActivityLog!G${i + 1}`,
+            values: [['N']]
+          });
+        }
+      }
+      
+      if (updates.length > 0) {
+        const sheets = await getSheetsClient();
+        await sheets.spreadsheets.values.batchUpdate({
+          spreadsheetId: SPREADSHEET_ID,
+          resource: {
+            valueInputOption: 'RAW',
+            data: updates
+          }
+        });
+      }
+      
+      return NextResponse.json({ success: true, marked: updates.length });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
+  // ==================== TASKS ENDPOINTS ====================
+  
+  // Get all tasks
+  if (path === 'tasks') {
+    try {
+      await ensureTasksSheet();
+      const data = await getSheetData(SPREADSHEET_ID, 'Tasks!A:N');
+      
+      if (data.length <= 1) {
+        return NextResponse.json([]);
+      }
+      
+      const tasks = parseSheetToObjects(data);
+      
+      // Filter out empty rows
+      const validTasks = tasks.filter(t => t.id && t.id.trim() !== '');
+      
+      // Sort: both pending and completed by priority (urgente > importante > necesario > sugerencia)
+      const priorityOrder = { 'urgente': 0, 'importante': 1, 'necesario': 2, 'sugerencia': 3 };
+      
+      const pending = validTasks
+        .filter(t => t.status !== 'completed')
+        .sort((a, b) => {
+          const orderA = priorityOrder[a.priority] !== undefined ? priorityOrder[a.priority] : 4;
+          const orderB = priorityOrder[b.priority] !== undefined ? priorityOrder[b.priority] : 4;
+          return orderA - orderB;
+        });
+      
+      const completed = validTasks
+        .filter(t => t.status === 'completed')
+        .sort((a, b) => {
+          const orderA = priorityOrder[a.priority] !== undefined ? priorityOrder[a.priority] : 4;
+          const orderB = priorityOrder[b.priority] !== undefined ? priorityOrder[b.priority] : 4;
+          return orderA - orderB;
+        });
+      
+      return NextResponse.json({ pending, completed });
     } catch (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
@@ -1693,12 +1977,44 @@ async function handleGet(request, path) {
     }
   }
 
+  // ==================== CIERRE DE CAJA ====================
+  if (path === 'cierre-caja') {
+    try {
+      await ensureCierreCajaSheet();
+      const data = await getSheetData(SPREADSHEET_ID, 'CierreCaja!A:J');
+      if (!data || data.length <= 1) return NextResponse.json([]);
+      const headers = data[0];
+      const rows = data.slice(1).map(row => {
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = row[i] || '');
+        return obj;
+      });
+      return NextResponse.json(rows.reverse()); // más reciente primero
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   return NextResponse.json({ message: 'ATV Operations API' });
 }
 
 // POST handlers
 async function handlePost(request, path) {
   const body = await request.json();
+
+  // ==================== ACTIVITY TRACKING ====================
+  
+  // Track user action (for frontend to report views/reports)
+  if (path === 'track-action') {
+    const { username, role, action, details } = body;
+    
+    if (!username || !action) {
+      return NextResponse.json({ error: 'Missing username or action' }, { status: 400 });
+    }
+    
+    await logUserActivity(username, role || 'user', action, details || '');
+    return NextResponse.json({ success: true });
+  }
 
   // ==================== BACKUP ENDPOINTS ====================
   
@@ -1729,6 +2045,124 @@ async function handlePost(request, path) {
   // Auth: Login
   if (path === 'auth/login') {
     return handleLogin(body);
+  }
+
+  // ==================== CIERRE DE CAJA (POST) ====================
+  if (path === 'cierre-caja') {
+    try {
+      await ensureCierreCajaSheet();
+      const { fecha, geEfectivo, geBanco, esEfectivo, esBanco, nota, usuario } = body;
+      const id = `cierre_${Date.now()}`;
+      const createdAt = new Date().toISOString();
+      const row = [id, fecha || createdAt.split('T')[0], geEfectivo || 0, geBanco || 0, esEfectivo || 0, esBanco || 0, nota || '', usuario || 'admin', createdAt];
+      await safeAppendSheetData(SPREADSHEET_ID, 'CierreCaja', [row]);
+      await addAuditLog('CREATE', 'CierreCaja', id, { fecha, geEfectivo, geBanco: geBanco || 0, esEfectivo, esBanco }, usuario || 'admin', usuario || 'admin');
+      return NextResponse.json({ success: true, id });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
+  // ==================== TASKS ENDPOINTS (POST) ====================
+  
+  // Create new task
+  if (path === 'tasks') {
+    try {
+      await ensureTasksSheet();
+      
+      const { description, price, priority, notes, userId, username, userRole } = body;
+      
+      if (!description || !priority) {
+        return NextResponse.json({ error: 'Description and priority are required' }, { status: 400 });
+      }
+      
+      const validPriorities = ['urgente', 'importante', 'necesario', 'sugerencia'];
+      if (!validPriorities.includes(priority)) {
+        return NextResponse.json({ error: 'Invalid priority' }, { status: 400 });
+      }
+      
+      const id = uuidv4();
+      const now = new Date().toISOString();
+      
+      const taskRow = [
+        id,
+        description,
+        price || '',
+        priority,
+        notes || '',
+        userId || 'system',
+        now,
+        'pending',
+        '', // completedBy
+        '', // completedAt
+        '', // completionNotes
+        userRole || 'user',
+        username || 'Sistema',
+        '' // completedByUsername
+      ];
+      
+      await safeAppendSheetData(SPREADSHEET_ID, 'Tasks', [taskRow]);
+      
+      // Log activity
+      await logUserActivity(username || 'Sistema', userRole || 'user', '+TAREA', `${priority}: ${description.substring(0, 30)}...`);
+      
+      return NextResponse.json({
+        success: true,
+        task: {
+          id,
+          description,
+          price: price || '',
+          priority,
+          notes: notes || '',
+          createdBy: userId,
+          createdAt: now,
+          status: 'pending',
+          createdByUsername: username || 'Sistema'
+        }
+      });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+  
+  // Complete task
+  if (path === 'tasks/complete') {
+    try {
+      const { taskId, completionNotes, userId, username, userRole } = body;
+      
+      if (!taskId) {
+        return NextResponse.json({ error: 'taskId is required' }, { status: 400 });
+      }
+      
+      const data = await getSheetData(SPREADSHEET_ID, 'Tasks!A:N');
+      const tasks = parseSheetToObjects(data);
+      const taskIndex = tasks.findIndex(t => t.id === taskId);
+      
+      if (taskIndex === -1) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
+      
+      const now = new Date().toISOString();
+      const rowIndex = taskIndex + 2; // +1 for header, +1 for 1-based index
+      
+      // Update status, completedBy, completedAt, completionNotes, completedByUsername
+      await updateSheetData(SPREADSHEET_ID, `Tasks!H${rowIndex}:N${rowIndex}`, [[
+        'completed',
+        userId || 'system',
+        now,
+        completionNotes || '',
+        tasks[taskIndex].createdByRole,
+        tasks[taskIndex].createdByUsername,
+        username || 'Sistema'
+      ]]);
+      
+      // Log activity
+      await logUserActivity(username || 'Sistema', userRole || 'user', '✓TAREA', `Completada: ${tasks[taskIndex].description?.substring(0, 30)}...`);
+      
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
   }
 
   // Auth: Change own password
@@ -1787,6 +2221,7 @@ async function handlePost(request, path) {
         paymentSplit, // New: array of {method: 'web'|'cash'|'bank'|'gyg', percentage: 20}
         userId = 'system',
         userName = 'System',
+        userRole = 'user',
       } = body;
 
       // Validate required fields
@@ -1908,6 +2343,9 @@ async function handlePost(request, path) {
       await safeAppendSheetData(SPREADSHEET_ID, 'Departures', [entry]);
       
       await addAuditLog('CREATE', 'Departure', id, { entry }, userId, userName);
+      
+      // Log activity
+      await logUserActivity(userName, userRole, '+TOUR', `${category} x${vehiclesCount} €${totalGross.toFixed(2)} (${pricing.productName})`);
 
       return NextResponse.json({ 
         success: true,
@@ -1935,7 +2373,7 @@ async function handlePost(request, path) {
   // Create batch departures
   if (path === 'departures/batch') {
     try {
-      const { entries, userId = 'system', userName = 'System' } = body;
+      const { entries, userId = 'system', userName = 'System', userRole = 'user' } = body;
 
       console.log('Batch request received:', {
         entriesCount: entries?.length,
@@ -2139,6 +2577,9 @@ async function handlePost(request, path) {
           }
           
           await addAuditLog('CREATE', 'Departure', id, { entry }, userId, userName);
+          
+          // Log activity
+          await logUserActivity(userName, userRole, '+TOUR', `${category} x${vehiclesCount} €${financials.totalGross.toFixed(2)} (${product.name})`);
 
           created.push({
             success: true,
@@ -2269,7 +2710,7 @@ async function handlePut(request, path) {
   if (path.startsWith('departures/')) {
     try {
       const id = path.split('/')[1];
-      const { userId = 'system', userName = 'System', ...updates } = body;
+      const { userId = 'system', userName = 'System', userRole = 'user', ...updates } = body;
 
       // Get current data - extended to AV to include discount and manualTotal columns
       const data = await getSheetData(SPREADSHEET_ID, 'Departures!A:AX');
@@ -2309,6 +2750,13 @@ async function handlePut(request, path) {
       await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AX${index + 2}`, [rowData]);
 
       await addAuditLog('UPDATE', 'Departure', id, { before: current, after: updated }, userId, userName);
+      
+      // Log activity
+      const changes = [];
+      if (updates.vehiclesCount && updates.vehiclesCount != current.vehiclesCount) changes.push(`veh:${current.vehiclesCount}→${updates.vehiclesCount}`);
+      if (updates.paymentSplitCash !== undefined && updates.paymentSplitCash != current.paymentSplitCash) changes.push(`efect:${current.paymentSplitCash||0}→${updates.paymentSplitCash}`);
+      if (updates.paymentSplitBank !== undefined && updates.paymentSplitBank != current.paymentSplitBank) changes.push(`banco:${current.paymentSplitBank||0}→${updates.paymentSplitBank}`);
+      await logUserActivity(userName, userRole, '~TOUR', `${current.category} ${changes.join(', ')}`);
 
       return NextResponse.json({ success: true, updated });
     } catch (error) {
@@ -2411,6 +2859,69 @@ async function handlePut(request, path) {
     }
   }
 
+  // Update task
+  if (path.startsWith('tasks/')) {
+    try {
+      const id = path.split('/')[1];
+      const { description, price, priority, notes, userId, username, userRole } = body;
+      
+      const data = await getSheetData(SPREADSHEET_ID, 'Tasks!A:N');
+      const tasks = parseSheetToObjects(data);
+      const index = tasks.findIndex(t => t.id === id);
+      
+      if (index === -1) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
+      
+      const task = tasks[index];
+      
+      // Permission check: only creator or admin can edit
+      if (userRole !== 'admin' && task.createdBy !== userId) {
+        return NextResponse.json({ error: 'No tienes permiso para editar esta tarea' }, { status: 403 });
+      }
+      
+      // Validate priority if provided
+      if (priority) {
+        const validPriorities = ['urgente', 'importante', 'necesario', 'sugerencia'];
+        if (!validPriorities.includes(priority)) {
+          return NextResponse.json({ error: 'Invalid priority' }, { status: 400 });
+        }
+      }
+      
+      const rowIndex = index + 2;
+      
+      // Update fields - only update description, price, priority, notes (columns B, C, D, E)
+      const updatedRow = [
+        description || task.description,
+        price !== undefined ? price : task.price,
+        priority || task.priority,
+        notes !== undefined ? notes : task.notes
+      ];
+      
+      await updateSheetData(SPREADSHEET_ID, `Tasks!B${rowIndex}:E${rowIndex}`, [updatedRow]);
+      
+      // Log activity
+      await logUserActivity(username || 'Sistema', userRole || 'user', '~TAREA', `Editada: ${(description || task.description).substring(0, 30)}...`);
+      
+      return NextResponse.json({
+        success: true,
+        task: {
+          id,
+          description: updatedRow[0],
+          price: updatedRow[1],
+          priority: updatedRow[2],
+          notes: updatedRow[3],
+          createdBy: task.createdBy,
+          createdAt: task.createdAt,
+          status: task.status,
+          createdByUsername: task.createdByUsername
+        }
+      });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   return NextResponse.json({ error: 'Not found' }, { status: 404 });
 }
 
@@ -2449,6 +2960,51 @@ async function handleDelete(request, path) {
     return deleteIncomeCategory(id);
   }
 
+  // Delete task
+  if (path.startsWith('tasks/')) {
+    try {
+      const id = path.split('/')[1];
+      const requesterId = searchParams.get('userId') || 'system';
+      const requesterRole = searchParams.get('userRole') || 'user';
+      const requesterUsername = searchParams.get('userName') || 'Sistema';
+      
+      const data = await getSheetData(SPREADSHEET_ID, 'Tasks!A:N');
+      const tasks = parseSheetToObjects(data);
+      const index = tasks.findIndex(t => t.id === id);
+      
+      if (index === -1) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
+      
+      const task = tasks[index];
+      
+      // Permission check:
+      // - Completed tasks: only admin can delete
+      // - Pending tasks: creator or admin can delete
+      if (task.status === 'completed') {
+        if (requesterRole !== 'admin') {
+          return NextResponse.json({ error: 'Solo el administrador puede eliminar tareas completadas' }, { status: 403 });
+        }
+      } else {
+        if (requesterRole !== 'admin' && task.createdBy !== requesterId) {
+          return NextResponse.json({ error: 'No tienes permiso para eliminar esta tarea' }, { status: 403 });
+        }
+      }
+      
+      // Soft delete (clear the row)
+      const headers = data[0];
+      const emptyRow = headers.map(() => '');
+      await updateSheetData(SPREADSHEET_ID, `Tasks!A${index + 2}:N${index + 2}`, [emptyRow]);
+      
+      // Log activity
+      await logUserActivity(requesterUsername, requesterRole, '-TAREA', `Eliminada: ${task.description?.substring(0, 30)}...`);
+      
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
   // Delete departure
   if (path.startsWith('departures/')) {
     try {
@@ -2474,6 +3030,10 @@ async function handleDelete(request, path) {
       await updateSheetData(SPREADSHEET_ID, `Departures!A${index + 2}:AX${index + 2}`, [emptyRow]);
 
       await addAuditLog('DELETE', 'Departure', id, { deleted: departure }, userId, userName);
+      
+      // Log activity - get role from URL params if available
+      const userRole = searchParams.get('userRole') || 'user';
+      await logUserActivity(userName, userRole, '-TOUR', `${departure.category} x${departure.vehiclesCount} €${departure.totalGross} (${departure.productName})`);
 
       return NextResponse.json({ success: true });
     } catch (error) {

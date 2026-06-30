@@ -107,7 +107,12 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
 
   async function handleDelete(departureId) {
     try {
-      const res = await fetch(`/api/departures/${departureId}?userId=user-1&userName=Usuario`, {
+      const params = new URLSearchParams({
+        userId: user?.id || 'user-1',
+        userName: user?.username || 'Usuario',
+        userRole: user?.role || 'user'
+      });
+      const res = await fetch(`/api/departures/${departureId}?${params}`, {
         method: 'DELETE',
       });
 
@@ -151,8 +156,9 @@ export default function Dashboard({ selectedDate: propDate, onDateChange }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...editForm,
-          userId: 'user-1',
-          userName: 'Usuario',
+          userId: user?.id || 'user-1',
+          userName: user?.username || 'Usuario',
+          userRole: user?.role || 'user',
         }),
       });
 

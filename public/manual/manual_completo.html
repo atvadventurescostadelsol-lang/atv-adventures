@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MANUAL COMPLETO - ATV Operations (Solo Lectura)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            line-height: 1.8; 
+            color: #333; 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .page { 
+            background: white; 
+            padding: 40px; 
+            margin-bottom: 30px; 
+            border-radius: 15px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            page-break-after: always;
+        }
+        .page:last-child { page-break-after: avoid; }
+        
+        h1 { 
+            color: #e65100; 
+            font-size: 2.8em; 
+            text-align: center; 
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 { 
+            color: #1565c0; 
+            font-size: 2em; 
+            margin: 30px 0 20px 0; 
+            padding: 15px;
+            background: linear-gradient(90deg, #e3f2fd 0%, transparent 100%);
+            border-left: 6px solid #1565c0;
+            border-radius: 0 10px 10px 0;
+        }
+        h3 { 
+            color: #2e7d32; 
+            font-size: 1.5em; 
+            margin: 25px 0 15px 0;
+            padding-bottom: 5px;
+            border-bottom: 3px solid #a5d6a7;
+        }
+        
+        .subtitle { 
+            text-align: center; 
+            font-size: 1.4em; 
+            color: #666; 
+            margin-bottom: 40px;
+        }
+        
+        .screenshot { 
+            width: 100%; 
+            border: 4px solid #1565c0; 
+            border-radius: 15px; 
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .callout { 
+            background: #fff3e0; 
+            border: 3px solid #ff9800; 
+            border-radius: 15px; 
+            padding: 25px; 
+            margin: 25px 0;
+            position: relative;
+        }
+        .callout::before {
+            content: "👆";
+            font-size: 2em;
+            position: absolute;
+            top: -20px;
+            left: 20px;
+        }
+        
+        .callout-red { 
+            background: #ffebee; 
+            border-color: #f44336;
+        }
+        .callout-red::before { content: "⚠️"; }
+        
+        .callout-green { 
+            background: #e8f5e9; 
+            border-color: #4caf50;
+        }
+        .callout-green::before { content: "✅"; }
+        
+        .callout-blue { 
+            background: #e3f2fd; 
+            border-color: #2196f3;
+        }
+        .callout-blue::before { content: "💡"; }
+        
+        .numero-grande {
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 60px;
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-right: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        
+        .paso {
+            display: flex;
+            align-items: flex-start;
+            margin: 20px 0;
+            padding: 20px;
+            background: #fafafa;
+            border-radius: 15px;
+            border: 2px solid #e0e0e0;
+        }
+        .paso-contenido { flex: 1; }
+        .paso-contenido h4 { 
+            color: #1565c0; 
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 20px 0;
+            font-size: 1.1em;
+        }
+        th, td { 
+            border: 2px solid #ccc; 
+            padding: 15px; 
+            text-align: left;
+        }
+        th { 
+            background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
+            color: white;
+            font-size: 1.1em;
+        }
+        tr:nth-child(even) { background: #f5f5f5; }
+        tr:hover { background: #e3f2fd; }
+        
+        .emoji-explicacion {
+            display: inline-block;
+            font-size: 2em;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        
+        .dos-columnas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .tarjeta-color {
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        .tarjeta-naranja { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border: 3px solid #ff9800; }
+        .tarjeta-verde { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 3px solid #4caf50; }
+        .tarjeta-roja { background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border: 3px solid #f44336; }
+        .tarjeta-morada { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border: 3px solid #9c27b0; }
+        .tarjeta-azul { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 3px solid #2196f3; }
+        
+        .flecha {
+            text-align: center;
+            font-size: 3em;
+            color: #1565c0;
+            margin: 10px 0;
+        }
+        
+        .resaltado {
+            background: #ffeb3b;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .muy-importante {
+            background: #f44336;
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-size: 1.2em;
+            text-align: center;
+        }
+        
+        @media print {
+            body { background: white; max-width: 100%; }
+            .page { box-shadow: none; margin: 0; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== PORTADA ==================== -->
+<div class="page">
+    <div style="text-align: center; padding: 40px 0;">
+        <div style="font-size: 5em;">📖</div>
+        <h1>MANUAL DE USUARIO</h1>
+        <p class="subtitle">Para usuarios de <strong>SOLO LECTURA</strong></p>
+        <p class="subtitle" style="font-size: 1.2em;">Aplicación ATV Operations</p>
+        
+        <div style="margin: 50px 0; padding: 30px; background: #e3f2fd; border-radius: 20px;">
+            <h3 style="border: none; color: #1565c0;">🎯 ¿Para qué sirve este manual?</h3>
+            <p style="font-size: 1.2em; margin-top: 15px;">
+                Este manual te explica <strong>paso a paso</strong> cómo usar la aplicación para:<br><br>
+                ✅ Ver las ventas de cada día<br>
+                ✅ Ver el calendario del mes<br>
+                ✅ Sacar informes y descargarlos en PDF<br>
+                ✅ Saber cuánto dinero hay en efectivo y en banco
+            </p>
+        </div>
+        
+        <div class="muy-importante">
+            ⚠️ RECUERDA: Con tu cuenta solo puedes VER información.<br>
+            NO puedes crear, modificar ni borrar nada.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== PÁGINA 1: LOGIN ==================== -->
+<div class="page">
+    <h2>📱 PASO 1: Cómo Entrar a la Aplicación</h2>
+    
+    <p style="font-size: 1.3em; margin: 20px 0;">
+        Lo primero que verás es esta pantalla. Aquí tienes que poner tu <strong>usuario</strong> y tu <strong>contraseña</strong>.
+    </p>
+    
+    <img src="manual/01_login.png" class="screenshot" alt="Pantalla de Login">
+    
+    <h3>¿Qué significa cada cosa?</h3>
+    
+    <div class="paso">
+        <span class="numero-grande">1</span>
+        <div class="paso-contenido">
+            <h4>El logo naranja "ATV"</h4>
+            <p>Es solo el logo de la aplicación. <strong>No tienes que hacer nada con él.</strong></p>
+        </div>
+    </div>
+    
+    <div class="paso">
+        <span class="numero-grande">2</span>
+        <div class="paso-contenido">
+            <h4>Cuadro "Usuario"</h4>
+            <p><strong>HAZ CLIC AQUÍ</strong> y escribe tu nombre de usuario. El que te hayan dado.</p>
+        </div>
+    </div>
+    
+    <div class="paso">
+        <span class="numero-grande">3</span>
+        <div class="paso-contenido">
+            <h4>Cuadro "Contraseña"</h4>
+            <p><strong>HAZ CLIC AQUÍ</strong> y escribe tu contraseña. Verás puntitos (•••••) porque es secreta.</p>
+            <p>El <strong>ojito 👁</strong> a la derecha sirve para ver la contraseña si quieres comprobar que la escribiste bien.</p>
+        </div>
+    </div>
+    
+    <div class="paso">
+        <span class="numero-grande">4</span>
+        <div class="paso-contenido">
+            <h4>Botón "Iniciar Sesión"</h4>
+            <p><strong>HAZ CLIC AQUÍ</strong> cuando hayas escrito tu usuario y contraseña.</p>
+        </div>
+    </div>
+    
+    <div class="callout callout-red">
+        <h4>⚠️ SI NO PUEDES ENTRAR:</h4>
+        <ul style="margin-top: 10px; margin-left: 20px;">
+            <li>Revisa que las <strong>MAYÚSCULAS</strong> estén bien (no es lo mismo "Maria" que "maria")</li>
+            <li>Revisa que no haya <strong>espacios</strong> antes o después</li>
+            <li>Si no funciona, <strong>llama al administrador</strong></li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== PÁGINA 2: DASHBOARD ==================== -->
+<div class="page">
+    <h2>📊 PASO 2: El Dashboard (Pantalla Principal)</h2>
+    
+    <p style="font-size: 1.3em; margin: 20px 0;">
+        Cuando entres, verás esta pantalla. Es el <strong>DASHBOARD</strong> = resumen del día.
+    </p>
+    
+    <img src="manual/02_dashboard.png" class="screenshot" alt="Dashboard">
+    
+    <h3>📍 Las pestañas de arriba</h3>
+    
+    <div class="callout callout-blue">
+        <p style="font-size: 1.2em;">
+            Arriba verás tres pestañas: <strong>Dashboard</strong>, <strong>Calendario</strong> y <strong>Reportes</strong>.<br><br>
+            👉 <strong>Dashboard</strong> = El día de hoy (o el día que elijas)<br>
+            👉 <strong>Calendario</strong> = Ver todo el mes<br>
+            👉 <strong>Reportes</strong> = Sacar informes y PDFs
+        </p>
+    </div>
+    
+    <h3>📅 Cómo cambiar de día</h3>
+    
+    <p style="font-size: 1.2em;">
+        Donde dice <strong>"Dashboard - domingo, 15 febrero 2026"</strong> puedes cambiar el día:
+    </p>
+    
+    <div class="dos-columnas">
+        <div class="tarjeta-azul">
+            <p style="font-size: 2em;">← Anterior</p>
+            <p>Haz clic para ver el día de <strong>AYER</strong></p>
+        </div>
+        <div class="tarjeta-azul">
+            <p style="font-size: 2em;">Siguiente →</p>
+            <p>Haz clic para ver el día de <strong>MAÑANA</strong></p>
+        </div>
+    </div>
+    
+    <p style="text-align: center; font-size: 1.2em;">
+        También puedes hacer clic en <strong>"Hoy"</strong> para volver al día actual.
+    </p>
+</div>
+
+<!-- ==================== PÁGINA 3: DASHBOARD - RECUADROS ==================== -->
+<div class="page">
+    <h2>📊 Los Recuadros de Colores del Dashboard</h2>
+    
+    <p style="font-size: 1.3em; margin: 20px 0;">
+        Los recuadros de arriba te dicen <strong>el resumen del día</strong>. Esto es lo que significa cada uno:
+    </p>
+    
+    <div class="dos-columnas">
+        <div class="tarjeta-naranja">
+            <h3 style="border: none; color: #e65100;">🟧 TOTAL BRUTO</h3>
+            <p style="font-size: 2em; font-weight: bold;">€1047.50</p>
+            <p style="margin-top: 15px;">
+                <strong>¿Qué es?</strong><br>
+                El dinero TOTAL que se ha facturado ese día.<br>
+                Es la suma de TODOS los tours (Quads + Buggies).
+            </p>
+            <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                Neto: €865.70 = sin IVA<br>
+                IVA: €181.80 = el impuesto
+            </p>
+        </div>
+        <div class="tarjeta-azul">
+            <h3 style="border: none; color: #1565c0;">⬜ VEHÍCULOS</h3>
+            <p style="font-size: 2em; font-weight: bold;">9</p>
+            <p style="margin-top: 15px;">
+                <strong>¿Qué es?</strong><br>
+                El número TOTAL de vehículos que han salido.<br><br>
+                🏍️ 2 Quads<br>
+                🚗 7 Buggies
+            </p>
+        </div>
+    </div>
+    
+    <div class="dos-columnas">
+        <div class="tarjeta-verde">
+            <h3 style="border: none; color: #2e7d32;">🟩 PAGOS RECIBIDOS</h3>
+            <p style="font-size: 2em; font-weight: bold;">€680.00</p>
+            <p style="margin-top: 15px;">
+                <strong>¿Qué es?</strong><br>
+                El dinero que YA HAS COBRADO.<br>
+                Es lo que tienes en la mano o en el banco.
+            </p>
+            <p style="margin-top: 10px;">
+                💵 €680.00 = en Efectivo<br>
+                🏦 €0.00 = en Banco
+            </p>
+        </div>
+        <div class="tarjeta-naranja">
+            <h3 style="border: none; color: #e65100;">🟧 PENDIENTE AL LLEGAR</h3>
+            <p style="font-size: 2em; font-weight: bold;">€367.50</p>
+            <p style="margin-top: 15px;">
+                <strong>¿Qué es?</strong><br>
+                Dinero que TODAVÍA NO HAS COBRADO.<br>
+                Lo cobrarás cuando llegue de GYG o Cruceros.
+            </p>
+            <p style="margin-top: 10px;">
+                🎫 GYG: €367.50<br>
+                🚢 Cruceros: €0.00
+            </p>
+        </div>
+    </div>
+    
+    <div class="muy-importante">
+        📝 RESUMEN FÁCIL:<br><br>
+        <strong>TOTAL BRUTO</strong> = Todo lo facturado<br>
+        <strong>PAGOS RECIBIDOS</strong> = Lo que ya tienes cobrado<br>
+        <strong>PENDIENTE</strong> = Lo que te deben (GYG, Cruceros)
+    </div>
+</div>
+
+<!-- ==================== PÁGINA 4: DASHBOARD - CUENTAS ==================== -->
+<div class="page">
+    <h2>💰 Las DOS Cuentas: GE y E&S</h2>
+    
+    <div class="muy-importante">
+        ⚠️ MUY IMPORTANTE ENTENDER ESTO ⚠️<br><br>
+        Hay <strong>DOS CUENTAS</strong> diferentes porque hay dos negocios:
+    </div>
+    
+    <div class="dos-columnas" style="margin-top: 30px;">
+        <div class="tarjeta-azul" style="border-width: 5px;">
+            <h3 style="border: none; color: #1565c0; font-size: 1.8em;">🏍️ Quads (GE)</h3>
+            <p style="font-size: 1.2em; margin-top: 15px;">
+                <strong>GE</strong> = Nombre de la empresa de Quads<br><br>
+                Todo lo de <strong>QUADS</strong> va aquí:<br>
+                - Ventas de tours en Quad<br>
+                - Gastos de los Quads<br>
+                - Dinero de los Quads
+            </p>
+        </div>
+        <div class="tarjeta-verde" style="border-width: 5px;">
+            <h3 style="border: none; color: #2e7d32; font-size: 1.8em;">🚗 Buggies (E&S)</h3>
+            <p style="font-size: 1.2em; margin-top: 15px;">
+                <strong>E&S</strong> = Nombre de la empresa de Buggies<br><br>
+                Todo lo de <strong>BUGGIES</strong> va aquí:<br>
+                - Ventas de tours en Buggy<br>
+                - Gastos de los Buggies<br>
+                - Dinero de los Buggies
+            </p>
+        </div>
+    </div>
+    
+    <h3>¿Qué significan los números de cada cuenta?</h3>
+    
+    <table>
+        <tr>
+            <th>Concepto</th>
+            <th>¿Qué significa?</th>
+        </tr>
+        <tr>
+            <td><strong>Ingresos Brutos</strong></td>
+            <td>El total de dinero de los tours (antes de quitar gastos)</td>
+        </tr>
+        <tr>
+            <td>💵 <strong>Efectivo</strong></td>
+            <td>Lo que se ha cobrado en billetes/monedas</td>
+        </tr>
+        <tr>
+            <td>🏦 <strong>Banco</strong></td>
+            <td>Lo que se ha cobrado por tarjeta o transferencia</td>
+        </tr>
+        <tr>
+            <td style="color: #ff9800;">🎫 <strong>GYG (pendiente)</strong></td>
+            <td>Lo que cobrará GetYourGuide (aún no lo tienes)</td>
+        </tr>
+        <tr>
+            <td style="color: #f44336;">↘️ <strong>Gastos</strong></td>
+            <td>Lo que se ha gastado (gasolina, guías, etc.)</td>
+        </tr>
+        <tr>
+            <td style="color: #4caf50; font-weight: bold;">💵 <strong>Efectivo Neto</strong></td>
+            <td><strong>LO QUE QUEDA EN EFECTIVO</strong> (ingresos - gastos)</td>
+        </tr>
+        <tr>
+            <td style="color: #2196f3; font-weight: bold;">🏦 <strong>Banco Neto</strong></td>
+            <td><strong>LO QUE QUEDA EN BANCO</strong> (ingresos - gastos)</td>
+        </tr>
+    </table>
+    
+    <div class="callout callout-green">
+        <h4>💡 EJEMPLO DEL PANTALLAZO:</h4>
+        <p style="margin-top: 10px;">
+            En <strong>Buggies (E&S)</strong> el día 15 de febrero:<br>
+            - Ingresaron €897.50 en total<br>
+            - De eso, €680.00 fue en efectivo<br>
+            - Hubo gastos de €235.00 en efectivo<br>
+            - Por eso el <strong>Efectivo Neto = €445.00</strong> (680 - 235)
+        </p>
+    </div>
+</div>
+
+<!-- ==================== PÁGINA 5: TOURS DEL DÍA ==================== -->
+<div class="page">
+    <h2>🚗 Los Tours del Día (Las Tarjetitas)</h2>
+    
+    <p style="font-size: 1.3em; margin: 20px 0;">
+        Abajo del todo ves los <strong>tours que se han hecho</strong>, organizados por hora.
+    </p>
+    
+    <div class="callout callout-blue">
+        <h4>🕐 "10:00 - 3 entrada(s)"</h4>
+        <p style="margin-top: 10px;">
+            Esto significa que a las <strong>10:00</strong> salieron <strong>3 tours</strong>.<br>
+            Debajo ves cada uno en una tarjetita.
+        </p>
+    </div>
+    
+    <h3>¿Qué significa cada tarjetita?</h3>
+    
+    <div class="dos-columnas">
+        <div class="tarjeta-verde" style="text-align: left; padding: 25px;">
+            <p style="font-size: 1.3em;"><span class="resaltado" style="background: #4caf50; color: white;">Buggy x2</span></p>
+            <p style="margin-top: 15px;">👆 Tipo de vehículo y cuántos</p>
+            <p style="margin-top: 20px; font-size: 1.1em;"><strong>2 horas</strong></p>
+            <p>👆 Duración del tour</p>
+            <p style="margin-top: 20px; font-size: 1.5em; font-weight: bold;">€290.00</p>
+            <p>👆 Precio total del tour</p>
+            <p style="margin-top: 20px;">💵 Efectivo: €290.00</p>
+            <p>👆 Cómo pagó el cliente</p>
+            <p style="margin-top: 20px; color: #666;">👤 Zorroaud</p>
+            <p>👆 Quién creó el tour</p>
+        </div>
+        <div style="padding: 20px;">
+            <h4>Los colores de las tarjetas:</h4>
+            <div style="margin: 20px 0; padding: 15px; border-left: 8px solid #1565c0; background: #e3f2fd; border-radius: 5px;">
+                <strong>Borde AZUL</strong> = Es un QUAD
+            </div>
+            <div style="margin: 20px 0; padding: 15px; border-left: 8px solid #4caf50; background: #e8f5e9; border-radius: 5px;">
+                <strong>Borde VERDE</strong> = Es un BUGGY
+            </div>
+            
+            <h4 style="margin-top: 30px;">Formas de pago:</h4>
+            <table style="font-size: 0.95em;">
+                <tr><td>💵 Efectivo</td><td>Pagó en billetes</td></tr>
+                <tr><td>🏦 Banco</td><td>Pagó con tarjeta</td></tr>
+                <tr><td style="color: #ff9800;">🎫 GYG</td><td>Pagó por GetYourGuide</td></tr>
+                <tr><td>🚢 Crucero</td><td>Vino de un crucero</td></tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== PÁGINA 6: CALENDARIO ==================== -->
+<div class="page">
+    <h2>📅 PASO 3: El Calendario</h2>
+    
+    <p style="font-size: 1.3em; margin: 20px 0;">
+        Para ir al calendario, haz clic en la pestaña <strong>"Calendario"</strong> de arriba.
+    </p>
+    
+    <img src="manual/03_calendario.png" class="screenshot" alt="Calendario">
+    
+    <h3>¿Qué ves en el calendario?</h3>
+    
+    <div class="callout callout-blue">
+        <p style="font-size: 1.2em;">
+            El calendario te muestra <strong>TODO EL MES</strong> de un vistazo.<br>
+            En cada día ves cuánto dinero se ganó y cuántos vehículos salieron.
+        </p>
+    </div>
+    
+    <h3>Cómo leer cada día:</h3>
+    
+    <div class="tarjeta-azul" style="max-width: 250px; margin: 20px auto; padding: 20px;">
+        <p style="font-size: 1.5em;"><strong>15</strong> <span style="float: right; background: #1565c0; color: white; padding: 2px 8px; border-radius: 10px;">6</span></p>
+        <p style="color: #e65100; font-size: 1.3em; margin-top: 10px;"><strong>€1047</strong></p>
+        <p style="color: #666;">Q:2 B:7</p>
+    </div>
+    
+    <table>
+        <tr><th>Lo que ves</th><th>Qué significa</th></tr>
+        <tr><td><strong>15</strong></td><td>El número del día (15 de febrero)</td></tr>
+        <tr><td><span style="background: #1565c0; color: white; padding: 2px 8px; border-radius: 10px;">6</span></td><td>Número de tours ese día</td></tr>
+        <tr><td style="color: #e65100;"><strong>€1047</strong></td><td>Dinero total facturado ese día</td></tr>
+        <tr><td>Q:2</td><td>2 tours de Quads</td></tr>
+        <tr><td>B:7</td><td>7 tours de Buggies</td></tr>
+    </table>
+    
+    <h3>Cómo navegar:</h3>
+    
+    <div class="dos-columnas">
+        <div class="tarjeta-azul">
+            <p style="font-size: 1.5em;"><strong>‹</strong></p>
+            <p>Mes ANTERIOR</p>
+        </div>
+        <div class="tarjeta-azul">
+            <p style="font-size: 1.5em;"><strong>›</strong></p>
+            <p>Mes SIGUIENTE</p>
+        </div>
+    </div>
+    
+    <p style="text-align: center; font-size: 1.2em; margin-top: 20px;">
+        Si haces <strong>clic en un día</strong>, te lleva al Dashboard de ese día.
+    </p>
+</div>
+
+<!-- ==================== PÁGINA 7: REPORTES ==================== -->
+<div class="page">
+    <h2>📋 PASO 4: Los Reportes (Informes)</h2>
+    
+    <p style="font-size: 1.3em; margin: 20px 0;">
+        Para ver los reportes, haz clic en la pestaña <strong>"Reportes"</strong> de arriba.
+    </p>
+    
+    <img src="manual/04_reportes.png" class="screenshot" alt="Reportes">
+    
+    <h3>🔹 El Informe Principal (Arriba)</h3>
+    
+    <div class="callout callout-green">
+        <p style="font-size: 1.2em;">
+            Este informe te da un <strong>resumen rápido</strong> de ventas.<br>
+            Puedes elegir ver: <strong>Hoy</strong>, <strong>Este Mes</strong>, <strong>Este Año</strong> o fechas personalizadas.
+        </p>
+    </div>
+    
+    <h3>Cómo usar el Informe Principal:</h3>
+    
+    <div class="paso">
+        <span class="numero-grande">1</span>
+        <div class="paso-contenido">
+            <h4>Elige el período</h4>
+            <p>Haz clic en uno de los botones: <strong>Hoy</strong>, <strong>Mes</strong>, <strong>Año</strong> o <strong>Personalizado</strong></p>
+        </div>
+    </div>
+    
+    <div class="paso">
+        <span class="numero-grande">2</span>
+        <div class="paso-contenido">
+            <h4>Mira los resultados</h4>
+            <p>Aparecen tablas con las ventas de Quads y Buggies, separadas por efectivo y banco.</p>
+        </div>
+    </div>
+    
+    <div class="paso">
+        <span class="numero-grande">3</span>
+        <div class="paso-contenido">
+            <h4>Descarga el PDF (si quieres)</h4>
+            <p>Haz clic en el botón negro <strong>"PDF"</strong> arriba a la derecha para descargar.</p>
+        </div>
+    </div>
+    
+    <h3>¿Qué significan las columnas?</h3>
+    
+    <table>
+        <tr>
+            <th>Columna</th>
+            <th>Qué significa</th>
+        </tr>
+        <tr>
+            <td><strong>Quads 💵</strong></td>
+            <td>Dinero de Quads cobrado en EFECTIVO</td>
+        </tr>
+        <tr>
+            <td><strong>Quads 🏦</strong></td>
+            <td>Dinero de Quads cobrado en BANCO</td>
+        </tr>
+        <tr>
+            <td><strong>Buggies 💵</strong></td>
+            <td>Dinero de Buggies cobrado en EFECTIVO</td>
+        </tr>
+        <tr>
+            <td><strong>Buggies 🏦</strong></td>
+            <td>Dinero de Buggies cobrado en BANCO</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ==================== PÁGINA 8: INFORME PERSONALIZADO ==================== -->
+<div class="page">
+    <h2>📋 El Informe Detallado Personalizado</h2>
+    
+    <p style="font-size: 1.3em; margin: 20px 0;">
+        Este es el informe más <strong>POTENTE</strong>. Tú eliges exactamente qué quieres ver.
+    </p>
+    
+    <img src="manual/05_informe_personalizado.png" class="screenshot" alt="Informe Personalizado">
+    
+    <div class="muy-importante">
+        🎯 CON ESTE INFORME PUEDES:<br><br>
+        ✅ Ver SOLO los gastos<br>
+        ✅ Ver SOLO los ingresos<br>
+        ✅ Ver SOLO los tours<br>
+        ✅ Ver TODO junto y calcular el BALANCE<br>
+        ✅ Filtrar por cuenta (GE o E&S)<br>
+        ✅ Filtrar por concepto (Gasolina, Guía, etc.)<br>
+        ✅ Filtrar por método de pago (Efectivo o Banco)
+    </div>
+    
+    <h3>Los filtros - ¿Qué es cada cosa?</h3>
+    
+    <table>
+        <tr><th>Filtro</th><th>Para qué sirve</th></tr>
+        <tr>
+            <td><strong>Desde / Hasta</strong></td>
+            <td>Elige las fechas. Ejemplo: del 1 de enero al 31 de enero.</td>
+        </tr>
+        <tr>
+            <td><strong>Incluir ☑️</strong></td>
+            <td>
+                Marca lo que quieras ver:<br>
+                ☑️ Tours = las ventas de tours<br>
+                ☑️ Gastos = los gastos<br>
+                ☑️ Ingresos Extra = otros ingresos
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Cuenta</strong></td>
+            <td>
+                "Todos" = Ver GE y E&S juntos<br>
+                "GE (Quads)" = Solo los Quads<br>
+                "E&S" = Solo los Buggies
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Método</strong></td>
+            <td>
+                "Todos" = Efectivo y Banco<br>
+                "Efectivo" = Solo lo pagado en efectivo<br>
+                "Banco" = Solo lo pagado con tarjeta
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Concepto</strong></td>
+            <td>
+                Filtrar por un concepto específico.<br>
+                Ejemplo: Solo ver "Gasolina" o "Beneficios Sajer"
+            </td>
+        </tr>
+    </table>
+</div>
+
+<!-- ==================== PÁGINA 9: CÓMO USAR EL INFORME ==================== -->
+<div class="page">
+    <h2>🔧 Cómo Usar el Informe Personalizado</h2>
+    
+    <h3>EJEMPLO 1: Ver TODO del mes de enero con BALANCE</h3>
+    
+    <div class="paso">
+        <span class="numero-grande">1</span>
+        <div class="paso-contenido">
+            <h4>Pon las fechas</h4>
+            <p>Desde: <strong>01/01/2026</strong> → Hasta: <strong>31/01/2026</strong></p>
+        </div>
+    </div>
+    
+    <div class="paso">
+        <span class="numero-grande">2</span>
+        <div class="paso-contenido">
+            <h4>Marca las 3 casillas</h4>
+            <p>☑️ Tours &nbsp;&nbsp; ☑️ Gastos &nbsp;&nbsp; ☑️ Ingresos Extra</p>
+        </div>
+    </div>
+    
+    <div class="paso">
+        <span class="numero-grande">3</span>
+        <div class="paso-contenido">
+            <h4>Deja los demás en "Todos"</h4>
+            <p>Cuenta: Todos &nbsp;&nbsp; Método: Todos &nbsp;&nbsp; Concepto: Todos</p>
+        </div>
+    </div>
+    
+    <div class="paso">
+        <span class="numero-grande">4</span>
+        <div class="paso-contenido">
+            <h4>Haz clic en GENERAR</h4>
+            <p>El botón azul "🔍 Generar"</p>
+        </div>
+    </div>
+    
+    <div class="flecha">⬇️</div>
+    
+    <h3>EJEMPLO 2: Ver SOLO los gastos de Buggies (E&S)</h3>
+    
+    <div class="paso">
+        <span class="numero-grande">1</span>
+        <div class="paso-contenido">
+            <h4>Pon las fechas que quieras</h4>
+        </div>
+    </div>
+    
+    <div class="paso">
+        <span class="numero-grande">2</span>
+        <div class="paso-contenido">
+            <h4>Marca SOLO Gastos</h4>
+            <p>☐ Tours &nbsp;&nbsp; <strong>☑️ Gastos</strong> &nbsp;&nbsp; ☐ Ingresos Extra</p>
+        </div>
+    </div>
+    
+    <div class="paso">
+        <span class="numero-grande">3</span>
+        <div class="paso-contenido">
+            <h4>En Cuenta elige "E&S"</h4>
+            <p>Así solo ves los gastos de Buggies</p>
+        </div>
+    </div>
+    
+    <div class="paso">
+        <span class="numero-grande">4</span>
+        <div class="paso-contenido">
+            <h4>Haz clic en GENERAR</h4>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== PÁGINA 10: ENTENDER RESULTADOS ==================== -->
+<div class="page">
+    <h2>📊 Entender los Resultados del Informe</h2>
+    
+    <p style="font-size: 1.3em; margin: 20px 0;">
+        Cuando generas el informe, aparecen unas <strong>tarjetas de colores</strong>. Esto es lo que significa cada una:
+    </p>
+    
+    <div class="dos-columnas">
+        <div class="tarjeta-naranja">
+            <h3 style="border: none; color: #e65100;">🚗 Ingresos Tours</h3>
+            <p style="font-size: 2em; font-weight: bold;">€2083.00</p>
+            <p style="margin-top: 15px;">
+                El dinero de los tours.<br>
+                💵 €922.40 en efectivo<br>
+                🏦 €1160.60 en banco
+            </p>
+            <p style="margin-top: 10px; color: #ff9800;">
+                ⏳ Pendiente: GYG €60.00
+            </p>
+        </div>
+        <div class="tarjeta-verde">
+            <h3 style="border: none; color: #2e7d32;">💰 Ingresos Extra</h3>
+            <p style="font-size: 2em; font-weight: bold;">+€3929.09</p>
+            <p style="margin-top: 15px;">
+                Otros ingresos (no tours).<br>
+                💵 €819.00 en efectivo<br>
+                🏦 €3110.09 en banco
+            </p>
+        </div>
+    </div>
+    
+    <div class="dos-columnas">
+        <div class="tarjeta-roja">
+            <h3 style="border: none; color: #c62828;">💸 Gastos</h3>
+            <p style="font-size: 2em; font-weight: bold;">-€6289.96</p>
+            <p style="margin-top: 15px;">
+                Todo lo que se ha gastado.<br>
+                💵 €1705.00 en efectivo<br>
+                🏦 €4584.96 en banco
+            </p>
+        </div>
+        <div class="tarjeta-morada">
+            <h3 style="border: none; color: #7b1fa2;">📊 BALANCE</h3>
+            <p style="font-size: 2em; font-weight: bold; color: #c62828;">€-277.87</p>
+            <p style="margin-top: 15px;">
+                <strong>LO QUE QUEDA</strong><br>
+                (Ingresos - Gastos)<br><br>
+                💵 €36.40 en efectivo<br>
+                🏦 €-314.27 en banco
+            </p>
+        </div>
+    </div>
+    
+    <div class="muy-importante">
+        📝 EL BALANCE ES LA RESTA:<br><br>
+        Ingresos Tours + Ingresos Extra - Gastos = <strong>BALANCE</strong><br><br>
+        Si es <span style="color: #4caf50;">VERDE/POSITIVO</span> = Hay ganancia<br>
+        Si es <span style="color: #f44336;">ROJO/NEGATIVO</span> = Hay pérdida
+    </div>
+    
+    <div class="callout callout-green">
+        <h4>💾 DESCARGAR PDF</h4>
+        <p style="margin-top: 10px;">
+            Haz clic en el botón <strong>"📥 Descargar PDF"</strong> para guardar el informe en tu ordenador.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== PÁGINA 11: PREGUNTAS FRECUENTES ==================== -->
+<div class="page">
+    <h2>❓ Preguntas que Seguro Te Harás</h2>
+    
+    <div class="callout callout-blue" style="margin: 30px 0;">
+        <h4>❓ "¿Cómo sé cuánto dinero hay en efectivo ahora mismo?"</h4>
+        <p style="margin-top: 15px;">
+            <strong>RESPUESTA:</strong><br>
+            1. Ve a <strong>Reportes</strong><br>
+            2. En el Informe Detallado Personalizado:<br>
+            &nbsp;&nbsp;&nbsp;- Pon las fechas desde el inicio hasta HOY<br>
+            &nbsp;&nbsp;&nbsp;- Marca ☑️ Tours, ☑️ Gastos, ☑️ Ingresos Extra<br>
+            &nbsp;&nbsp;&nbsp;- Elige la Cuenta (GE para Quads, E&S para Buggies)<br>
+            3. Haz clic en GENERAR<br>
+            4. Mira la tarjeta <strong>BALANCE</strong> → el número de 💵 es el efectivo
+        </p>
+    </div>
+    
+    <div class="callout callout-blue" style="margin: 30px 0;">
+        <h4>❓ "¿Cómo veo solo los gastos de un mes?"</h4>
+        <p style="margin-top: 15px;">
+            <strong>RESPUESTA:</strong><br>
+            1. Ve a <strong>Reportes</strong> → Informe Detallado Personalizado<br>
+            2. Pon las fechas del mes (ej: 01/02/2026 a 28/02/2026)<br>
+            3. Marca <strong>SOLO</strong> ☑️ Gastos (desmarca los otros)<br>
+            4. Haz clic en GENERAR<br>
+            5. Verás la lista de todos los gastos
+        </p>
+    </div>
+    
+    <div class="callout callout-blue" style="margin: 30px 0;">
+        <h4>❓ "¿Cómo veo cuánto se ha gastado en Gasolina?"</h4>
+        <p style="margin-top: 15px;">
+            <strong>RESPUESTA:</strong><br>
+            1. Ve a <strong>Reportes</strong> → Informe Detallado Personalizado<br>
+            2. Pon las fechas que quieras<br>
+            3. Marca ☑️ Gastos<br>
+            4. En <strong>Concepto</strong> elige "Gasolina"<br>
+            5. Haz clic en GENERAR<br>
+            6. Solo verás los gastos de gasolina
+        </p>
+    </div>
+    
+    <div class="callout callout-blue" style="margin: 30px 0;">
+        <h4>❓ "¿Por qué el Balance no aparece?"</h4>
+        <p style="margin-top: 15px;">
+            <strong>RESPUESTA:</strong><br>
+            El Balance SOLO aparece si tienes marcado:<br>
+            - Gastos <strong>Y</strong> (Tours o Ingresos Extra)<br><br>
+            Si solo marcas una cosa (solo Tours, o solo Gastos), no hay nada que restar y no aparece Balance.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== PÁGINA 12: CERRAR SESIÓN ==================== -->
+<div class="page">
+    <h2>🚪 Cómo Cerrar Sesión</h2>
+    
+    <p style="font-size: 1.3em; margin: 20px 0;">
+        Cuando termines de usar la aplicación, <strong>cierra sesión</strong> para que nadie más pueda entrar.
+    </p>
+    
+    <div class="paso">
+        <span class="numero-grande">1</span>
+        <div class="paso-contenido">
+            <h4>Mira arriba a la derecha</h4>
+            <p>Verás tu nombre de usuario (ej: "Laurence")</p>
+        </div>
+    </div>
+    
+    <div class="paso">
+        <span class="numero-grande">2</span>
+        <div class="paso-contenido">
+            <h4>Haz clic en tu nombre</h4>
+            <p>Se abrirá un menú pequeño</p>
+        </div>
+    </div>
+    
+    <div class="paso">
+        <span class="numero-grande">3</span>
+        <div class="paso-contenido">
+            <h4>Haz clic en "Cerrar Sesión"</h4>
+            <p>Volverás a la pantalla de login</p>
+        </div>
+    </div>
+    
+    <div style="margin-top: 50px; text-align: center; padding: 40px; background: #e8f5e9; border-radius: 20px;">
+        <h2 style="color: #2e7d32; border: none;">🎉 ¡Ya sabes usar la aplicación!</h2>
+        <p style="font-size: 1.3em; margin-top: 20px;">
+            Si tienes dudas, vuelve a leer este manual.<br>
+            Si sigue sin quedarte claro, pregunta al administrador.
+        </p>
+    </div>
+    
+    <div style="margin-top: 50px; text-align: center; color: #999;">
+        <p>Manual de Usuario - ATV Operations</p>
+        <p>Versión 2.0 - Febrero 2026</p>
+    </div>
+</div>
+
+</body>
+</html>

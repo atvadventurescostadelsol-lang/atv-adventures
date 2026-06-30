@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Usuario - Solo Lectura</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .page {
+            background: white;
+            padding: 40px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            page-break-after: always;
+        }
+        
+        .page:last-child {
+            page-break-after: avoid;
+        }
+        
+        h1 {
+            color: #2563eb;
+            font-size: 2.5em;
+            text-align: center;
+            margin-bottom: 10px;
+            border-bottom: 4px solid #2563eb;
+            padding-bottom: 20px;
+        }
+        
+        h2 {
+            color: #1e40af;
+            font-size: 1.8em;
+            margin: 30px 0 20px 0;
+            padding-left: 15px;
+            border-left: 5px solid #3b82f6;
+        }
+        
+        h3 {
+            color: #1e3a8a;
+            font-size: 1.3em;
+            margin: 25px 0 15px 0;
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .emoji-big {
+            font-size: 4em;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .box {
+            background: #f0f9ff;
+            border: 2px solid #3b82f6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .box-green {
+            background: #f0fdf4;
+            border-color: #22c55e;
+        }
+        
+        .box-red {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+        
+        .box-yellow {
+            background: #fefce8;
+            border-color: #eab308;
+        }
+        
+        .box-purple {
+            background: #faf5ff;
+            border-color: #a855f7;
+        }
+        
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .step {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 10px auto;
+        }
+        
+        .step-box {
+            text-align: center;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        
+        .screenshot {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 30px;
+            border-radius: 10px;
+            font-family: monospace;
+            margin: 20px 0;
+            white-space: pre-wrap;
+            font-size: 0.9em;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            border: 2px solid #e2e8f0;
+            padding: 15px;
+            text-align: left;
+        }
+        
+        th {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        
+        .highlight {
+            background: #fef08a;
+            padding: 3px 8px;
+            border-radius: 5px;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .btn-green {
+            background: #22c55e;
+        }
+        
+        .arrow {
+            font-size: 2em;
+            color: #3b82f6;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        ul {
+            margin: 15px 0 15px 30px;
+        }
+        
+        li {
+            margin: 10px 0;
+        }
+        
+        .important {
+            background: #fef3c7;
+            border-left: 5px solid #f59e0b;
+            padding: 15px 20px;
+            margin: 20px 0;
+        }
+        
+        .card-example {
+            border: 3px solid #3b82f6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            background: white;
+        }
+        
+        .card-example.quad {
+            border-left: 8px solid #3b82f6;
+        }
+        
+        .card-example.buggy {
+            border-left: 8px solid #22c55e;
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            .page {
+                box-shadow: none;
+                margin: 0;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- PORTADA -->
+<div class="page">
+    <div class="emoji-big">📖</div>
+    <h1>MANUAL DE USUARIO</h1>
+    <p class="subtitle">Modo Solo Lectura</p>
+    <p class="subtitle">Aplicación de Gestión de Tours ATV</p>
+    
+    <div class="box" style="margin-top: 50px;">
+        <h3 style="text-align: center; margin-bottom: 20px;">🎯 ¿Qué puedes hacer con tu cuenta?</h3>
+        <div class="two-columns">
+            <div class="box box-green">
+                <h3>✅ PUEDES</h3>
+                <ul>
+                    <li>Ver el Dashboard</li>
+                    <li>Ver el Calendario</li>
+                    <li>Ver los Informes</li>
+                    <li>Descargar PDFs</li>
+                </ul>
+            </div>
+            <div class="box box-red">
+                <h3>❌ NO PUEDES</h3>
+                <ul>
+                    <li>Crear tours</li>
+                    <li>Borrar tours</li>
+                    <li>Modificar tours</li>
+                    <li>Crear gastos o ingresos</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PÁGINA 1: INICIAR SESIÓN -->
+<div class="page">
+    <h2>📱 PASO 1: Cómo Entrar a la Aplicación</h2>
+    
+    <div class="step-box">
+        <div class="step">1</div>
+        <h3>Abre tu navegador y escribe la dirección de la aplicación</h3>
+    </div>
+    
+    <div class="step-box">
+        <div class="step">2</div>
+        <h3>Verás la pantalla de inicio de sesión</h3>
+    </div>
+    
+    <div class="screenshot">
+╔═══════════════════════════════════════════════════════╗
+║                                                       ║
+║                  🚗 ATV Operations                    ║
+║                                                       ║
+║     ┌───────────────────────────────────────┐        ║
+║     │  👤 Usuario:  [________________]      │        ║
+║     └───────────────────────────────────────┘        ║
+║                                                       ║
+║     ┌───────────────────────────────────────┐        ║
+║     │  🔒 Contraseña:  [________________]   │        ║
+║     └───────────────────────────────────────┘        ║
+║                                                       ║
+║            ┌──────────────────────┐                  ║
+║            │   INICIAR SESIÓN     │                  ║
+║            └──────────────────────┘                  ║
+║                                                       ║
+╚═══════════════════════════════════════════════════════╝
+    </div>
+    
+    <h3>Pasos para iniciar sesión:</h3>
+    
+    <div class="two-columns">
+        <div class="step-box">
+            <div class="step">1</div>
+            <p><strong>Haz clic</strong> en el cuadro "Usuario"</p>
+        </div>
+        <div class="step-box">
+            <div class="step">2</div>
+            <p><strong>Escribe</strong> tu nombre de usuario</p>
+        </div>
+    </div>
+    <div class="two-columns">
+        <div class="step-box">
+            <div class="step">3</div>
+            <p><strong>Haz clic</strong> en el cuadro "Contraseña"</p>
+        </div>
+        <div class="step-box">
+            <div class="step">4</div>
+            <p><strong>Escribe</strong> tu contraseña</p>
+        </div>
+    </div>
+    <div class="step-box">
+        <div class="step">5</div>
+        <p><strong>Haz clic</strong> en el botón azul <span class="btn">INICIAR SESIÓN</span></p>
+    </div>
+    
+    <div class="important">
+        <strong>⚠️ IMPORTANTE:</strong>
+        <ul>
+            <li>Las mayúsculas y minúsculas importan</li>
+            <li>Si te equivocas, aparecerá un mensaje en rojo</li>
+            <li>Si no recuerdas tus datos, pide ayuda al administrador</li>
+        </ul>
+    </div>
+</div>
+
+<!-- PÁGINA 2: DASHBOARD -->
+<div class="page">
+    <h2>📊 PASO 2: El Dashboard (Pantalla Principal)</h2>
+    
+    <p style="font-size: 1.2em; margin: 20px 0;">
+        El Dashboard te muestra un <strong>resumen del día</strong>: cuántos tours se han hecho y cuánto dinero se ha ganado.
+    </p>
+    
+    <h3>Las partes del Dashboard:</h3>
+    
+    <div class="screenshot">
+╔═══════════════════════════════════════════════════════════════════╗
+║  🚗 ATV Operations       [Dashboard] [Calendario] [Informes]   👤 ║
+╠═══════════════════════════════════════════════════════════════════╣
+║                                                                   ║
+║       📅 FECHA: [◀️] 24 de Febrero 2026 [▶️]                      ║
+║                                                                   ║
+╠═══════════════════════════════════════════════════════════════════╣
+║                                                                   ║
+║   ┌───────────────────┐        ┌───────────────────┐             ║
+║   │ 💰 TOTAL VENTAS   │        │ 🚗 TOTAL TOURS    │             ║
+║   │    €1,250.00      │        │        8          │             ║
+║   └───────────────────┘        └───────────────────┘             ║
+║                                                                   ║
+╠═══════════════════════════════════════════════════════════════════╣
+║                      TOURS DEL DÍA                                ║
+║                                                                   ║
+║   🕐 10:00                                                        ║
+║   ┌─────────────────┐  ┌─────────────────┐                       ║
+║   │ Quad x2         │  │ Buggy x1        │                       ║
+║   │ Tour 2 horas    │  │ Tour 1 hora     │                       ║
+║   │ €180.00         │  │ €65.00          │                       ║
+║   │ 💵 Efectivo     │  │ 🏦 Banco        │                       ║
+║   └─────────────────┘  └─────────────────┘                       ║
+║                                                                   ║
+╚═══════════════════════════════════════════════════════════════════╝
+    </div>
+    
+    <h3>Cómo cambiar el día:</h3>
+    
+    <div class="box">
+        <p style="text-align: center; font-size: 1.3em;">
+            <strong>[◀️]</strong> 24 de Febrero 2026 <strong>[▶️]</strong>
+        </p>
+        <div class="two-columns" style="text-align: center; margin-top: 20px;">
+            <div>
+                <p>👆 <strong>Clic aquí</strong></p>
+                <p>Ver día <strong>ANTERIOR</strong></p>
+            </div>
+            <div>
+                <p>👆 <strong>Clic aquí</strong></p>
+                <p>Ver día <strong>SIGUIENTE</strong></p>
+            </div>
+        </div>
+    </div>
+    
+    <h3>Entender las tarjetas de tours:</h3>
+    
+    <div class="two-columns">
+        <div class="card-example quad">
+            <p><strong>Quad x2</strong></p>
+            <p>Tour 2 horas</p>
+            <p style="font-size: 1.3em; font-weight: bold;">€180.00</p>
+            <p>💵 Efectivo</p>
+            <p style="margin-top: 15px; font-size: 0.9em; color: #3b82f6;">
+                🔵 Borde AZUL = QUAD
+            </p>
+        </div>
+        <div class="card-example buggy">
+            <p><strong>Buggy x1</strong></p>
+            <p>Tour 1 hora</p>
+            <p style="font-size: 1.3em; font-weight: bold;">€65.00</p>
+            <p>🏦 Banco</p>
+            <p style="margin-top: 15px; font-size: 0.9em; color: #22c55e;">
+                🟢 Borde VERDE = BUGGY
+            </p>
+        </div>
+    </div>
+    
+    <h3>Símbolos de pago:</h3>
+    <table>
+        <tr><th>Símbolo</th><th>Significado</th></tr>
+        <tr><td style="font-size: 1.5em;">💵</td><td>Pagó en <strong>EFECTIVO</strong></td></tr>
+        <tr><td style="font-size: 1.5em;">🏦</td><td>Pagó con <strong>TARJETA / BANCO</strong></td></tr>
+        <tr><td style="font-size: 1.5em;">🌐</td><td>Pagó por <strong>WEB</strong></td></tr>
+        <tr><td style="font-size: 1.5em;">🎫</td><td>Pagó por <strong>GET YOUR GUIDE</strong></td></tr>
+        <tr><td style="font-size: 1.5em;">🚢</td><td>Pagó por <strong>CRUCERO</strong></td></tr>
+    </table>
+</div>
+
+<!-- PÁGINA 3: CALENDARIO -->
+<div class="page">
+    <h2>📅 PASO 3: El Calendario</h2>
+    
+    <h3>Cómo ir al Calendario:</h3>
+    
+    <div class="box">
+        <p style="text-align: center; font-size: 1.2em;">
+            [Dashboard] &nbsp;&nbsp; <span class="highlight" style="font-size: 1.3em; padding: 10px 20px;"><strong>[Calendario]</strong></span> &nbsp;&nbsp; [Informes]
+        </p>
+        <p class="arrow">👆</p>
+        <p style="text-align: center; font-size: 1.2em;"><strong>HAZ CLIC AQUÍ</strong></p>
+    </div>
+    
+    <h3>¿Qué muestra el Calendario?</h3>
+    <p>El calendario te muestra <strong>todos los días del mes</strong> con el total de ventas de cada día.</p>
+    
+    <div class="screenshot">
+              ◀️  FEBRERO 2026  ▶️
+
+  ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┐
+  │ LUN │ MAR │ MIÉ │ JUE │ VIE │ SÁB │ DOM │
+  ├─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+  │     │     │     │     │     │  1  │  2  │
+  │     │     │     │     │     │€120 │€350 │
+  ├─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+  │  3  │  4  │  5  │  6  │  7  │  8  │  9  │
+  │€200 │ €0  │€180 │€450 │€320 │€890 │€1200│
+  ├─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+  │ 10  │ 11  │ 12  │ 13  │ 14  │ 15  │ 16  │
+  │€150 │€275 │€180 │€520 │€410 │€750 │€980 │
+  └─────┴─────┴─────┴─────┴─────┴─────┴─────┘
+    </div>
+    
+    <h3>Cómo usar el Calendario:</h3>
+    
+    <div class="two-columns">
+        <div class="box">
+            <h3 style="text-align: center;">Cambiar de mes</h3>
+            <p style="text-align: center; font-size: 1.3em; margin: 20px 0;">
+                <strong>◀️</strong> &nbsp; FEBRERO 2026 &nbsp; <strong>▶️</strong>
+            </p>
+            <p style="text-align: center;">
+                Usa las flechas para ir al mes anterior o siguiente
+            </p>
+        </div>
+        <div class="box">
+            <h3 style="text-align: center;">Ver detalles de un día</h3>
+            <p style="text-align: center; font-size: 3em; margin: 10px 0;">
+                <span style="background: #dbeafe; padding: 10px 20px; border-radius: 10px;">15</span>
+            </p>
+            <p style="text-align: center;">
+                Haz clic en el número del día para ver sus detalles
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- PÁGINA 4: INFORMES -->
+<div class="page">
+    <h2>📋 PASO 4: Los Informes</h2>
+    
+    <h3>Cómo ir a Informes:</h3>
+    
+    <div class="box">
+        <p style="text-align: center; font-size: 1.2em;">
+            [Dashboard] &nbsp;&nbsp; [Calendario] &nbsp;&nbsp; <span class="highlight" style="font-size: 1.3em; padding: 10px 20px;"><strong>[Informes]</strong></span>
+        </p>
+        <p class="arrow">👆</p>
+        <p style="text-align: center; font-size: 1.2em;"><strong>HAZ CLIC AQUÍ</strong></p>
+    </div>
+    
+    <h3>Hay DOS tipos de informes:</h3>
+    
+    <div class="two-columns">
+        <div class="box box-purple">
+            <h3 style="text-align: center;">📊 INFORME PRINCIPAL</h3>
+            <p>Resumen general rápido por período (día, mes, año)</p>
+        </div>
+        <div class="box box-purple">
+            <h3 style="text-align: center;">📋 INFORME PERSONALIZADO</h3>
+            <p>Tú eliges exactamente qué quieres ver con filtros</p>
+        </div>
+    </div>
+    
+    <h3>INFORME PRINCIPAL - Cómo usarlo:</h3>
+    
+    <div class="step-box">
+        <div class="step">1</div>
+        <p><strong>Elige el período:</strong> Hoy, Este mes, Este año o Personalizado</p>
+    </div>
+    
+    <div class="step-box">
+        <div class="step">2</div>
+        <p><strong>Haz clic en</strong> <span class="btn">🔍 GENERAR</span></p>
+    </div>
+    
+    <div class="step-box">
+        <div class="step">3</div>
+        <p><strong>Ve los resultados</strong> y si quieres, haz clic en <span class="btn btn-green">📥 Descargar PDF</span></p>
+    </div>
+</div>
+
+<!-- PÁGINA 5: INFORME PERSONALIZADO -->
+<div class="page">
+    <h2>📋 Informe Detallado Personalizado</h2>
+    
+    <p style="font-size: 1.2em; margin: 20px 0;">
+        Este informe te permite elegir <strong>exactamente</strong> qué quieres ver.
+    </p>
+    
+    <h3>Los filtros disponibles:</h3>
+    
+    <div class="box">
+        <div class="two-columns">
+            <div>
+                <h3>📅 DESDE</h3>
+                <p>Fecha de inicio</p>
+            </div>
+            <div>
+                <h3>📅 HASTA</h3>
+                <p>Fecha de fin</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="box box-yellow">
+        <h3>☑️ INCLUIR (Elige lo que quieras ver):</h3>
+        <div style="margin: 20px 0;">
+            <p style="font-size: 1.3em; margin: 15px 0;">☑️ 🚗 <strong>Tours</strong> - Ver lista de tours</p>
+            <p style="font-size: 1.3em; margin: 15px 0;">☑️ 💸 <strong>Gastos</strong> - Ver lista de gastos</p>
+            <p style="font-size: 1.3em; margin: 15px 0;">☑️ 💰 <strong>Ingresos Extra</strong> - Ver otros ingresos</p>
+        </div>
+        <div class="important">
+            <strong>💡 IMPORTANTE:</strong> Puedes marcar UNA, DOS o LAS TRES opciones. 
+            El BALANCE solo aparece si marcas gastos + (tours o ingresos).
+        </div>
+    </div>
+    
+    <h3>Ejemplos de combinaciones:</h3>
+    <table>
+        <tr><th>Lo que marcas</th><th>Lo que verás</th></tr>
+        <tr><td>☑️ Solo Tours</td><td>Lista de todos los tours</td></tr>
+        <tr><td>☑️ Solo Gastos</td><td>Lista de todos los gastos</td></tr>
+        <tr><td>☑️ Tours + ☑️ Gastos</td><td>Tours, Gastos y <strong>BALANCE</strong></td></tr>
+        <tr><td>☑️ Los 3 marcados</td><td>Todo junto con Balance completo</td></tr>
+    </table>
+    
+    <h3>Entender los resultados:</h3>
+    
+    <div class="two-columns">
+        <div class="box" style="background: #fff7ed; border-color: #f97316;">
+            <p style="font-size: 0.9em; color: #ea580c;">🚗 TOURS</p>
+            <p style="font-size: 1.5em; font-weight: bold;">€4,123.75</p>
+            <p style="font-size: 0.8em;">💵 €2,500 | 🏦 €1,623</p>
+        </div>
+        <div class="box box-green">
+            <p style="font-size: 0.9em; color: #16a34a;">💰 INGRESOS EXTRA</p>
+            <p style="font-size: 1.5em; font-weight: bold;">+€1,036.33</p>
+            <p style="font-size: 0.8em;">💵 €500 | 🏦 €536</p>
+        </div>
+    </div>
+    <div class="two-columns">
+        <div class="box box-red">
+            <p style="font-size: 0.9em; color: #dc2626;">💸 GASTOS</p>
+            <p style="font-size: 1.5em; font-weight: bold;">-€4,773.50</p>
+            <p style="font-size: 0.8em;">💵 €3,000 | 🏦 €1,773</p>
+        </div>
+        <div class="box box-purple">
+            <p style="font-size: 0.9em; color: #7c3aed;">📊 BALANCE</p>
+            <p style="font-size: 1.5em; font-weight: bold; color: #16a34a;">€386.58</p>
+            <p style="font-size: 0.8em;">💵 €0 | 🏦 €386</p>
+        </div>
+    </div>
+</div>
+
+<!-- PÁGINA 6: CERRAR SESIÓN Y FAQ -->
+<div class="page">
+    <h2>🚪 PASO 5: Cerrar Sesión</h2>
+    
+    <div class="box">
+        <h3>Cómo salir de la aplicación:</h3>
+        <div class="step-box">
+            <div class="step">1</div>
+            <p>Busca tu nombre arriba a la derecha</p>
+        </div>
+        <div class="step-box">
+            <div class="step">2</div>
+            <p>Haz clic en él</p>
+        </div>
+        <div class="step-box">
+            <div class="step">3</div>
+            <p>Haz clic en <strong>"Cerrar sesión"</strong></p>
+        </div>
+    </div>
+    
+    <h2 style="margin-top: 40px;">❓ Preguntas Frecuentes</h2>
+    
+    <div class="box box-yellow">
+        <h3>❓ "No puedo entrar"</h3>
+        <p><strong>Solución:</strong></p>
+        <ul>
+            <li>Verifica que las mayúsculas estén bien</li>
+            <li>Verifica que no haya espacios al principio o final</li>
+            <li>Pide al administrador que te confirme tus datos</li>
+        </ul>
+    </div>
+    
+    <div class="box box-yellow">
+        <h3>❓ "No veo el botón de crear tour"</h3>
+        <p><strong>Respuesta:</strong> Es normal. Tu cuenta es de "Solo Lectura". Solo puedes VER información, no crear ni modificar.</p>
+    </div>
+    
+    <div class="box box-yellow">
+        <h3>❓ "El informe no muestra nada"</h3>
+        <p><strong>Solución:</strong></p>
+        <ul>
+            <li>Verifica que las fechas sean correctas (DESDE debe ser ANTES que HASTA)</li>
+            <li>Verifica que haya datos en esas fechas</li>
+            <li>Asegúrate de marcar al menos una casilla en "Incluir"</li>
+        </ul>
+    </div>
+    
+    <div class="box box-yellow">
+        <h3>❓ "No sé dónde está el PDF que descargué"</h3>
+        <p><strong>Solución:</strong></p>
+        <ul>
+            <li>Pulsa <strong>Ctrl + J</strong> (o Cmd + J en Mac) para ver descargas</li>
+            <li>O busca en la carpeta <strong>"Descargas"</strong> de tu ordenador</li>
+        </ul>
+    </div>
+    
+    <div class="box" style="margin-top: 40px; text-align: center;">
+        <h3>📞 ¿Necesitas ayuda?</h3>
+        <p style="font-size: 1.2em;">Contacta con el administrador</p>
+    </div>
+    
+    <p style="text-align: center; margin-top: 40px; color: #666;">
+        <strong>FIN DEL MANUAL</strong><br>
+        Versión 1.0 - Febrero 2026
+    </p>
+</div>
+
+</body>
+</html>
