@@ -297,10 +297,12 @@ function calculatePayoutDate(salesChannel, date) {
 // Ensure CierreCaja sheet exists
 async function ensureCierreCajaSheet() {
   try {
-    const spreadsheet = await sheetsClient.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+    const { getSheetsClient } = require('@/lib/google-sheets');
+    const sheets = await getSheetsClient();
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
     const sheetExists = spreadsheet.data.sheets?.some(s => s.properties?.title === 'CierreCaja');
     if (!sheetExists) {
-      await sheetsClient.spreadsheets.batchUpdate({
+      await sheets.spreadsheets.batchUpdate({
         spreadsheetId: SPREADSHEET_ID,
         requestBody: { requests: [{ addSheet: { properties: { title: 'CierreCaja' } } }] }
       });
